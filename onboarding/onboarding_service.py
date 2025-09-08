@@ -28,9 +28,9 @@ class OnboardingService:
     def start_customer_onboarding(self, 
                                 organization_name: str,
                                 primary_contact_email: str,
-                                industry_type: str = None,
-                                company_size: str = None,
-                                expected_agent_count: int = None) -> CustomerOnboarding:
+                                industry_type: Optional[str] = None,
+                                company_size: Optional[str] = None,
+                                expected_agent_count: Optional[int] = None) -> CustomerOnboarding:
         """
         Start the onboarding process for a new customer
         
@@ -50,18 +50,17 @@ class OnboardingService:
             customer_id = f"cust_{uuid.uuid4().hex[:12]}"
             
             # Create onboarding record
-            customer = CustomerOnboarding(
-                customer_id=customer_id,
-                organization_name=organization_name,
-                primary_contact_email=primary_contact_email,
-                industry_type=industry_type,
-                company_size=company_size,
-                expected_agent_count=expected_agent_count,
-                onboarding_status='started',
-                current_step='welcome',
-                completion_percentage=0.0,
-                started_at=datetime.utcnow()
-            )
+            customer = CustomerOnboarding()
+            customer.customer_id = customer_id
+            customer.organization_name = organization_name
+            customer.primary_contact_email = primary_contact_email
+            customer.industry_type = industry_type
+            customer.company_size = company_size
+            customer.expected_agent_count = expected_agent_count
+            customer.onboarding_status = 'started'
+            customer.current_step = 'welcome'
+            customer.completion_percentage = 0.0
+            customer.started_at = datetime.utcnow()
             
             db.session.add(customer)
             db.session.commit()
@@ -102,7 +101,7 @@ class OnboardingService:
         
         customer = self.get_customer_onboarding(customer_id)
         if not customer:
-            return None
+            return {}
         
         # Get all progress records
         progress_records = CustomerProgress.query.filter_by(customer_id=customer_id).all()
@@ -217,9 +216,9 @@ class OnboardingService:
     def complete_onboarding_step(self, 
                                 customer_id: str, 
                                 step_key: str, 
-                                completion_data: Dict[str, Any] = None,
-                                feedback: str = None,
-                                difficulty_rating: int = None) -> bool:
+                                completion_data: Optional[Dict[str, Any]] = None,
+                                feedback: Optional[str] = None,
+                                difficulty_rating: Optional[int] = None) -> bool:
         """
         Mark an onboarding step as completed
         
@@ -242,11 +241,10 @@ class OnboardingService:
             ).first()
             
             if not progress:
-                progress = CustomerProgress(
-                    customer_id=customer_id,
-                    step_key=step_key,
-                    started_at=datetime.utcnow()
-                )
+                progress = CustomerProgress()
+                progress.customer_id = customer_id
+                progress.step_key = step_key
+                progress.started_at = datetime.utcnow()
                 db.session.add(progress)
             
             # Update progress
@@ -292,10 +290,9 @@ class OnboardingService:
             ).first()
             
             if not progress:
-                progress = CustomerProgress(
-                    customer_id=customer_id,
-                    step_key=step_key
-                )
+                progress = CustomerProgress()
+                progress.customer_id = customer_id
+                progress.step_key = step_key
                 db.session.add(progress)
             
             # Update progress
@@ -312,7 +309,7 @@ class OnboardingService:
             self.logger.error(f"Failed to start onboarding step {step_key} for customer {customer_id}: {e}")
             return False
     
-    def pause_onboarding(self, customer_id: str, reason: str = None) -> bool:
+    def pause_onboarding(self, customer_id: str, reason: Optional[str] = None) -> bool:
         """Pause customer onboarding"""
         try:
             customer = self.get_customer_onboarding(customer_id)
@@ -519,11 +516,10 @@ class OnboardingService:
                 ).first()
                 
                 if not existing:
-                    progress = CustomerProgress(
-                        customer_id=customer_id,
-                        step_key=step.step_key,
-                        status='not_started'
-                    )
+                    progress = CustomerProgress()
+                    progress.customer_id = customer_id
+                    progress.step_key = step.step_key
+                    progress.status = 'not_started'
                     db.session.add(progress)
             
             db.session.commit()
