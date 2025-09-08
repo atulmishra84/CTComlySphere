@@ -1,12 +1,13 @@
 """
 Agent Classification Engine
 Automatically classifies AI agents based on functionality and determines applicable regulatory frameworks
+Enhanced with GenAI and Agentic AI detection capabilities
 """
 import re
 import json
 from typing import Dict, List, Set, Any, Optional
 from datetime import datetime
-from models import ComplianceFramework
+from models import ComplianceFramework, AIAgentType
 
 
 class AgentClassificationEngine:
@@ -76,6 +77,79 @@ class AgentClassificationEngine:
                 'frameworks': [],
                 'criticality': 'low',
                 'description': 'AI systems for research and development purposes'
+            },
+            'genai': {
+                'keywords': [
+                    'gpt', 'llm', 'large language model', 'generative', 'openai', 'claude', 'anthropic',
+                    'palm', 'bard', 'gemini', 'llama', 'mistral', 'claude', 'text-generation', 'completion',
+                    'chat', 'conversation', 'prompt', 'fine-tune', 'embedding', 'transformer',
+                    'bert', 'roberta', 'bloom', 'alpaca', 'vicuna', 'chatgpt', 'gpt-3', 'gpt-4',
+                    'content-generation', 'text-to-image', 'image-generation', 'dalle', 'midjourney',
+                    'stable-diffusion', 'diffusion', 'gan', 'vae', 'multimodal', 'vision-language'
+                ],
+                'protocols': ['rest_api', 'grpc', 'websocket', 'graphql'],
+                'data_types': ['text', 'generated_content', 'prompts', 'embeddings'],
+                'frameworks': [
+                    ComplianceFramework.NIST_AI_RMF, 
+                    ComplianceFramework.OWASP_AI,
+                    ComplianceFramework.MITRE_ATLAS,
+                    ComplianceFramework.SAIF_GOOGLE
+                ],
+                'criticality': 'high',
+                'description': 'Generative AI systems capable of creating text, images, code, or other content',
+                'ai_type': AIAgentType.GENAI,
+                'specific_risks': [
+                    'bias_amplification', 'misinformation_generation', 'privacy_leakage',
+                    'hallucinations', 'prompt_injection', 'data_poisoning', 'model_extraction'
+                ]
+            },
+            'agentic_ai': {
+                'keywords': [
+                    'agent', 'autonomous', 'langchain', 'autogpt', 'crew', 'swarm', 'multi-agent',
+                    'planning', 'reasoning', 'tool-use', 'function-calling', 'workflow', 'orchestration',
+                    'decision-making', 'goal-oriented', 'task-execution', 'memory', 'context',
+                    'retrieval', 'rag', 'knowledge-base', 'vector', 'embedding', 'search',
+                    'api-calling', 'external-tools', 'browser', 'code-execution', 'interpreter'
+                ],
+                'protocols': ['rest_api', 'grpc', 'websocket', 'mqtt', 'graphql'],
+                'data_types': ['instructions', 'goals', 'tool_responses', 'memory_state'],
+                'frameworks': [
+                    ComplianceFramework.NIST_AI_RMF,
+                    ComplianceFramework.OWASP_AI,
+                    ComplianceFramework.MITRE_ATLAS,
+                    ComplianceFramework.SAIF_GOOGLE,
+                    ComplianceFramework.SOC2_TYPE_II
+                ],
+                'criticality': 'critical',
+                'description': 'Autonomous AI agents capable of planning, reasoning, and executing tasks with tool access',
+                'ai_type': AIAgentType.AGENTIC_AI,
+                'specific_risks': [
+                    'uncontrolled_autonomy', 'goal_misalignment', 'tool_misuse', 'escalation_privileges',
+                    'resource_consumption', 'infinite_loops', 'unauthorized_actions', 'data_exfiltration',
+                    'system_compromise', 'social_engineering'
+                ]
+            },
+            'multimodal_ai': {
+                'keywords': [
+                    'multimodal', 'vision-language', 'video-understanding', 'audio-processing',
+                    'speech-to-text', 'text-to-speech', 'image-captioning', 'visual-qa',
+                    'ocr', 'document-analysis', 'multimedia', 'cross-modal', 'fusion',
+                    'gpt-4v', 'clip', 'align', 'blip', 'flamingo', 'kosmos'
+                ],
+                'protocols': ['rest_api', 'grpc', 'websocket'],
+                'data_types': ['images', 'audio', 'video', 'text', 'documents'],
+                'frameworks': [
+                    ComplianceFramework.NIST_AI_RMF,
+                    ComplianceFramework.OWASP_AI,
+                    ComplianceFramework.GDPR
+                ],
+                'criticality': 'high',
+                'description': 'AI systems processing multiple data modalities (text, image, audio, video)',
+                'ai_type': AIAgentType.MULTIMODAL_AI,
+                'specific_risks': [
+                    'cross_modal_bias', 'deepfake_generation', 'privacy_inference',
+                    'content_manipulation', 'biometric_exposure'
+                ]
             }
         }
     
@@ -127,12 +201,84 @@ class AgentClassificationEngine:
                 'data_handling': ['phi_protection', 'secure_communications'],
                 'risk_threshold': 'high',
                 'mandatory': True
+            },
+            ComplianceFramework.NIST_AI_RMF.value: {
+                'required_controls': [
+                    'ai_governance_structure', 'risk_assessment_ai', 'bias_testing',
+                    'model_documentation', 'performance_monitoring', 'human_oversight',
+                    'explainability_requirements', 'ai_system_validation'
+                ],
+                'data_handling': ['training_data_governance', 'model_lineage', 'bias_mitigation'],
+                'risk_threshold': 'high',
+                'mandatory': True,
+                'genai_specific': [
+                    'prompt_injection_protection', 'content_filtering', 'safety_alignment',
+                    'hallucination_detection', 'output_monitoring', 'responsible_disclosure'
+                ],
+                'agentic_specific': [
+                    'autonomy_limits', 'goal_alignment_verification', 'tool_access_controls',
+                    'action_logging', 'override_mechanisms', 'resource_limits'
+                ]
+            },
+            ComplianceFramework.OWASP_AI.value: {
+                'required_controls': [
+                    'prompt_injection_defense', 'training_data_poisoning_protection',
+                    'model_dos_prevention', 'model_theft_protection', 'supply_chain_vulnerabilities',
+                    'output_handling_controls', 'ai_system_monitoring', 'plugin_validation'
+                ],
+                'data_handling': ['secure_model_storage', 'input_validation', 'output_sanitization'],
+                'risk_threshold': 'high',
+                'mandatory': True,
+                'genai_specific': [
+                    'prompt_firewall', 'output_content_scanning', 'model_endpoint_security',
+                    'inference_monitoring', 'api_rate_limiting'
+                ],
+                'agentic_specific': [
+                    'tool_sandbox_execution', 'action_authorization', 'capability_restrictions',
+                    'memory_isolation', 'external_api_validation'
+                ]
+            },
+            ComplianceFramework.MITRE_ATLAS.value: {
+                'required_controls': [
+                    'adversarial_robustness_testing', 'model_evasion_protection',
+                    'data_integrity_verification', 'model_backdoor_detection',
+                    'inference_attack_prevention', 'membership_inference_protection'
+                ],
+                'data_handling': ['differential_privacy', 'federated_learning_security'],
+                'risk_threshold': 'critical',
+                'mandatory': True,
+                'genai_specific': [
+                    'adversarial_prompt_detection', 'model_extraction_prevention',
+                    'watermarking_implementation', 'synthetic_data_labeling'
+                ],
+                'agentic_specific': [
+                    'behavioral_anomaly_detection', 'goal_manipulation_prevention',
+                    'reward_hacking_detection', 'agent_communication_security'
+                ]
+            },
+            ComplianceFramework.SAIF_GOOGLE.value: {
+                'required_controls': [
+                    'secure_ai_development', 'secure_ai_deployment', 'secure_ai_usage',
+                    'ai_risk_management', 'ai_incident_response', 'ai_supply_chain_security'
+                ],
+                'data_handling': ['privacy_preserving_ml', 'federated_analytics'],
+                'risk_threshold': 'high',
+                'mandatory': True,
+                'genai_specific': [
+                    'responsible_ai_practices', 'content_authenticity', 'safety_evaluations',
+                    'red_team_testing', 'alignment_verification'
+                ],
+                'agentic_specific': [
+                    'agent_safety_measures', 'containment_protocols', 'escalation_prevention',
+                    'human_in_the_loop', 'shutdown_procedures'
+                ]
             }
         }
     
     def classify_agent(self, agent_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Classify an AI agent based on its functionality and metadata
+        Enhanced with GenAI and Agentic AI detection
         
         Args:
             agent_data: Dictionary containing agent information (name, type, protocol, metadata, etc.)
@@ -151,6 +297,10 @@ class AgentClassificationEngine:
             'classification_reasons': [],
             'data_types_detected': [],
             'protocols_analyzed': [],
+            'ai_type': AIAgentType.TRADITIONAL_ML,
+            'specific_risks': [],
+            'genai_capabilities': [],
+            'agentic_features': [],
             'classified_at': datetime.utcnow().isoformat()
         }
         
@@ -174,6 +324,22 @@ class AgentClassificationEngine:
             primary_class, primary_score = sorted_scores[0]
             classification_result['primary_classification'] = primary_class
             classification_result['confidence_score'] = primary_score
+            
+            # Set AI type and specific features
+            primary_rules = self.classification_rules[primary_class]
+            if 'ai_type' in primary_rules:
+                classification_result['ai_type'] = primary_rules['ai_type']
+            
+            if 'specific_risks' in primary_rules:
+                classification_result['specific_risks'] = primary_rules['specific_risks']
+            
+            # Detect GenAI capabilities
+            if primary_class == 'genai' or 'genai' in [s['type'] for s in classification_result.get('secondary_classifications', [])]:
+                classification_result['genai_capabilities'] = self._detect_genai_capabilities(agent_data)
+            
+            # Detect Agentic AI features
+            if primary_class == 'agentic_ai' or 'agentic_ai' in [s['type'] for s in classification_result.get('secondary_classifications', [])]:
+                classification_result['agentic_features'] = self._detect_agentic_features(agent_data)
             
             # Secondary classifications (score > threshold)
             secondary_threshold = 0.3
@@ -206,6 +372,13 @@ class AgentClassificationEngine:
                 framework_key = framework.value if hasattr(framework, 'value') else str(framework)
                 if framework_key in self.framework_mappings:
                     controls.update(self.framework_mappings[framework_key]['required_controls'])
+                    
+                    # Add specialized controls based on AI type
+                    framework_mapping = self.framework_mappings[framework_key]
+                    if classification_result['ai_type'] == AIAgentType.GENAI and 'genai_specific' in framework_mapping:
+                        controls.update(framework_mapping['genai_specific'])
+                    elif classification_result['ai_type'] == AIAgentType.AGENTIC_AI and 'agentic_specific' in framework_mapping:
+                        controls.update(framework_mapping['agentic_specific'])
             
             classification_result['applicable_frameworks'] = [f.value for f in frameworks]
             classification_result['required_controls'] = list(controls)
@@ -426,3 +599,206 @@ class AgentClassificationEngine:
             config['immediate_notify'] = True
         
         return config
+    
+    def _detect_genai_capabilities(self, agent_data: Dict[str, Any]) -> List[str]:
+        """Detect specific GenAI capabilities from agent metadata"""
+        capabilities = []
+        agent_text = self._extract_text_for_analysis(agent_data).lower()
+        
+        # Text generation capabilities
+        text_generation_keywords = [
+            'text-generation', 'completion', 'chat', 'conversation', 'dialogue',
+            'summarization', 'translation', 'paraphrasing', 'writing'
+        ]
+        if any(keyword in agent_text for keyword in text_generation_keywords):
+            capabilities.append('text_generation')
+        
+        # Code generation capabilities
+        code_keywords = [
+            'code', 'programming', 'coding', 'github', 'copilot', 'codex',
+            'development', 'software', 'script', 'function'
+        ]
+        if any(keyword in agent_text for keyword in code_keywords):
+            capabilities.append('code_generation')
+        
+        # Image generation capabilities
+        image_keywords = [
+            'image', 'picture', 'visual', 'art', 'drawing', 'design',
+            'dalle', 'midjourney', 'stable-diffusion', 'imagen'
+        ]
+        if any(keyword in agent_text for keyword in image_keywords):
+            capabilities.append('image_generation')
+        
+        # Multimodal capabilities
+        multimodal_keywords = [
+            'multimodal', 'vision', 'audio', 'video', 'speech',
+            'cross-modal', 'text-to-image', 'image-to-text'
+        ]
+        if any(keyword in agent_text for keyword in multimodal_keywords):
+            capabilities.append('multimodal')
+        
+        # Fine-tuning capabilities
+        if 'fine-tune' in agent_text or 'fine-tuning' in agent_text or 'custom' in agent_text:
+            capabilities.append('fine_tuning')
+        
+        # Embedding capabilities
+        if 'embedding' in agent_text or 'vector' in agent_text or 'similarity' in agent_text:
+            capabilities.append('embeddings')
+        
+        return capabilities
+    
+    def _detect_agentic_features(self, agent_data: Dict[str, Any]) -> List[str]:
+        """Detect specific Agentic AI features from agent metadata"""
+        features = []
+        agent_text = self._extract_text_for_analysis(agent_data).lower()
+        
+        # Planning capabilities
+        planning_keywords = [
+            'planning', 'plan', 'strategy', 'goal', 'objective',
+            'task-planning', 'multi-step', 'workflow'
+        ]
+        if any(keyword in agent_text for keyword in planning_keywords):
+            features.append('planning')
+        
+        # Reasoning capabilities
+        reasoning_keywords = [
+            'reasoning', 'logic', 'inference', 'deduction',
+            'problem-solving', 'analysis', 'decision'
+        ]
+        if any(keyword in agent_text for keyword in reasoning_keywords):
+            features.append('reasoning')
+        
+        # Tool usage capabilities
+        tool_keywords = [
+            'tool', 'api', 'function', 'plugin', 'extension',
+            'external', 'integration', 'service', 'browser'
+        ]
+        if any(keyword in agent_text for keyword in tool_keywords):
+            features.append('tool_usage')
+        
+        # Memory capabilities
+        memory_keywords = [
+            'memory', 'context', 'history', 'recall', 'remember',
+            'persistent', 'storage', 'knowledge'
+        ]
+        if any(keyword in agent_text for keyword in memory_keywords):
+            features.append('memory')
+        
+        # Autonomous execution
+        autonomous_keywords = [
+            'autonomous', 'automatic', 'self', 'independent',
+            'unsupervised', 'auto', 'continuous'
+        ]
+        if any(keyword in agent_text for keyword in autonomous_keywords):
+            features.append('autonomy')
+        
+        # Multi-agent collaboration
+        multiagent_keywords = [
+            'multi-agent', 'swarm', 'collaboration', 'team',
+            'coordination', 'communication', 'collective'
+        ]
+        if any(keyword in agent_text for keyword in multiagent_keywords):
+            features.append('multi_agent')
+        
+        # Learning and adaptation
+        learning_keywords = [
+            'learning', 'adaptation', 'improvement', 'evolution',
+            'feedback', 'reinforcement', 'self-improvement'
+        ]
+        if any(keyword in agent_text for keyword in learning_keywords):
+            features.append('learning')
+        
+        return features
+    
+    def assess_genai_risks(self, agent_data: Dict[str, Any], capabilities: List[str]) -> Dict[str, Any]:
+        """Assess specific risks for GenAI systems"""
+        risk_assessment = {
+            'hallucination_risk': 'medium',
+            'bias_risk': 'medium',
+            'misinformation_risk': 'medium',
+            'privacy_risk': 'medium',
+            'safety_risk': 'low',
+            'mitigation_recommendations': []
+        }
+        
+        # Higher risks for text generation
+        if 'text_generation' in capabilities:
+            risk_assessment['hallucination_risk'] = 'high'
+            risk_assessment['misinformation_risk'] = 'high'
+            risk_assessment['mitigation_recommendations'].extend([
+                'implement_hallucination_detection',
+                'add_fact_checking_layer',
+                'require_source_citation'
+            ])
+        
+        # Higher risks for multimodal systems
+        if 'multimodal' in capabilities or 'image_generation' in capabilities:
+            risk_assessment['privacy_risk'] = 'high'
+            risk_assessment['safety_risk'] = 'medium'
+            risk_assessment['mitigation_recommendations'].extend([
+                'content_moderation',
+                'deepfake_detection',
+                'privacy_filter'
+            ])
+        
+        # Code generation specific risks
+        if 'code_generation' in capabilities:
+            risk_assessment['safety_risk'] = 'high'
+            risk_assessment['mitigation_recommendations'].extend([
+                'code_security_scanning',
+                'execution_sandboxing',
+                'vulnerability_detection'
+            ])
+        
+        return risk_assessment
+    
+    def assess_agentic_risks(self, agent_data: Dict[str, Any], features: List[str]) -> Dict[str, Any]:
+        """Assess specific risks for Agentic AI systems"""
+        risk_assessment = {
+            'autonomy_risk': 'medium',
+            'goal_misalignment_risk': 'medium',
+            'resource_consumption_risk': 'low',
+            'unauthorized_action_risk': 'medium',
+            'escalation_risk': 'low',
+            'mitigation_recommendations': []
+        }
+        
+        # Higher risks for autonomous systems
+        if 'autonomy' in features:
+            risk_assessment['autonomy_risk'] = 'critical'
+            risk_assessment['goal_misalignment_risk'] = 'high'
+            risk_assessment['mitigation_recommendations'].extend([
+                'human_oversight_required',
+                'action_approval_gates',
+                'emergency_shutdown'
+            ])
+        
+        # Tool usage risks
+        if 'tool_usage' in features:
+            risk_assessment['unauthorized_action_risk'] = 'high'
+            risk_assessment['escalation_risk'] = 'high'
+            risk_assessment['mitigation_recommendations'].extend([
+                'tool_access_controls',
+                'permission_validation',
+                'action_logging'
+            ])
+        
+        # Planning and reasoning risks
+        if 'planning' in features and 'reasoning' in features:
+            risk_assessment['goal_misalignment_risk'] = 'high'
+            risk_assessment['mitigation_recommendations'].extend([
+                'goal_verification',
+                'plan_validation',
+                'intermediate_checkpoints'
+            ])
+        
+        # Multi-agent collaboration risks
+        if 'multi_agent' in features:
+            risk_assessment['resource_consumption_risk'] = 'high'
+            risk_assessment['mitigation_recommendations'].extend([
+                'resource_limits',
+                'coordination_monitoring',
+                'conflict_resolution'
+            ])
+        
+        return risk_assessment
