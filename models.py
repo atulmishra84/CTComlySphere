@@ -275,7 +275,7 @@ class ModelVersion(db.Model):
 
 
 # Remediation Workflow Models
-class RemediationWorkflowStatus(Enum):
+class RemediationWorkflowStatus(enum.Enum):
     """Status of remediation workflow execution"""
     PENDING = "pending"
     RUNNING = "running"
@@ -285,7 +285,7 @@ class RemediationWorkflowStatus(Enum):
     PARTIALLY_COMPLETED = "partially_completed"
 
 
-class RemediationActionType(Enum):
+class RemediationActionType(enum.Enum):
     """Types of remediation actions"""
     UPDATE_CONFIGURATION = "update_configuration"
     APPLY_SECURITY_PATCH = "apply_security_patch"
@@ -301,7 +301,7 @@ class RemediationActionType(Enum):
     QUARANTINE_SYSTEM = "quarantine_system"
 
 
-class RemediationTriggerType(Enum):
+class RemediationTriggerType(enum.Enum):
     """What triggered the remediation workflow"""
     COMPLIANCE_VIOLATION = "compliance_violation"
     SECURITY_ALERT = "security_alert"
@@ -430,10 +430,6 @@ class RemediationTemplate(db.Model):
     created_by = db.Column(db.String(100), default='system')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    output_schema = db.Column(JSON)
-    model_size_mb = db.Column(db.Float)
-    
-    # Training information
     training_run_id = db.Column(db.String(255))
     experiment_id = db.Column(db.String(255))
     training_dataset = db.Column(db.String(500))
@@ -463,12 +459,7 @@ class RemediationTemplate(db.Model):
     deployment_status = db.Column(db.String(50))  # deployed, pending, failed
     last_deployed = db.Column(db.DateTime)
     
-    # Relationships
-    deployments = db.relationship('ModelDeployment', backref='model_version', lazy=True)
-    lineage_records = db.relationship('ModelLineage', backref='model_version', lazy=True)
     
-    # Unique constraint on model_name + version
-    __table_args__ = (db.UniqueConstraint('model_name', 'version'),)
 
 
 class ModelDeployment(db.Model):
