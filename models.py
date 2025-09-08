@@ -220,3 +220,157 @@ class PlaybookExecution(db.Model):
     # Relationships
     playbook = db.relationship('RegistrationPlaybook', backref='executions')
     agent = db.relationship('AIAgent', backref='playbook_executions')
+
+
+class ModelVersion(db.Model):
+    """Track model versions in model registry"""
+    id = db.Column(db.Integer, primary_key=True)
+    model_name = db.Column(db.String(255), nullable=False, index=True)
+    version = db.Column(db.String(50), nullable=False)
+    stage = db.Column(db.String(50), default='None')  # None, Staging, Production, Archived
+    description = db.Column(db.Text)
+    created_by = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Model metadata
+    framework = db.Column(db.String(100))  # tensorflow, pytorch, sklearn, etc.
+    model_type = db.Column(db.String(100))  # classification, regression, nlp, etc.
+    input_schema = db.Column(JSON)
+    output_schema = db.Column(JSON)
+    model_size_mb = db.Column(db.Float)
+    
+    # Training information
+    training_run_id = db.Column(db.String(255))
+    experiment_id = db.Column(db.String(255))
+    training_dataset = db.Column(db.String(500))
+    training_samples = db.Column(db.Integer)
+    validation_samples = db.Column(db.Integer)
+    training_duration = db.Column(db.Float)  # hours
+    
+    # Performance metrics
+    accuracy = db.Column(db.Float)
+    precision = db.Column(db.Float)
+    recall = db.Column(db.Float)
+    f1_score = db.Column(db.Float)
+    custom_metrics = db.Column(JSON)
+    
+    # Healthcare compliance
+    processes_phi = db.Column(db.Boolean, default=False)
+    hipaa_compliant = db.Column(db.Boolean, default=False)
+    fda_cleared = db.Column(db.Boolean, default=False)
+    gdpr_compliant = db.Column(db.Boolean, default=False)
+    regulatory_approval = db.Column(db.String(255))
+    data_classification = db.Column(db.String(100))
+    compliance_frameworks = db.Column(JSON)
+    
+    # Deployment information
+    deployment_config = db.Column(JSON)
+    serving_endpoint = db.Column(db.String(500))
+    deployment_status = db.Column(db.String(50))  # deployed, pending, failed
+    last_deployed = db.Column(db.DateTime)
+    
+    # Relationships
+    deployments = db.relationship('ModelDeployment', backref='model_version', lazy=True)
+    lineage_records = db.relationship('ModelLineage', backref='model_version', lazy=True)
+    
+    # Unique constraint on model_name + version
+    __table_args__ = (db.UniqueConstraint('model_name', 'version'),)
+
+
+class ModelDeployment(db.Model):
+    """Track model deployments across environments"""
+    id = db.Column(db.Integer, primary_key=True)
+    model_version_id = db.Column(db.Integer, db.ForeignKey('model_version.id'), nullable=False)
+    deployment_id = db.Column(db.String(255), unique=True, nullable=False)
+    environment = db.Column(db.String(100), nullable=False)  # dev, staging, prod
+    deployment_target = db.Column(db.String(100))  # kubernetes, docker, lambda, etc.
+    
+    # Endpoint information
+    endpoint_url = db.Column(db.String(500))
+    health_check_url = db.Column(db.String(500))
+    api_version = db.Column(db.String(50))
+    
+    # Deployment configuration
+    deployment_config = db.Column(JSON)
+    resource_requirements = db.Column(JSON)
+    scaling_config = db.Column(JSON)
+    security_config = db.Column(JSON)
+    
+    # Status tracking
+    deployment_status = db.Column(db.String(50), default='pending')  # pending, active, failed, terminated
+    health_status = db.Column(db.String(50), default='unknown')  # healthy, unhealthy, unknown
+    
+    # Timestamps
+    deployed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_health_check = db.Column(db.DateTime)
+    terminated_at = db.Column(db.DateTime)
+    
+    # Performance metrics
+    request_count = db.Column(db.Integer, default=0)
+    error_count = db.Column(db.Integer, default=0)
+    average_response_time = db.Column(db.Float)
+    last_prediction_time = db.Column(db.DateTime)
+    
+    # Compliance tracking
+    compliance_scan_status = db.Column(db.String(50), default='pending')
+    security_scan_results = db.Column(JSON)
+    audit_logs_enabled = db.Column(db.Boolean, default=False)
+
+
+class ModelLineage(db.Model):
+    """Track model lineage and dependencies"""
+    id = db.Column(db.Integer, primary_key=True)
+    model_version_id = db.Column(db.Integer, db.ForeignKey('model_version.id'), nullable=False)
+    
+    # Lineage information
+    parent_model_name = db.Column(db.String(255))
+    parent_model_version = db.Column(db.String(50))
+    training_run_id = db.Column(db.String(255))
+    experiment_name = db.Column(db.String(255))
+    
+    # Data sources
+    data_sources = db.Column(JSON)  # List of data source references
+    feature_dependencies = db.Column(JSON)  # List of feature engineering dependencies
+    code_version = db.Column(db.String(255))  # Git commit hash or version
+    
+    # Training artifacts
+    training_artifacts = db.Column(JSON)  # List of training artifacts (logs, checkpoints, etc.)
+    model_artifacts = db.Column(JSON)  # List of model artifacts (weights, config, etc.)
+    
+    # Dependencies
+    framework_dependencies = db.Column(JSON)  # ML framework versions
+    library_dependencies = db.Column(JSON)  # Python/R library versions
+    infrastructure_dependencies = db.Column(JSON)  # Hardware, cloud resources
+    
+    # Provenance
+    created_by = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    lineage_extracted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    lineage_source = db.Column(db.String(100))  # mlflow, manual, api, etc.
+
+
+class ModelRegistrySync(db.Model):
+    """Track synchronization with external model registries"""
+    id = db.Column(db.Integer, primary_key=True)
+    registry_type = db.Column(db.String(50), nullable=False)  # mlflow, sagemaker, etc.
+    registry_url = db.Column(db.String(500), nullable=False)
+    
+    # Sync status
+    last_sync_at = db.Column(db.DateTime)
+    sync_status = db.Column(db.String(50), default='pending')  # success, failed, in_progress
+    sync_error = db.Column(db.Text)
+    models_synced = db.Column(db.Integer, default=0)
+    models_failed = db.Column(db.Integer, default=0)
+    
+    # Sync configuration
+    sync_frequency = db.Column(db.String(50), default='daily')  # hourly, daily, weekly
+    auto_sync_enabled = db.Column(db.Boolean, default=True)
+    sync_filters = db.Column(JSON)  # Filters for what to sync
+    
+    # Connection info
+    connection_validated = db.Column(db.Boolean, default=False)
+    last_connection_check = db.Column(db.DateTime)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
