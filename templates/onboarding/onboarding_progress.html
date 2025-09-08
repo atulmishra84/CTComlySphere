@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}Onboarding Progress - {{ customer.organization_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">{{ customer.organization_name }}</h1>
+                    <p class="text-muted mb-0">Customer ID: {{ customer.customer_id }}</p>
+                </div>
+                <div>
+                    {% if customer.onboarding_status == 'paused' %}
+                    <form method="POST" action="{{ url_for('onboarding.resume_onboarding', customer_id=customer.customer_id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-success me-2">
+                            <i class="fas fa-play"></i> Resume Onboarding
+                        </button>
+                    </form>
+                    {% elif customer.onboarding_status != 'completed' %}
+                    <button type="button" class="btn btn-outline-warning me-2" data-bs-toggle="modal" data-bs-target="#pauseModal">
+                        <i class="fas fa-pause"></i> Pause Onboarding
+                    </button>
+                    {% endif %}
+                    <a href="{{ url_for('onboarding.onboarding_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Overview -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <!-- Status Card -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="card-title">Onboarding Progress</h5>
+                            <div class="progress mb-2" style="height: 12px;">
+                                <div class="progress-bar" 
+                                     style="width: {{ progress.completion_percentage }}%"
+                                     aria-valuenow="{{ progress.completion_percentage }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>{{ progress.completed_steps }} of {{ progress.total_required_steps }} steps completed</span>
+                                <strong>{{ "%.0f"|format(progress.completion_percentage) }}%</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            {% if customer.onboarding_status == 'completed' %}
+                                <i class="fas fa-check-circle fa-3x text-success mb-2"></i>
+                                <h6 class="text-success">Completed!</h6>
+                            {% elif customer.onboarding_status == 'paused' %}
+                                <i class="fas fa-pause-circle fa-3x text-warning mb-2"></i>
+                                <h6 class="text-warning">Paused</h6>
+                            {% else %}
+                                <i class="fas fa-clock fa-3x text-primary mb-2"></i>
+                                <h6 class="text-primary">In Progress</h6>
+                                {% if progress.estimated_time_remaining > 0 %}
+                                <small class="text-muted">~{{ progress.estimated_time_remaining }} min remaining</small>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onboarding Steps -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Onboarding Steps</h5>
+                </div>
+                <div class="card-body">
+                    <div class="onboarding-timeline">
+                        {% for step in progress.steps %}
+                        <div class="timeline-item {% if step.status == 'completed' %}completed{% elif step.status == 'in_progress' %}active{% elif not step.can_access %}disabled{% endif %} mb-4">
+                            <div class="row">
+                                <div class="col-1 text-center">
+                                    <div class="timeline-marker">
+                                        {% if step.status == 'completed' %}
+                                            <i class="fas fa-check-circle text-success"></i>
+                                        {% elif step.status == 'in_progress' %}
+                                            <i class="fas fa-clock text-warning"></i>
+                                        {% elif not step.can_access %}
+                                            <i class="fas fa-lock text-muted"></i>
+                                        {% else %}
+                                            <i class="far fa-circle text-muted"></i>
+                                        {% endif %}
+                                    </div>
+                                    {% if not loop.last %}
+                                    <div class="timeline-line"></div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-11">
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="card-title mb-1">
+                                                        Step {{ step.step_order }}: {{ step.step_name }}
+                                                        {% if step.is_required %}
+                                                            <span class="badge bg-danger ms-2">Required</span>
+                                                        {% else %}
+                                                            <span class="badge bg-secondary ms-2">Optional</span>
+                                                        {% endif %}
+                                                    </h6>
+                                                    <p class="card-text text-muted mb-2">{{ step.step_description }}</p>
+                                                    <div class="d-flex align-items-center text-muted">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        <small>{{ step.estimated_time_minutes }} minutes</small>
+                                                        {% if step.category %}
+                                                        <span class="mx-2">•</span>
+                                                        <span class="badge bg-light text-dark">{{ step.category.title() }}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    {% if step.status == 'completed' and step.completed_at %}
+                                                    <div class="mt-2">
+                                                        <small class="text-success">
+                                                            <i class="fas fa-check"></i> Completed on {{ step.completed_at[:10] }}
+                                                        </small>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="ms-3">
+                                                    {% if step.status == 'completed' %}
+                                                        <button class="btn btn-outline-success" disabled>
+                                                            <i class="fas fa-check"></i> Completed
+                                                        </button>
+                                                    {% elif step.can_access and step.status != 'completed' %}
+                                                        <a href="{{ url_for('onboarding.onboarding_step', customer_id=customer.customer_id, step_key=step.step_key) }}" 
+                                                           class="btn btn-primary">
+                                                            {% if step.status == 'in_progress' %}
+                                                                <i class="fas fa-play"></i> Continue
+                                                            {% else %}
+                                                                <i class="fas fa-arrow-right"></i> Start
+                                                            {% endif %}
+                                                        </a>
+                                                    {% else %}
+                                                        <button class="btn btn-outline-secondary" disabled>
+                                                            <i class="fas fa-lock"></i> Locked
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Customer Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Customer Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Contact Email</label>
+                        <div>{{ customer.primary_contact_email }}</div>
+                    </div>
+                    {% if customer.industry_type %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Industry</label>
+                        <div>{{ customer.industry_type.title() }}</div>
+                    </div>
+                    {% endif %}
+                    {% if customer.company_size %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Company Size</label>
+                        <div>{{ customer.company_size.title() }}</div>
+                    </div>
+                    {% endif %}
+                    {% if customer.expected_agent_count %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Expected AI Agents</label>
+                        <div>{{ customer.expected_agent_count }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Started</label>
+                        <div>{{ customer.started_at[:10] }}</div>
+                    </div>
+                    {% if customer.completed_at %}
+                    <div class="mb-0">
+                        <label class="form-label text-muted">Completed</label>
+                        <div>{{ customer.completed_at[:10] }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            {% if progress.next_step and customer.onboarding_status != 'completed' %}
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Next Step</h6>
+                </div>
+                <div class="card-body">
+                    {% for step in progress.steps %}
+                        {% if step.step_key == progress.next_step %}
+                        <h6>{{ step.step_name }}</h6>
+                        <p class="text-muted mb-3">{{ step.step_description }}</p>
+                        <a href="{{ url_for('onboarding.onboarding_step', customer_id=customer.customer_id, step_key=step.step_key) }}" 
+                           class="btn btn-primary w-100">
+                            <i class="fas fa-arrow-right"></i> Continue Onboarding
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Pause Modal -->
+<div class="modal fade" id="pauseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Pause Onboarding</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('onboarding.pause_onboarding', customer_id=customer.customer_id) }}">
+                <div class="modal-body">
+                    <p>Are you sure you want to pause the onboarding process?</p>
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason (optional)</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" 
+                                  placeholder="e.g., Need more time to gather information"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Pause Onboarding</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.onboarding-timeline .timeline-marker {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.onboarding-timeline .timeline-line {
+    width: 2px;
+    height: 50px;
+    background-color: #dee2e6;
+    margin: 10px auto;
+}
+
+.onboarding-timeline .timeline-item.completed .timeline-line {
+    background-color: #198754;
+}
+
+.onboarding-timeline .timeline-item.active .timeline-line {
+    background-color: #ffc107;
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.progress-bar {
+    border-radius: 10px;
+}
+</style>
+
+{% endblock %}

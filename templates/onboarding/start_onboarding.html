@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Start Customer Onboarding{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-rocket fa-2x text-primary me-3"></i>
+                    <div>
+                        <h1 class="h3 mb-0">Start Customer Onboarding</h1>
+                        <p class="text-muted mb-0">Get started with healthcare AI compliance monitoring</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onboarding Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Organization Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <!-- Organization Name -->
+                            <div class="col-md-6 mb-3">
+                                <label for="organization_name" class="form-label">
+                                    Organization Name <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="organization_name" 
+                                       name="organization_name" 
+                                       placeholder="e.g., MedTech Solutions Inc."
+                                       required>
+                            </div>
+
+                            <!-- Primary Contact Email -->
+                            <div class="col-md-6 mb-3">
+                                <label for="primary_contact_email" class="form-label">
+                                    Primary Contact Email <span class="text-danger">*</span>
+                                </label>
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="primary_contact_email" 
+                                       name="primary_contact_email" 
+                                       placeholder="contact@medtech.com"
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Industry Type -->
+                            <div class="col-md-6 mb-3">
+                                <label for="industry_type" class="form-label">Industry Type</label>
+                                <select class="form-select" id="industry_type" name="industry_type">
+                                    <option value="">Select Industry</option>
+                                    <option value="healthcare">Healthcare</option>
+                                    <option value="pharmaceutical">Pharmaceutical</option>
+                                    <option value="medical_device">Medical Device</option>
+                                    <option value="telehealth">Telehealth</option>
+                                    <option value="health_insurance">Health Insurance</option>
+                                    <option value="clinical_research">Clinical Research</option>
+                                    <option value="health_tech">Health Technology</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+
+                            <!-- Company Size -->
+                            <div class="col-md-6 mb-3">
+                                <label for="company_size" class="form-label">Company Size</label>
+                                <select class="form-select" id="company_size" name="company_size">
+                                    <option value="">Select Company Size</option>
+                                    <option value="startup">Startup (1-10 employees)</option>
+                                    <option value="small">Small (11-50 employees)</option>
+                                    <option value="medium">Medium (51-200 employees)</option>
+                                    <option value="large">Large (201-1000 employees)</option>
+                                    <option value="enterprise">Enterprise (1000+ employees)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Expected Agent Count -->
+                        <div class="mb-4">
+                            <label for="expected_agent_count" class="form-label">
+                                Expected Number of AI Agents to Monitor
+                            </label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="expected_agent_count" 
+                                   name="expected_agent_count" 
+                                   min="1" 
+                                   max="10000"
+                                   placeholder="e.g., 25">
+                            <div class="form-text">
+                                Estimate how many AI systems/models you plan to monitor for compliance
+                            </div>
+                        </div>
+
+                        <!-- What to Expect -->
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-info-circle"></i> What to Expect
+                            </h6>
+                            <div class="mb-2">
+                                Our guided onboarding will help you:
+                            </div>
+                            <ul class="mb-0">
+                                <li>Configure compliance requirements for your industry</li>
+                                <li>Set up security and access controls</li>
+                                <li>Connect your AI systems and cloud environments</li>
+                                <li>Run your first compliance assessment</li>
+                                <li>Learn platform features through hands-on training</li>
+                            </ul>
+                            <hr>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-clock text-primary me-2"></i>
+                                <strong>Estimated completion time: 30-45 minutes</strong>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('onboarding.onboarding_dashboard') }}" 
+                               class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-rocket"></i> Start Onboarding
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Benefits Section -->
+            <div class="row mt-4">
+                <div class="col-md-4 mb-3">
+                    <div class="text-center">
+                        <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                        <h6>Comprehensive Security</h6>
+                        <p class="text-muted small">
+                            Monitor AI systems against 11 compliance frameworks including HIPAA, NIST AI RMF, and GDPR
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="text-center">
+                        <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                        <h6>Automated Discovery</h6>
+                        <p class="text-muted small">
+                            Automatically discover AI agents across 15+ protocols including Kubernetes, REST APIs, and gRPC
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="text-center">
+                        <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                        <h6>Real-time Monitoring</h6>
+                        <p class="text-muted small">
+                            Continuous compliance monitoring with real-time alerts and detailed reporting
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-focus on organization name field
+document.getElementById('organization_name').focus();
+
+// Form validation feedback
+document.querySelector('form').addEventListener('submit', function(e) {
+    const orgName = document.getElementById('organization_name').value.trim();
+    const email = document.getElementById('primary_contact_email').value.trim();
+    
+    if (!orgName || !email) {
+        e.preventDefault();
+        alert('Please fill in the required fields (Organization Name and Primary Contact Email)');
+        return false;
+    }
+});
+</script>
+
+{% endblock %}

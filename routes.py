@@ -47,6 +47,17 @@ except ImportError as e:
     MODEL_REGISTRY_AVAILABLE = False
     print(f"Warning: Model registry features not available: {e}")
 
+# Import audit and onboarding routes
+try:
+    from routes_pkg.audit_routes import audit_bp
+    from routes_pkg.onboarding_routes import onboarding_bp
+    app.register_blueprint(audit_bp)
+    app.register_blueprint(onboarding_bp)
+    AUDIT_ONBOARDING_AVAILABLE = True
+except ImportError as e:
+    AUDIT_ONBOARDING_AVAILABLE = False
+    print(f"Warning: Audit and onboarding features not available: {e}")
+
 
 @app.route('/')
 def dashboard():
