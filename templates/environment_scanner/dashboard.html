@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environment Scanner - Healthcare AI Compliance Platform</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .scanner-card {
+            transition: transform 0.2s;
+        }
+        .scanner-card:hover {
+            transform: translateY(-2px);
+        }
+        .agent-status {
+            font-size: 0.8rem;
+        }
+        .risk-badge {
+            font-size: 0.75rem;
+        }
+        .scan-progress {
+            height: 4px;
+        }
+        .discovery-method {
+            background: var(--bs-secondary);
+            color: var(--bs-light);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1">
+                            <i class="fas fa-radar me-2"></i>Environment Scanner
+                        </h1>
+                        <p class="text-muted mb-0">Discover and monitor AI agents across your infrastructure</p>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scanner Controls -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-play-circle me-2"></i>Targeted Environment Scanning
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            Scan specific environments or filter by customer to discover targeted AI agents. 
+                            For real client environments, deploy scanning agents using our 
+                            <a href="{{ url_for('environment_scanner.deployment_guide') }}" class="text-decoration-none">deployment guide</a>.
+                        </p>
+                        
+                        <form id="scanForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="targetEnvironment" class="form-label">Target Environment</label>
+                                    <select class="form-select" id="targetEnvironment" name="environment">
+                                        <option value="All Environments" selected>All Environments</option>
+                                        <option value="Production">Production</option>
+                                        <option value="Staging">Staging</option>
+                                        <option value="Development">Development</option>
+                                        <option value="Cloud">Cloud</option>
+                                        <option value="On-Premise">On-Premise</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="customerFilter" class="form-label">Customer Filter (Optional)</label>
+                                    <input type="text" class="form-control" id="customerFilter" name="customer_filter" 
+                                           placeholder="Enter customer name or ID">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Scanner Types</label>
+                                <div class="row">
+                                    {% for scanner_type, info in capabilities.items() %}
+                                    <div class="col-md-3 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="{{ scanner_type }}" 
+                                                   id="scanner_{{ scanner_type }}" name="scanner_types" checked>
+                                            <label class="form-check-label" for="scanner_{{ scanner_type }}">
+                                                {{ info.name }}
+                                                {% if not info.available %}
+                                                <small class="text-warning">(Unavailable)</small>
+                                                {% endif %}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary" id="runScanBtn">
+                                    <i class="fas fa-search me-1"></i>Run Scan
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="startAutoScanBtn">
+                                    <i class="fas fa-sync me-1"></i>Start Auto-Scan
+                                </button>
+                                <button type="button" class="btn btn-outline-warning d-none" id="stopAutoScanBtn">
+                                    <i class="fas fa-stop me-1"></i>Stop Auto-Scan
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div class="mt-3">
+                            <div class="alert alert-info d-flex align-items-center">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <div>
+                                    <strong>Scan Target:</strong> <span id="scanTargetInfo">All environments</span>
+                                    <br>
+                                    <small class="text-muted">
+                                        💡 Currently showing simulated data. Deploy scanning agents to capture real client environments.
+                                        <a href="{{ url_for('environment_scanner.deployment_guide') }}" class="text-decoration-none">View deployment guide</a>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>Scan Statistics
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <div class="h4 mb-1 text-primary">{{ stats.total_agents_discovered }}</div>
+                                <div class="small text-muted">Agents Discovered</div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="h4 mb-1 text-success">{{ stats.available_scanners }}</div>
+                                <div class="small text-muted">Active Scanners</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="h4 mb-1 text-warning">{{ stats.active_scans }}</div>
+                                <div class="small text-muted">Running Scans</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="h4 mb-1 text-info">{{ stats.completed_scans }}</div>
+                                <div class="small text-muted">Completed Scans</div>
+                            </div>
+                        </div>
+                        
+                        {% if stats.auto_scan_enabled %}
+                        <div class="alert alert-success mt-3 mb-0">
+                            <i class="fas fa-sync-alt me-1"></i>
+                            Auto-scan active
+                            {% if stats.last_auto_scan %}
+                            <br><small>Last scan: {{ stats.last_auto_scan }}</small>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discovered Agents -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-robot me-2"></i>Discovered Agents ({{ total_agents }})
+                        </h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshAgents()">
+                                <i class="fas fa-refresh me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if discovered_agents %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Agent Name</th>
+                                        <th>Type</th>
+                                        <th>Protocol</th>
+                                        <th>Discovery Method</th>
+                                        <th>Risk Level</th>
+                                        <th>Compliance</th>
+                                        <th>Discovered</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="agentsTableBody">
+                                    {% for agent in discovered_agents %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ agent.name }}</strong>
+                                            {% if agent.metadata.get('namespace') %}
+                                            <br><small class="text-muted">{{ agent.metadata.namespace }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ agent.type }}</span>
+                                        </td>
+                                        <td>{{ agent.protocol }}</td>
+                                        <td>
+                                            <span class="discovery-method">{{ agent.discovered_by }}</span>
+                                        </td>
+                                        <td>
+                                            {% set risk_colors = {
+                                                'CRITICAL': 'danger',
+                                                'HIGH': 'warning', 
+                                                'MEDIUM': 'info',
+                                                'LOW': 'success'
+                                            } %}
+                                            <span class="badge bg-{{ risk_colors.get(agent.risk_level, 'secondary') }} risk-badge">
+                                                {{ agent.risk_level }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% for framework in agent.compliance_frameworks %}
+                                            <span class="badge bg-primary me-1">{{ framework }}</span>
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            <small>{{ agent.discovery_timestamp }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="viewAgentDetails('{{ agent.id }}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success" onclick="assessCompliance('{{ agent.id }}')">
+                                                    <i class="fas fa-shield-alt"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5>No Agents Discovered</h5>
+                            <p class="text-muted">Run a scan to discover AI agents in your environment.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discovery Methods -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-cogs me-2"></i>Discovery Methods ({{ capabilities|length }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for scanner_type, info in capabilities.items() %}
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card scanner-card h-100 {% if not info.available %}opacity-50{% endif %}">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0">{{ info.name }}</h6>
+                                        {% if info.available %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Unavailable</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text small">{{ info.description }}</p>
+                                        
+                                        <h6 class="mt-3 mb-2">Discovery Targets</h6>
+                                        <ul class="small mb-3">
+                                            {% for target in info.discovery_targets[:3] %}
+                                            <li>{{ target }}</li>
+                                            {% endfor %}
+                                            {% if info.discovery_targets|length > 3 %}
+                                            <li class="text-muted">+{{ info.discovery_targets|length - 3 }} more...</li>
+                                            {% endif %}
+                                        </ul>
+                                        
+                                        <h6 class="mb-2">Capabilities</h6>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            {% for capability in info.capabilities %}
+                                            <span class="badge bg-info">{{ capability }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <a href="{{ url_for('environment_scanner.scanner_details', scanner_type=scanner_type) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-info-circle me-1"></i>Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Modal -->
+    <div class="modal fade" id="scanProgressModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-search me-2"></i>Scanning Progress
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Progress</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div id="scanStatus"></div>
+                    <div id="scanResults" class="mt-3 d-none">
+                        <h6>Scan Results</h6>
+                        <div id="scanResultsContent"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let currentScanId = null;
+        let scanProgressModal = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            scanProgressModal = new bootstrap.Modal(document.getElementById('scanProgressModal'));
+            
+            // Update scan target info when form changes
+            updateScanTargetInfo();
+            document.getElementById('targetEnvironment').addEventListener('change', updateScanTargetInfo);
+            document.getElementById('customerFilter').addEventListener('input', updateScanTargetInfo);
+        });
+        
+        // Handle scan form submission
+        document.getElementById('scanForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const scannerTypes = Array.from(formData.getAll('scanner_types'));
+            
+            const data = {
+                environment: formData.get('environment'),
+                customer_filter: formData.get('customer_filter'),
+                scanner_types: scannerTypes
+            };
+            
+            try {
+                document.getElementById('runScanBtn').disabled = true;
+                
+                const response = await fetch('/environment-scanner/api/run-scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentScanId = result.scan_id;
+                    showScanProgress(result.scan_id);
+                } else {
+                    alert('Scan failed: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error starting scan: ' + error.message);
+            } finally {
+                document.getElementById('runScanBtn').disabled = false;
+            }
+        });
+        
+        // Handle auto-scan buttons
+        document.getElementById('startAutoScanBtn').addEventListener('click', async function() {
+            try {
+                const formData = new FormData(document.getElementById('scanForm'));
+                const data = {
+                    environment: formData.get('environment'),
+                    customer_filter: formData.get('customer_filter')
+                };
+                
+                const response = await fetch('/environment-scanner/api/start-auto-scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('startAutoScanBtn').classList.add('d-none');
+                    document.getElementById('stopAutoScanBtn').classList.remove('d-none');
+                    alert('Auto-scan started successfully');
+                } else {
+                    alert('Failed to start auto-scan: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error starting auto-scan: ' + error.message);
+            }
+        });
+        
+        document.getElementById('stopAutoScanBtn').addEventListener('click', async function() {
+            try {
+                const response = await fetch('/environment-scanner/api/stop-auto-scan', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('stopAutoScanBtn').classList.add('d-none');
+                    document.getElementById('startAutoScanBtn').classList.remove('d-none');
+                    alert('Auto-scan stopped successfully');
+                } else {
+                    alert('Failed to stop auto-scan: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error stopping auto-scan: ' + error.message);
+            }
+        });
+        
+        function showScanProgress(scanId) {
+            scanProgressModal.show();
+            document.getElementById('progressPercent').textContent = '0%';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('scanStatus').innerHTML = '<div class="text-info">Starting scan...</div>';
+            document.getElementById('scanResults').classList.add('d-none');
+            
+            // Poll for scan progress
+            pollScanProgress(scanId);
+        }
+        
+        async function pollScanProgress(scanId) {
+            try {
+                const response = await fetch(`/environment-scanner/api/scan-status/${scanId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const status = result.status;
+                    
+                    // Update progress
+                    const progress = status.progress || 0;
+                    document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+                    document.getElementById('progressBar').style.width = progress + '%';
+                    
+                    // Update status
+                    let statusHtml = `<div class="text-info">Status: ${status.status}</div>`;
+                    if (status.discovered_agents > 0) {
+                        statusHtml += `<div class="text-success">Agents discovered: ${status.discovered_agents}</div>`;
+                    }
+                    if (status.errors && status.errors.length > 0) {
+                        statusHtml += `<div class="text-warning">Errors: ${status.errors.length}</div>`;
+                    }
+                    document.getElementById('scanStatus').innerHTML = statusHtml;
+                    
+                    // Check if scan is complete
+                    if (status.status === 'completed') {
+                        document.getElementById('progressPercent').textContent = '100%';
+                        document.getElementById('progressBar').style.width = '100%';
+                        
+                        // Show results
+                        document.getElementById('scanResults').classList.remove('d-none');
+                        document.getElementById('scanResultsContent').innerHTML = `
+                            <div class="alert alert-success">
+                                <strong>Scan completed successfully!</strong><br>
+                                Discovered ${status.discovered_agents} agents
+                            </div>
+                        `;
+                        
+                        // Refresh the page after a delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
+                        
+                    } else if (status.status === 'failed') {
+                        document.getElementById('scanStatus').innerHTML = '<div class="text-danger">Scan failed</div>';
+                        document.getElementById('scanResults').classList.remove('d-none');
+                        document.getElementById('scanResultsContent').innerHTML = `
+                            <div class="alert alert-danger">
+                                <strong>Scan failed!</strong><br>
+                                ${status.errors ? status.errors.join('<br>') : 'Unknown error'}
+                            </div>
+                        `;
+                    } else {
+                        // Continue polling
+                        setTimeout(() => pollScanProgress(scanId), 2000);
+                    }
+                } else {
+                    console.error('Failed to get scan status:', result.error);
+                }
+            } catch (error) {
+                console.error('Error polling scan progress:', error);
+            }
+        }
+        
+        function updateScanTargetInfo() {
+            const environment = document.getElementById('targetEnvironment').value;
+            const customerFilter = document.getElementById('customerFilter').value;
+            
+            let info = environment;
+            if (customerFilter) {
+                info += ` (Customer: ${customerFilter})`;
+            }
+            
+            document.getElementById('scanTargetInfo').textContent = info;
+        }
+        
+        async function refreshAgents() {
+            try {
+                const response = await fetch('/environment-scanner/api/discovered-agents');
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Reload the page to update the agents table
+                    window.location.reload();
+                } else {
+                    alert('Failed to refresh agents: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error refreshing agents: ' + error.message);
+            }
+        }
+        
+        function viewAgentDetails(agentId) {
+            // Navigate to agent details page
+            window.location.href = `/agents/${agentId}`;
+        }
+        
+        function assessCompliance(agentId) {
+            // Navigate to compliance assessment page
+            window.location.href = `/compliance/assess/${agentId}`;
+        }
+    </script>
+</body>
+</html>
