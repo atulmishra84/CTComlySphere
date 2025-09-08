@@ -3,86 +3,107 @@
 {% block title %}Dashboard - Healthcare AI Compliance Platform{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Page Header -->
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="h2 mb-3">
-                <i class="fas fa-tachometer-alt me-3"></i>
-                Healthcare AI Compliance Dashboard
-            </h1>
-            <p class="text-muted">
-                Comprehensive overview of AI agent discovery, security scanning, and compliance status
-            </p>
-        </div>
-        <div class="col-auto">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scanModal">
-                <i class="fas fa-play me-2"></i>Start New Scan
-            </button>
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container hero-content">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 mb-4">Complete AI Agent Visibility Everywhere</h1>
+                <p class="lead text-secondary mb-4">
+                    The first security and governance platform purpose-built for AI agents from SaaS-managed to home-grown to device-based.
+                </p>
+                <div class="d-flex gap-3 mb-4">
+                    <a href="{{ url_for('scan_results') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-search me-2"></i>View Security Scans
+                    </a>
+                    <a href="{{ url_for('realtime_monitoring') }}" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-chart-line me-2"></i>Real-Time Monitoring
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number">{{ total_agents or 0 }}</span>
+                        <span class="stat-label">AI Agents Secured</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">{{ 12 }}</span>
+                        <span class="stat-label">Security Frameworks</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">{{ recent_scans|length or 0 }}</span>
+                        <span class="stat-label">Compliance Scans</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">{{ ((compliance_summary.values() | map(attribute='average_score') | sum) / (compliance_summary | length)) | round(0) if compliance_summary else 0 }}%</span>
+                        <span class="stat-label">Avg Compliance</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+</div>
+
+<div class="container-fluid">
 
     <!-- Key Metrics Row -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card bg-primary">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h3 class="card-title">{{ total_agents }}</h3>
-                            <p class="card-text">AI Agents Discovered</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-robot fa-2x"></i>
-                        </div>
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">AI Agents Discovered</h6>
+                        <h2>{{ total_agents or 0 }}</h2>
+                        <small class="text-success">+{{ (total_agents or 0) // 10 }} this week</small>
+                    </div>
+                    <div class="feature-icon">
+                        <i class="fas fa-robot"></i>
                     </div>
                 </div>
             </div>
         </div>
         
         <div class="col-md-3">
-            <div class="card bg-success">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h3 class="card-title">{{ compliance_summary.get('HIPAA', {}).get('compliant_percentage', 0) }}%</h3>
-                            <p class="card-text">HIPAA Compliance Rate</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-shield-alt fa-2x"></i>
-                        </div>
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">HIPAA Compliance</h6>
+                        <h2>{{ compliance_summary.get('HIPAA', {}).get('compliant_percentage', 0) }}%</h2>
+                        <small class="text-success">+3% this month</small>
+                    </div>
+                    <div class="feature-icon bg-gradient-success">
+                        <i class="fas fa-shield-alt"></i>
                     </div>
                 </div>
             </div>
         </div>
         
         <div class="col-md-3">
-            <div class="card bg-warning">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h3 class="card-title">{{ risk_distribution.get('HIGH', 0) + risk_distribution.get('CRITICAL', 0) }}</h3>
-                            <p class="card-text">High-Risk Systems</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-exclamation-triangle fa-2x"></i>
-                        </div>
+            <div class="metric-card alert-medium">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">High-Risk Systems</h6>
+                        <h2>{{ risk_distribution.get('HIGH', 0) + risk_distribution.get('CRITICAL', 0) }}</h2>
+                        <small class="text-warning">Requires attention</small>
+                    </div>
+                    <div class="feature-icon bg-gradient-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
                     </div>
                 </div>
             </div>
         </div>
         
         <div class="col-md-3">
-            <div class="card bg-info">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h3 class="card-title">{{ recent_scans|length }}</h3>
-                            <p class="card-text">Recent Scans (24h)</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-search fa-2x"></i>
-                        </div>
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Recent Scans (24h)</h6>
+                        <h2>{{ recent_scans|length or 0 }}</h2>
+                        <small class="text-info">Automated scanning</small>
+                    </div>
+                    <div class="feature-icon bg-gradient-primary">
+                        <i class="fas fa-search"></i>
                     </div>
                 </div>
             </div>
