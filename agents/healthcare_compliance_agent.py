@@ -16,6 +16,7 @@ from models import AIAgent, ComplianceEvaluation, ScanResult, ComplianceFramewor
 from agents.classification_engine import AgentClassificationEngine
 from agents.enhanced_decision_engine import enhanced_decision_engine, DecisionContext, RiskPrediction
 from agents.memory_system import agent_memory_system, MemoryType, MemoryImportance
+from agents.remediation_integration import agent_remediation_integration, RemediationRequest
 
 
 class AgentAction(Enum):
@@ -81,7 +82,7 @@ class HealthcareComplianceAgent:
         self.learning_mode = True
         
         # Remediation integration
-        self.remediation_engine = None  # Will be set when available
+        self.remediation_integration = agent_remediation_integration
         
         # Initialize agent capabilities
         self.initialize_knowledge_base()
@@ -796,33 +797,31 @@ class HealthcareComplianceAgent:
     
     async def trigger_automated_remediation(self, agent_id: str, framework: str, 
                                           issues: List[str], remediation_context: Dict[str, Any]):
-        """Trigger automated remediation workflows"""
-        if not self.remediation_engine:
-            self.logger.warning("Remediation engine not available for automated remediation")
-            return False
-        
+        """Trigger automated remediation using enhanced integration"""
         try:
             # Create remediation request
-            remediation_request = {
-                "agent_id": agent_id,
-                "framework": framework,
-                "issues": issues,
-                "context": remediation_context,
-                "triggered_by": "ai_agent",
-                "timestamp": datetime.utcnow().isoformat()
-            }
+            request = RemediationRequest(
+                agent_id=agent_id,
+                framework=framework,
+                issues=issues,
+                severity=remediation_context.get("severity", "medium"),
+                triggered_by="ai_agent_enhanced",
+                context=remediation_context,
+                auto_approve=remediation_context.get("auto_approve", False)
+            )
             
-            # Execute remediation workflow
-            result = await self.remediation_engine.execute_automated_remediation(remediation_request)
+            # Execute intelligent remediation
+            result = await self.remediation_integration.trigger_intelligent_remediation(request)
             
-            # Store remediation outcome in memory
+            # Store enhanced remediation outcome in memory
             self.memory_system.store_memory(
                 memory_type=MemoryType.EXPERIENCE,
                 content={
-                    "action": "automated_remediation",
-                    "request": remediation_request,
+                    "action": "enhanced_automated_remediation",
+                    "request": request.__dict__,
                     "result": result,
-                    "success": result.get("success", False)
+                    "success": result.get("success", False),
+                    "intelligent_features": ["context_analysis", "template_selection", "risk_assessment"]
                 },
                 context={
                     "agent_id": agent_id,
@@ -830,14 +829,14 @@ class HealthcareComplianceAgent:
                     "timestamp": datetime.utcnow().isoformat()
                 },
                 importance=MemoryImportance.HIGH,
-                tags=["remediation", f"framework:{framework}", f"agent:{agent_id}"]
+                tags=["enhanced_remediation", f"framework:{framework}", f"agent:{agent_id}"]
             )
             
-            self.logger.info(f"Automated remediation triggered for agent {agent_id}: {result.get('success', False)}")
+            self.logger.info(f"Enhanced automated remediation triggered for agent {agent_id}: {result.get('success', False)}")
             return result.get("success", False)
             
         except Exception as e:
-            self.logger.error(f"Automated remediation failed: {str(e)}")
+            self.logger.error(f"Enhanced automated remediation failed: {str(e)}")
             return False
     
     def determine_applicable_frameworks(self, classification: Dict[str, Any]) -> List[str]:

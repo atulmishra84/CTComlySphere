@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 
 from agents.healthcare_compliance_agent import healthcare_compliance_agent, AgentAction, Priority
+from agents.enhanced_conversation_handler import enhanced_conversation_handler
 
 
 @dataclass
