@@ -2,7 +2,7 @@ modules = ["python-3.11", "postgresql-16"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["c-ares", "grpc", "openssl", "pkg-config", "postgresql", "zlib"]
+packages = ["c-ares", "glibcLocales", "grpc", "openssl", "pkg-config", "postgresql", "zlib"]
 
 [deployment]
 deploymentTarget = "autoscale"

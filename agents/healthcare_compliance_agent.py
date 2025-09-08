@@ -14,6 +14,8 @@ from enum import Enum
 from app import db
 from models import AIAgent, ComplianceEvaluation, ScanResult, ComplianceFramework, RiskLevel
 from agents.classification_engine import AgentClassificationEngine
+from agents.enhanced_decision_engine import enhanced_decision_engine, DecisionContext, RiskPrediction
+from agents.memory_system import agent_memory_system, MemoryType, MemoryImportance
 
 
 class AgentAction(Enum):
@@ -70,9 +72,59 @@ class HealthcareComplianceAgent:
         self.decision_history: List[Dict[str, Any]] = []
         self.running = False
         
+        # Enhanced AI capabilities
+        self.decision_engine = enhanced_decision_engine
+        self.memory_system = agent_memory_system
+        
+        # Predictive analytics tracking
+        self.risk_predictions: Dict[str, RiskPrediction] = {}
+        self.learning_mode = True
+        
+        # Remediation integration
+        self.remediation_engine = None  # Will be set when available
+        
         # Initialize agent capabilities
         self.initialize_knowledge_base()
-        self.logger.info("Healthcare Compliance AI Agent initialized")
+        self.initialize_enhanced_capabilities()
+        self.logger.info("Enhanced Healthcare Compliance AI Agent initialized")
+    
+    def initialize_enhanced_capabilities(self):
+        """Initialize enhanced AI capabilities including decision engine and memory system"""
+        try:
+            # Initialize memory system
+            self.memory_system.load_critical_memories()
+            
+            # Load agent preferences and patterns
+            self.load_agent_learning_data()
+            
+            self.logger.info("Enhanced AI capabilities initialized successfully")
+        except Exception as e:
+            self.logger.error(f"Error initializing enhanced capabilities: {str(e)}")
+            # Fallback to basic functionality
+            self.learning_mode = False
+    
+    def load_agent_learning_data(self):
+        """Load historical learning data and patterns from memory system"""
+        # Load decision patterns
+        decision_memories = self.memory_system.search_memories(
+            memory_type=MemoryType.DECISION,
+            limit=100
+        )
+        
+        for memory in decision_memories:
+            decision_data = memory.content
+            if decision_data.get("effectiveness_score", 0) > 0.7:
+                # Learn from successful decisions
+                pattern_data = {
+                    "context": decision_data.get("decision_context", {}),
+                    "outcome": decision_data.get("decision_outcome", {}),
+                    "success_factors": decision_data.get("success_factors", []),
+                    "confidence": decision_data.get("effectiveness_score", 0.5)
+                }
+                
+                self.memory_system.learn_patterns("successful_decision", pattern_data)
+        
+        self.logger.info(f"Loaded {len(decision_memories)} decision patterns for learning")
     
     def initialize_knowledge_base(self):
         """Initialize the agent's knowledge base with compliance rules and patterns"""
@@ -141,10 +193,11 @@ class HealthcareComplianceAgent:
             {"scope": "full_environment"}
         )
         
-        # Start main execution loop
+        # Start enhanced execution loop
         while self.running:
             await self.process_task_queue()
             await self.monitor_compliance_status()
+            await self.proactive_monitoring()  # Enhanced proactive monitoring
             await self.learn_from_decisions()
             await asyncio.sleep(300)  # 5-minute cycle
     
@@ -433,14 +486,359 @@ class HealthcareComplianceAgent:
                 )
     
     async def learn_from_decisions(self):
-        """Learn from past decisions to improve future actions"""
-        # Analyze decision patterns
-        recent_decisions = self.decision_history[-100:]  # Last 100 decisions
+        """Enhanced learning from past decisions using memory system and pattern analysis"""
+        if not self.learning_mode:
+            return
         
-        # Pattern analysis would go here
-        # For now, log learning activity
-        if recent_decisions:
-            self.logger.info(f"Agent learning from {len(recent_decisions)} recent decisions")
+        try:
+            # Analyze decision patterns using enhanced capabilities
+            recent_decisions = self.decision_history[-100:]  # Last 100 decisions
+            
+            # Store decisions in memory system for learning
+            for decision in recent_decisions[-10:]:  # Process recent decisions
+                effectiveness_score = decision.get("effectiveness_score")
+                if effectiveness_score is not None:
+                    self.memory_system.store_decision_memory(
+                        decision_context=decision.get("context", {}),
+                        decision_outcome=decision.get("result", {}),
+                        effectiveness_score=effectiveness_score
+                    )
+            
+            # Learn patterns from successful decisions
+            successful_patterns = []
+            for decision in recent_decisions:
+                if decision.get("effectiveness_score", 0) > 0.8:
+                    pattern_data = {
+                        "action": decision.get("action"),
+                        "context": decision.get("context"),
+                        "success_factors": decision.get("success_factors", []),
+                        "confidence": decision.get("effectiveness_score")
+                    }
+                    successful_patterns.append(pattern_data)
+            
+            # Update knowledge base with learned patterns
+            if successful_patterns:
+                await self.update_knowledge_base_from_patterns(successful_patterns)
+            
+            self.logger.info(f"Enhanced learning completed: analyzed {len(recent_decisions)} decisions, found {len(successful_patterns)} successful patterns")
+            
+        except Exception as e:
+            self.logger.error(f"Enhanced learning failed: {str(e)}")
+            # Fallback to basic learning
+            if recent_decisions:
+                self.logger.info(f"Basic learning from {len(recent_decisions)} recent decisions")
+    
+    async def update_knowledge_base_from_patterns(self, patterns: List[Dict[str, Any]]):
+        """Update knowledge base based on learned patterns"""
+        for pattern in patterns:
+            action = pattern.get("action")
+            context = pattern.get("context", {})
+            
+            # Update risk thresholds based on successful interventions
+            framework = context.get("compliance_framework")
+            if framework and framework in self.knowledge_base["compliance_frameworks"]:
+                current_threshold = self.knowledge_base["compliance_frameworks"][framework]["risk_threshold"]
+                
+                # Adjust threshold based on pattern success
+                if pattern.get("confidence", 0) > 0.9:
+                    # Very successful pattern - can be more aggressive
+                    new_threshold = max(current_threshold - 2, 60)
+                    self.knowledge_base["compliance_frameworks"][framework]["risk_threshold"] = new_threshold
+                    
+                    self.logger.info(f"Updated {framework} risk threshold to {new_threshold} based on successful pattern")
+    
+    async def predict_compliance_risks(self, agent_id: str, frameworks: List[str] = None) -> Dict[str, RiskPrediction]:
+        """Predict compliance risks for specific agent across frameworks"""
+        predictions = {}
+        
+        try:
+            agent = AIAgent.query.get(agent_id)
+            if not agent:
+                return predictions
+            
+            # Use provided frameworks or detect from agent
+            target_frameworks = frameworks or self._detect_applicable_frameworks(agent)
+            
+            for framework in target_frameworks:
+                # Create decision context
+                context = DecisionContext(
+                    agent_id=agent_id,
+                    compliance_framework=framework,
+                    current_risk_level=agent.risk_level or RiskLevel.MEDIUM,
+                    historical_patterns=await self._get_historical_patterns(agent_id, framework),
+                    environmental_factors=await self._get_environmental_factors(),
+                    business_impact=await self._assess_business_impact(agent),
+                    regulatory_changes=await self._get_regulatory_changes(framework)
+                )
+                
+                # Get risk prediction
+                prediction = await self.decision_engine.predict_compliance_risk(context)
+                predictions[framework] = prediction
+                
+                # Store prediction for tracking
+                self.risk_predictions[f"{agent_id}_{framework}"] = prediction
+                
+                # Schedule remediation if high risk predicted
+                await self._handle_risk_prediction(agent_id, framework, prediction)
+            
+            self.logger.info(f"Generated risk predictions for agent {agent_id} across {len(target_frameworks)} frameworks")
+            
+        except Exception as e:
+            self.logger.error(f"Risk prediction failed for agent {agent_id}: {str(e)}")
+        
+        return predictions
+    
+    async def _handle_risk_prediction(self, agent_id: str, framework: str, prediction: RiskPrediction):
+        """Handle risk prediction by scheduling appropriate actions"""
+        
+        if prediction.predicted_risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
+            # Schedule immediate assessment
+            await self.schedule_task(
+                AgentAction.ASSESS_COMPLIANCE,
+                Priority.HIGH if prediction.predicted_risk_level == RiskLevel.HIGH else Priority.CRITICAL,
+                {
+                    "agent_id": agent_id,
+                    "framework": framework,
+                    "predicted_risk": prediction.predicted_risk_level.value,
+                    "confidence": prediction.confidence.value,
+                    "reason": "high_risk_predicted"
+                }
+            )
+            
+            # Schedule remediation if auto-remediation enabled
+            framework_config = self.knowledge_base["compliance_frameworks"].get(framework, {})
+            if framework_config.get("auto_remediation", False):
+                await self.schedule_task(
+                    AgentAction.REMEDIATE_ISSUES,
+                    Priority.HIGH,
+                    {
+                        "agent_id": agent_id,
+                        "framework": framework,
+                        "predicted_issues": prediction.contributing_factors,
+                        "recommended_actions": prediction.recommended_actions,
+                        "auto_triggered": True
+                    }
+                )
+        
+        elif prediction.predicted_risk_level == RiskLevel.MEDIUM:
+            # Schedule monitoring
+            await self.schedule_task(
+                AgentAction.MONITOR_CHANGES,
+                Priority.MEDIUM,
+                {
+                    "agent_id": agent_id,
+                    "framework": framework,
+                    "monitoring_focus": prediction.contributing_factors,
+                    "prediction_horizon": prediction.prediction_horizon
+                }
+            )
+    
+    def _detect_applicable_frameworks(self, agent: AIAgent) -> List[str]:
+        """Detect which compliance frameworks apply to an agent"""
+        frameworks = []
+        
+        # Basic framework detection logic
+        if agent.healthcare_related:
+            frameworks.append("HIPAA")
+        
+        if agent.ai_type and "medical" in str(agent.ai_type).lower():
+            frameworks.append("FDA")
+        
+        if agent.data_processing_eu:
+            frameworks.append("GDPR")
+        
+        # Default frameworks for all healthcare AI
+        if not frameworks:
+            frameworks = ["HIPAA", "SOC2"]
+        
+        return frameworks
+    
+    async def _get_historical_patterns(self, agent_id: str, framework: str) -> Dict[str, Any]:
+        """Get historical patterns for agent and framework"""
+        try:
+            # Search for historical decision patterns
+            historical_memories = self.memory_system.search_memories(
+                memory_type=MemoryType.PATTERN,
+                tags=[f"agent:{agent_id}", f"framework:{framework}"],
+                limit=10
+            )
+            
+            patterns = {}
+            for memory in historical_memories:
+                pattern_data = memory.content
+                pattern_type = pattern_data.get("pattern_type", "unknown")
+                patterns[pattern_type] = pattern_data
+            
+            return patterns
+            
+        except Exception as e:
+            self.logger.error(f"Error getting historical patterns: {str(e)}")
+            return {}
+    
+    async def _get_environmental_factors(self) -> Dict[str, Any]:
+        """Get current environmental factors affecting compliance"""
+        return {
+            "system_load": 0.6,  # Would be detected from monitoring
+            "network_issues": False,
+            "resource_constraints": False,
+            "maintenance_window": False
+        }
+    
+    async def _assess_business_impact(self, agent: AIAgent) -> Dict[str, Any]:
+        """Assess business impact of compliance issues"""
+        return {
+            "criticality": "high" if agent.healthcare_related else "medium",
+            "patient_facing": agent.healthcare_related,
+            "data_sensitivity": "high" if agent.healthcare_related else "medium",
+            "regulatory_visibility": "high"
+        }
+    
+    async def _get_regulatory_changes(self, framework: str) -> List[Dict[str, Any]]:
+        """Get recent regulatory changes for framework"""
+        # This would integrate with regulatory monitoring services
+        return []
+    
+    async def proactive_monitoring(self):
+        """Enhanced proactive monitoring with predictive capabilities"""
+        try:
+            # Get all agents for monitoring
+            agents = AIAgent.query.all()
+            
+            for agent in agents:
+                # Predict risks for each agent
+                predictions = await self.predict_compliance_risks(agent.id)
+                
+                # Check for immediate actions needed
+                for framework, prediction in predictions.items():
+                    if prediction.confidence.value in ["high", "very_high"]:
+                        if prediction.predicted_risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
+                            # Immediate attention needed
+                            await self.schedule_task(
+                                AgentAction.ALERT_STAKEHOLDERS,
+                                Priority.HIGH,
+                                {
+                                    "agent_id": agent.id,
+                                    "framework": framework,
+                                    "alert_type": "predicted_compliance_risk",
+                                    "risk_level": prediction.predicted_risk_level.value,
+                                    "recommendations": prediction.recommended_actions,
+                                    "time_horizon": prediction.prediction_horizon
+                                }
+                            )
+            
+            # Analyze system-wide trends
+            await self._analyze_system_trends()
+            
+            self.logger.info(f"Proactive monitoring completed for {len(agents)} agents")
+            
+        except Exception as e:
+            self.logger.error(f"Proactive monitoring failed: {str(e)}")
+    
+    async def _analyze_system_trends(self):
+        """Analyze system-wide compliance trends"""
+        try:
+            # Get recent evaluations for trend analysis
+            recent_evaluations = ComplianceEvaluation.query.filter(
+                ComplianceEvaluation.created_at >= datetime.utcnow() - timedelta(days=30)
+            ).all()
+            
+            if len(recent_evaluations) < 10:
+                return  # Insufficient data for trend analysis
+            
+            # Group by framework
+            framework_trends = {}
+            for eval in recent_evaluations:
+                framework = eval.framework.value
+                if framework not in framework_trends:
+                    framework_trends[framework] = []
+                framework_trends[framework].append({
+                    "score": eval.compliance_score,
+                    "date": eval.created_at,
+                    "agent_id": eval.agent_id
+                })
+            
+            # Analyze trends for each framework
+            for framework, evaluations in framework_trends.items():
+                if len(evaluations) >= 5:  # Minimum for trend analysis
+                    scores = [e["score"] for e in evaluations]
+                    avg_score = sum(scores) / len(scores)
+                    
+                    # Simple trend detection
+                    recent_scores = scores[-5:]  # Last 5 scores
+                    older_scores = scores[:-5] if len(scores) > 5 else scores[:len(scores)//2]
+                    
+                    if older_scores and recent_scores:
+                        recent_avg = sum(recent_scores) / len(recent_scores)
+                        older_avg = sum(older_scores) / len(older_scores)
+                        
+                        if recent_avg < older_avg - 5:  # Declining trend
+                            await self.schedule_task(
+                                AgentAction.ALERT_STAKEHOLDERS,
+                                Priority.HIGH,
+                                {
+                                    "alert_type": "declining_compliance_trend",
+                                    "framework": framework,
+                                    "current_avg": recent_avg,
+                                    "previous_avg": older_avg,
+                                    "affected_agents": len(set(e["agent_id"] for e in evaluations))
+                                }
+                            )
+                            
+                            self.logger.warning(f"Declining compliance trend detected for {framework}: {recent_avg:.1f} vs {older_avg:.1f}")
+        
+        except Exception as e:
+            self.logger.error(f"System trend analysis failed: {str(e)}")
+    
+    async def set_remediation_engine(self, remediation_engine):
+        """Set the remediation engine for integration"""
+        self.remediation_engine = remediation_engine
+        self.logger.info("Remediation engine integrated with AI agent")
+    
+    async def trigger_automated_remediation(self, agent_id: str, framework: str, 
+                                          issues: List[str], remediation_context: Dict[str, Any]):
+        """Trigger automated remediation workflows"""
+        if not self.remediation_engine:
+            self.logger.warning("Remediation engine not available for automated remediation")
+            return False
+        
+        try:
+            # Create remediation request
+            remediation_request = {
+                "agent_id": agent_id,
+                "framework": framework,
+                "issues": issues,
+                "context": remediation_context,
+                "triggered_by": "ai_agent",
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+            # Execute remediation workflow
+            result = await self.remediation_engine.execute_automated_remediation(remediation_request)
+            
+            # Store remediation outcome in memory
+            self.memory_system.store_memory(
+                memory_type=MemoryType.EXPERIENCE,
+                content={
+                    "action": "automated_remediation",
+                    "request": remediation_request,
+                    "result": result,
+                    "success": result.get("success", False)
+                },
+                context={
+                    "agent_id": agent_id,
+                    "framework": framework,
+                    "timestamp": datetime.utcnow().isoformat()
+                },
+                importance=MemoryImportance.HIGH,
+                tags=["remediation", f"framework:{framework}", f"agent:{agent_id}"]
+            )
+            
+            self.logger.info(f"Automated remediation triggered for agent {agent_id}: {result.get('success', False)}")
+            return result.get("success", False)
+            
+        except Exception as e:
+            self.logger.error(f"Automated remediation failed: {str(e)}")
+            return False
     
     def determine_applicable_frameworks(self, classification: Dict[str, Any]) -> List[str]:
         """Determine which compliance frameworks apply to an AI system"""

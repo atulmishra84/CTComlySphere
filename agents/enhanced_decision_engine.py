@@ -8,8 +8,12 @@ This module provides advanced decision-making capabilities including:
 - Adaptive risk scoring with contextual awareness
 """
 
-import numpy as np
 import json
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
