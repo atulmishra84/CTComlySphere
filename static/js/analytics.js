@@ -272,29 +272,17 @@ function initializeComplianceFrameworkChart() {
             datasets: [{
                 label: 'Compliance Score',
                 data: [85, 88, 75, 82, 90],
-                backgroundColor: [
-                    'rgba(34, 197, 94, 0.2)',   // Green for HIPAA
-                    'rgba(59, 130, 246, 0.2)',  // Blue for HITRUST
-                    'rgba(249, 115, 22, 0.2)',  // Orange for FDA
-                    'rgba(168, 85, 247, 0.2)',  // Purple for GDPR
-                    'rgba(236, 72, 153, 0.2)'   // Pink for SOC2
-                ],
-                borderColor: [
-                    'rgb(34, 197, 94)',   // Green
-                    'rgb(59, 130, 246)',  // Blue
-                    'rgb(249, 115, 22)',  // Orange
-                    'rgb(168, 85, 247)',  // Purple
-                    'rgb(236, 72, 153)'   // Pink
-                ],
+                backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                borderColor: 'rgb(59, 130, 246)',
                 pointBackgroundColor: [
-                    'rgb(34, 197, 94)',
-                    'rgb(59, 130, 246)',
-                    'rgb(249, 115, 22)',
-                    'rgb(168, 85, 247)',
-                    'rgb(236, 72, 153)'
+                    'rgb(34, 197, 94)',    // Green for HIPAA
+                    'rgb(59, 130, 246)',   // Blue for HITRUST
+                    'rgb(249, 115, 22)',   // Orange for FDA
+                    'rgb(168, 85, 247)',   // Purple for GDPR
+                    'rgb(236, 72, 153)'    // Pink for SOC2
                 ],
                 pointBorderColor: '#fff',
-                pointBorderWidth: 3,
+                pointBorderWidth: 2,
                 pointHoverBackgroundColor: '#fff',
                 pointHoverBorderColor: [
                     'rgb(34, 197, 94)',
@@ -304,9 +292,10 @@ function initializeComplianceFrameworkChart() {
                     'rgb(236, 72, 153)'
                 ],
                 pointHoverBorderWidth: 3,
-                pointRadius: 6,
-                pointHoverRadius: 8,
-                borderWidth: 3
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                borderWidth: 2,
+                fill: true
             }]
         },
         options: {
