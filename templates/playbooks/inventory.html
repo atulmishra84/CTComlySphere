@@ -170,7 +170,7 @@
                                                 </td>
                                                 <td>{{ inventory.added_to_inventory.strftime('%m/%d %H:%M') }}</td>
                                                 <td>
-                                                    <a href="{{ url_for('playbooks.inventory_details', agent_id=agent.id) }}" 
+                                                    <a href="{{ url_for('inventory_details', agent_id=agent.id) }}" 
                                                        class="btn btn-sm btn-outline-primary">
                                                         <i class="fas fa-eye"></i>
                                                     </a>

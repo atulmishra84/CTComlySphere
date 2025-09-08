@@ -405,6 +405,44 @@ def view_playbook(id):
                          executions=executions)
 
 
+@app.route('/playbooks/<int:id>/edit', methods=['GET', 'POST'])
+def edit_playbook(id):
+    """Edit existing playbook"""
+    playbook = RegistrationPlaybook.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        try:
+            playbook.name = request.form.get('name')
+            playbook.description = request.form.get('description')
+            playbook.plain_english_config = request.form.get('plain_english_config')
+            
+            if PlaybookManager:
+                playbook_manager = PlaybookManager()
+                # Regenerate backend code with updated configuration
+                playbook.generated_code = playbook_manager.parse_english_to_code(
+                    playbook.plain_english_config
+                )
+            
+            db.session.commit()
+            flash(f'Playbook "{playbook.name}" updated successfully!', 'success')
+            return redirect(url_for('view_playbook', id=playbook.id))
+            
+        except Exception as e:
+            flash(f'Error updating playbook: {str(e)}', 'error')
+            db.session.rollback()
+    
+    return render_template('playbooks/edit.html', playbook=playbook)
+
+
+@app.route('/agents/<int:agent_id>/inventory')
+def inventory_details(agent_id):
+    """View agent inventory details"""
+    agent = AIAgent.query.get_or_404(agent_id)
+    inventory = AIAgentInventory.query.filter_by(agent_id=agent_id).first()
+    
+    return render_template('playbooks/agent_details.html', agent=agent, inventory=inventory)
+
+
 @app.route('/playbooks/inventory')
 def playbooks_inventory():
     """AI Agent Inventory dashboard"""

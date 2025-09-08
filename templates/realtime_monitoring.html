@@ -237,7 +237,7 @@
 <script>
 let charts = {};
 let autoRefreshEnabled = false;
-let refreshInterval;
+let monitoringRefreshInterval;
 let lastUpdateTime = new Date();
 
 // Initialize real-time monitoring
@@ -507,11 +507,11 @@ function toggleAutoRefresh() {
     const icon = document.getElementById('autoRefreshIcon');
     
     if (autoRefreshEnabled) {
-        clearInterval(refreshInterval);
+        clearInterval(monitoringRefreshInterval);
         autoRefreshEnabled = false;
         icon.className = 'fas fa-play';
     } else {
-        refreshInterval = setInterval(() => {
+        monitoringRefreshInterval = setInterval(() => {
             fetchAgentStatus();
             fetchRealTimeMetrics();
         }, 3000);

@@ -28,7 +28,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="/playbooks">Playbooks</a></li>
-                            <li class="breadcrumb-item"><a href="{{ url_for('playbooks.view_playbook', id=playbook.id) }}">{{ playbook.name }}</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('view_playbook', id=playbook.id) }}">{{ playbook.name }}</a></li>
                             <li class="breadcrumb-item active">Edit</li>
                         </ol>
                     </nav>
@@ -89,7 +89,7 @@
                                 </div>
 
                                 <div class="d-flex justify-content-between">
-                                    <a href="{{ url_for('playbooks.view_playbook', id=playbook.id) }}" class="btn btn-secondary">
+                                    <a href="{{ url_for('view_playbook', id=playbook.id) }}" class="btn btn-secondary">
                                         <i class="fas fa-arrow-left"></i> Back to Playbook
                                     </a>
                                     <button type="submit" class="btn btn-primary">
