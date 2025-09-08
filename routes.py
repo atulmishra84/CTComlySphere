@@ -1180,6 +1180,65 @@ def upload_logo():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Upload failed: {str(e)}'})
 
+@app.route('/playbooks/<int:id>/duplicate', methods=['POST'])
+def duplicate_playbook(id):
+    """Duplicate an existing playbook"""
+    try:
+        original = RegistrationPlaybook.query.get_or_404(id)
+        
+        # Create duplicate with modified name
+        duplicate = RegistrationPlaybook(
+            name=f"{original.name} (Copy)",
+            description=f"Copy of {original.description}",
+            conditions=original.conditions,
+            actions=original.actions,
+            priority=original.priority,
+            enabled=False  # Duplicates start disabled
+        )
+        
+        db.session.add(duplicate)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Playbook duplicated successfully',
+            'new_id': duplicate.id
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Duplication failed: {str(e)}'})
+
+@app.route('/playbooks/<int:id>/delete', methods=['POST'])
+def delete_playbook(id):
+    """Delete a playbook"""
+    try:
+        playbook = RegistrationPlaybook.query.get_or_404(id)
+        db.session.delete(playbook)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Playbook deleted successfully'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Deletion failed: {str(e)}'})
+
+@app.route('/api/auto-registration/toggle', methods=['POST'])
+def toggle_auto_registration():
+    """Toggle auto-registration on/off"""
+    try:
+        data = request.get_json()
+        enabled = data.get('enabled', False)
+        
+        # In a real implementation, this would update a system setting
+        # For now, we'll just return success
+        return jsonify({
+            'success': True,
+            'message': f'Auto-registration {"enabled" if enabled else "disabled"}',
+            'enabled': enabled
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Toggle failed: {str(e)}'})
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('404.html'), 404

@@ -53,7 +53,7 @@
                                 <button type="button" class="btn btn-outline-success btn-sm">
                                     <i class="fas fa-play me-1"></i>Running
                                 </button>
-                                <button type="button" class="btn btn-outline-secondary btn-sm">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="configureAutoRegistration()">
                                     <i class="fas fa-cog me-1"></i>Configure
                                 </button>
                             </div>
@@ -94,9 +94,9 @@
                                         Actions
                                     </button>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
-                                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('edit_playbook', id=1) }}"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="duplicatePlaybook(1, 'Healthcare AI Registration')"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
+                                        <li><a class="dropdown-item text-danger" href="#" onclick="deletePlaybook(1, 'Healthcare AI Registration')"><i class="fas fa-trash me-2"></i>Delete</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -141,11 +141,11 @@
                                             </div>
                                             <div class="action-item">
                                                 <span class="action-type">set_risk_level</span>
-                                                <span class="action-link">Configure action</span>
+                                                <a href="#" class="action-link" onclick="configureAction('set_risk_level')">Configure action</a>
                                             </div>
                                             <div class="action-item">
                                                 <span class="action-type">trigger_scan</span>
-                                                <span class="action-link">Configure action</span>
+                                                <a href="#" class="action-link" onclick="configureAction('set_risk_level')">Configure action</a>
                                             </div>
                                         </div>
                                     </div>
@@ -220,7 +220,7 @@
                                             </div>
                                             <div class="action-item">
                                                 <span class="action-type">set_risk_level</span>
-                                                <span class="action-link">Configure action</span>
+                                                <a href="#" class="action-link" onclick="configureAction('set_risk_level')">Configure action</a>
                                             </div>
                                         </div>
                                     </div>
@@ -292,11 +292,11 @@
                                             </div>
                                             <div class="action-item">
                                                 <span class="action-type">set_risk_level</span>
-                                                <span class="action-link">Configure action</span>
+                                                <a href="#" class="action-link" onclick="configureAction('set_risk_level')">Configure action</a>
                                             </div>
                                             <div class="action-item">
                                                 <span class="action-type">trigger_scan</span>
-                                                <span class="action-link">Configure action</span>
+                                                <a href="#" class="action-link" onclick="configureAction('set_risk_level')">Configure action</a>
                                             </div>
                                         </div>
                                     </div>
@@ -367,7 +367,7 @@
                                             </div>
                                             <div class="action-item">
                                                 <span class="action-type">set_risk_level</span>
-                                                <span class="action-link">Configure action</span>
+                                                <a href="#" class="action-link" onclick="configureAction('set_risk_level')">Configure action</a>
                                             </div>
                                         </div>
                                     </div>
@@ -947,5 +947,62 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Playbook action functions
+function duplicatePlaybook(id, name) {
+    if (confirm(`Are you sure you want to duplicate the playbook "${name}"?`)) {
+        fetch(`/playbooks/${id}/duplicate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error duplicating playbook: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error duplicating playbook');
+        });
+    }
+}
+
+function deletePlaybook(id, name) {
+    if (confirm(`Are you sure you want to delete the playbook "${name}"? This action cannot be undone.`)) {
+        fetch(`/playbooks/${id}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deleting playbook: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting playbook');
+        });
+    }
+}
+
+function configureAction(actionType) {
+    // Open modal or redirect to configuration page
+    alert(`Configure ${actionType} action - This will open a configuration modal in the full implementation.`);
+}
+
+function configureAutoRegistration() {
+    // Open auto-registration settings
+    alert('Auto-registration configuration - This will open settings modal in the full implementation.');
+}
 </script>
 {% endblock %}
