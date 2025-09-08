@@ -61,12 +61,50 @@ except ImportError as e:
 
 @app.route('/')
 def dashboard():
-    """Main dashboard with overview statistics"""
+    """Main dashboard with overview statistics including GenAI and Agentic AI insights"""
     # Get basic statistics
     total_agents = AIAgent.query.count()
     recent_scans = ScanResult.query.filter(
         ScanResult.created_at >= datetime.utcnow() - timedelta(hours=24)
     ).all()
+    
+    # AI Type distribution with GenAI and Agentic AI metrics
+    from models import AIAgentType
+    ai_type_distribution = {}
+    genai_count = AIAgent.query.filter_by(ai_type=AIAgentType.GENAI).count()
+    agentic_count = AIAgent.query.filter_by(ai_type=AIAgentType.AGENTIC_AI).count()
+    multimodal_count = AIAgent.query.filter_by(ai_type=AIAgentType.MULTIMODAL_AI).count()
+    traditional_count = AIAgent.query.filter_by(ai_type=AIAgentType.TRADITIONAL_ML).count()
+    
+    ai_type_distribution = {
+        'GenAI': genai_count,
+        'Agentic AI': agentic_count,
+        'Multimodal AI': multimodal_count,
+        'Traditional ML': traditional_count,
+        'Computer Vision': AIAgent.query.filter_by(ai_type=AIAgentType.COMPUTER_VISION).count(),
+        'NLP': AIAgent.query.filter_by(ai_type=AIAgentType.NLP).count(),
+        'Conversational AI': AIAgent.query.filter_by(ai_type=AIAgentType.CONVERSATIONAL_AI).count()
+    }
+    
+    # GenAI specific metrics
+    genai_agents = AIAgent.query.filter_by(ai_type=AIAgentType.GENAI).all()
+    genai_metrics = {
+        'total_genai': genai_count,
+        'fine_tuned_count': sum(1 for agent in genai_agents if agent.fine_tuned),
+        'multimodal_genai': sum(1 for agent in genai_agents if agent.multimodal),
+        'model_families': list(set(agent.model_family for agent in genai_agents if agent.model_family)),
+        'capabilities_summary': {}
+    }
+    
+    # Agentic AI specific metrics
+    agentic_agents = AIAgent.query.filter_by(ai_type=AIAgentType.AGENTIC_AI).all()
+    agentic_metrics = {
+        'total_agentic': agentic_count,
+        'autonomous_count': sum(1 for agent in agentic_agents if agent.autonomy_level in ['high', 'full']),
+        'planning_enabled': sum(1 for agent in agentic_agents if agent.planning_capability),
+        'memory_enabled': sum(1 for agent in agentic_agents if agent.memory_enabled),
+        'frameworks': list(set(agent.agent_framework for agent in agentic_agents if agent.agent_framework))
+    }
     
     # Risk distribution
     risk_distribution = {}
@@ -74,7 +112,24 @@ def dashboard():
         count = ScanResult.query.filter_by(risk_level=risk_level).count()
         risk_distribution[risk_level.value] = count
     
-    # Compliance summary
+    # GenAI/Agentic AI specific risk analysis
+    genai_risk_analysis = {
+        'high_risk_genai': 0,
+        'critical_risk_agentic': 0,
+        'total_specialized_risks': 0
+    }
+    
+    for agent in genai_agents:
+        latest_scan = ScanResult.query.filter_by(ai_agent_id=agent.id).order_by(ScanResult.created_at.desc()).first()
+        if latest_scan and latest_scan.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
+            genai_risk_analysis['high_risk_genai'] += 1
+    
+    for agent in agentic_agents:
+        latest_scan = ScanResult.query.filter_by(ai_agent_id=agent.id).order_by(ScanResult.created_at.desc()).first()
+        if latest_scan and latest_scan.risk_level == RiskLevel.CRITICAL:
+            genai_risk_analysis['critical_risk_agentic'] += 1
+    
+    # Compliance summary with GenAI/Agentic frameworks
     compliance_summary = {}
     for framework in ComplianceFramework:
         evaluations = ComplianceEvaluation.query.filter_by(framework=framework).all()
@@ -91,11 +146,26 @@ def dashboard():
                 'compliant_percentage': 0
             }
     
+    # Recent specialized AI discoveries
+    recent_genai = AIAgent.query.filter_by(ai_type=AIAgentType.GENAI).filter(
+        AIAgent.discovered_at >= datetime.utcnow() - timedelta(days=7)
+    ).count()
+    
+    recent_agentic = AIAgent.query.filter_by(ai_type=AIAgentType.AGENTIC_AI).filter(
+        AIAgent.discovered_at >= datetime.utcnow() - timedelta(days=7)
+    ).count()
+    
     return render_template('dashboard.html',
                          total_agents=total_agents,
                          recent_scans=recent_scans,
                          risk_distribution=risk_distribution,
-                         compliance_summary=compliance_summary)
+                         compliance_summary=compliance_summary,
+                         ai_type_distribution=ai_type_distribution,
+                         genai_metrics=genai_metrics,
+                         agentic_metrics=agentic_metrics,
+                         genai_risk_analysis=genai_risk_analysis,
+                         recent_genai=recent_genai,
+                         recent_agentic=recent_agentic)
 
 
 @app.route('/scan/results')
