@@ -9,6 +9,11 @@ from .graphql_scanner import GraphQLScanner
 from .cloud_scanner import CloudServiceScanner
 from .a2a_scanner import A2ACommunicationScanner
 from .mcp_scanner import MCPScanner
+from .fhir_scanner import FHIRScanner
+from .hl7_scanner import HL7Scanner
+from .dicom_scanner import DICOMScanner
+from .webrtc_scanner import WebRTCScanner
+from .amqp_scanner import AMQPScanner
 
 class ProtocolScanner:
     """Main scanner orchestrator that manages all protocol-specific scanners"""
@@ -24,7 +29,12 @@ class ProtocolScanner:
             'graphql': GraphQLScanner(),
             'cloud_services': CloudServiceScanner(),
             'a2a_communication': A2ACommunicationScanner(),
-            'mcp_protocol': MCPScanner()
+            'mcp_protocol': MCPScanner(),
+            'fhir': FHIRScanner(),
+            'hl7': HL7Scanner(),
+            'dicom': DICOMScanner(),
+            'webrtc': WebRTCScanner(),
+            'amqp': AMQPScanner()
         }
     
     def start_comprehensive_scan(self, protocols, cloud_providers=None):

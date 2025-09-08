@@ -259,7 +259,7 @@ def webhooks():
             'status': 'active',
             'is_active': True,
             'scan_frequency': 3600,
-            'protocols': ['kubernetes', 'docker'],
+            'protocols': ['kubernetes', 'docker', 'fhir', 'hl7'],
             'last_triggered': datetime.utcnow() - timedelta(hours=2)
         },
         {
@@ -270,7 +270,7 @@ def webhooks():
             'status': 'active',
             'is_active': True,
             'scan_frequency': 86400,
-            'protocols': ['rest_api', 'grpc'],
+            'protocols': ['rest_api', 'grpc', 'dicom', 'webrtc', 'amqp'],
             'last_triggered': datetime.utcnow() - timedelta(days=1)
         }
     ]
@@ -618,7 +618,9 @@ def api_realtime_protocols():
     
     protocols = [
         'Kubernetes', 'Docker', 'REST API', 'gRPC', 
-        'WebSocket', 'MQTT', 'GraphQL', 'Cloud Services'
+        'WebSocket', 'MQTT', 'GraphQL', 'Cloud Services',
+        'MCP Protocol', 'A2A Communication', 'FHIR',
+        'HL7', 'DICOM', 'WebRTC', 'AMQP'
     ]
     
     protocol_data = []
