@@ -257,6 +257,7 @@ def webhooks():
             'url': 'https://alerts.company.com/security',
             'events': ['high_risk_detected', 'phi_exposure'],
             'status': 'active',
+            'is_active': True,
             'scan_frequency': 3600,
             'protocols': ['kubernetes', 'docker'],
             'last_triggered': datetime.utcnow() - timedelta(hours=2)
@@ -267,6 +268,7 @@ def webhooks():
             'url': 'https://compliance.company.com/reports',
             'events': ['compliance_evaluation_complete'],
             'status': 'active',
+            'is_active': True,
             'scan_frequency': 86400,
             'protocols': ['rest_api', 'grpc'],
             'last_triggered': datetime.utcnow() - timedelta(days=1)
