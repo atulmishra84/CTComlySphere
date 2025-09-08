@@ -38,6 +38,15 @@ try:
 except ImportError:
     PlaybookManager = None
 
+# Import model registry routes
+try:
+    from routes_pkg.model_registry_routes import model_registry_bp
+    app.register_blueprint(model_registry_bp)
+    MODEL_REGISTRY_AVAILABLE = True
+except ImportError as e:
+    MODEL_REGISTRY_AVAILABLE = False
+    print(f"Warning: Model registry features not available: {e}")
+
 
 @app.route('/')
 def dashboard():
