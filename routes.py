@@ -6,6 +6,22 @@ from scanners import ProtocolScanner
 import random
 import json
 
+# Import agent classification and controls managers
+try:
+    from agents.classification_engine import AgentClassificationEngine
+    from agents.controls_manager import AgentControlsManager
+    from agents.registration_workflow import EnhancedRegistrationWorkflow
+    AGENT_MANAGEMENT_AVAILABLE = True
+    classification_engine = AgentClassificationEngine()
+    controls_manager = AgentControlsManager()
+    registration_workflow = EnhancedRegistrationWorkflow()
+except ImportError as e:
+    AGENT_MANAGEMENT_AVAILABLE = False
+    classification_engine = None
+    controls_manager = None
+    registration_workflow = None
+    print(f"Warning: Agent management features not available: {e}")
+
 # Import integrations
 try:
     from integrations.kubernetes_integration import kubernetes_integration
@@ -807,6 +823,203 @@ def stop_integration_monitoring():
     
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/agents/classification')
+def agent_classification_dashboard():
+    """Agent classification dashboard"""
+    if not AGENT_MANAGEMENT_AVAILABLE:
+        flash('Agent management features are not available', 'error')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        # Get all agents with their classification status
+        agents_query = db.session.query(AIAgent, AIAgentInventory).outerjoin(
+            AIAgentInventory, AIAgent.id == AIAgentInventory.agent_id
+        ).all()
+        
+        agents_data = []
+        classification_stats = {
+            'total_agents': 0,
+            'classified_agents': 0,
+            'unclassified_agents': 0,
+            'healthcare_ai': 0,
+            'financial_ai': 0,
+            'operational_ai': 0,
+            'research_ai': 0,
+            'personal_data_ai': 0
+        }
+        
+        for agent, inventory in agents_query:
+            classification_stats['total_agents'] += 1
+            
+            if inventory and inventory.primary_classification:
+                classification_stats['classified_agents'] += 1
+                if inventory.primary_classification in classification_stats:
+                    classification_stats[inventory.primary_classification] += 1
+            else:
+                classification_stats['unclassified_agents'] += 1
+            
+            agents_data.append({
+                'agent': agent,
+                'inventory': inventory,
+                'classification_status': 'classified' if inventory and inventory.primary_classification else 'unclassified',
+                'frameworks': inventory.applicable_frameworks if inventory else [],
+                'controls_status': len(inventory.applied_controls or []) if inventory else 0
+            })
+        
+        return render_template('agents/classification_dashboard.html',
+                             agents=agents_data,
+                             stats=classification_stats)
+    
+    except Exception as e:
+        flash(f"Error loading classification dashboard: {str(e)}", 'error')
+        return render_template('agents/classification_dashboard.html', agents=[], stats={})
+
+
+@app.route('/agents/<int:agent_id>/classify', methods=['POST'])
+def classify_agent(agent_id):
+    """Classify a specific agent"""
+    if not AGENT_MANAGEMENT_AVAILABLE:
+        return jsonify({'success': False, 'error': 'Agent management not available'}), 500
+    
+    try:
+        agent = AIAgent.query.get_or_404(agent_id)
+        
+        # Prepare agent data
+        agent_data = {
+            'id': agent.id,
+            'name': agent.name,
+            'type': agent.type,
+            'protocol': agent.protocol,
+            'endpoint': agent.endpoint,
+            'version': agent.version,
+            'cloud_provider': agent.cloud_provider,
+            'region': agent.region,
+            'agent_metadata': agent.agent_metadata or {}
+        }
+        
+        # Perform classification
+        classification_result = classification_engine.classify_agent(agent_data)
+        
+        # Update or create inventory record
+        inventory_record = AIAgentInventory.query.filter_by(agent_id=agent_id).first()
+        if not inventory_record:
+            inventory_record = AIAgentInventory(agent_id=agent_id)
+            db.session.add(inventory_record)
+        
+        # Update classification fields
+        inventory_record.primary_classification = classification_result.get('primary_classification')
+        inventory_record.secondary_classifications = classification_result.get('secondary_classifications', [])
+        inventory_record.classification_confidence = classification_result.get('confidence_score', 0.0)
+        inventory_record.classification_reasons = classification_result.get('classification_reasons', [])
+        inventory_record.applicable_frameworks = classification_result.get('applicable_frameworks', [])
+        inventory_record.required_controls = classification_result.get('required_controls', [])
+        inventory_record.criticality_level = classification_result.get('criticality_level', 'low')
+        inventory_record.last_classification_update = db.func.now()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Agent {agent.name} classified successfully',
+            'classification_result': classification_result
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/agents/<int:agent_id>/register', methods=['POST'])
+def register_agent_with_classification(agent_id):
+    """Register agent with full classification and controls workflow"""
+    if not AGENT_MANAGEMENT_AVAILABLE:
+        return jsonify({'success': False, 'error': 'Agent management not available'}), 500
+    
+    try:
+        # Execute complete registration workflow
+        workflow_result = registration_workflow.register_agent_with_classification(
+            agent_id, auto_apply_controls=True
+        )
+        
+        if workflow_result['workflow_status'] == 'completed':
+            return jsonify({
+                'success': True,
+                'message': f'Agent registration completed successfully',
+                'workflow_result': workflow_result
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': f'Agent registration failed: {workflow_result.get("error", "Unknown error")}',
+                'workflow_result': workflow_result
+            }), 500
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/agents/auto-register', methods=['POST'])
+def auto_register_discovered_agents():
+    """Automatically register all discovered but unregistered agents"""
+    if not AGENT_MANAGEMENT_AVAILABLE:
+        return jsonify({'success': False, 'error': 'Agent management not available'}), 500
+    
+    try:
+        # Find agents that don't have inventory records or are not registered
+        unregistered_agents = db.session.query(AIAgent).outerjoin(
+            AIAgentInventory, AIAgent.id == AIAgentInventory.agent_id
+        ).filter(
+            db.or_(
+                AIAgentInventory.id.is_(None),
+                AIAgentInventory.inventory_status != InventoryStatus.REGISTERED
+            )
+        ).all()
+        
+        if not unregistered_agents:
+            return jsonify({
+                'success': True,
+                'message': 'No unregistered agents found',
+                'agents_processed': 0
+            })
+        
+        results = []
+        
+        for agent in unregistered_agents:
+            try:
+                # Execute full registration workflow
+                workflow_result = registration_workflow.register_agent_with_classification(
+                    agent.id, auto_apply_controls=True
+                )
+                
+                results.append({
+                    'agent_id': agent.id,
+                    'agent_name': agent.name,
+                    'status': workflow_result['workflow_status'],
+                    'classification': workflow_result.get('classification_result', {}).get('primary_classification'),
+                    'frameworks': workflow_result.get('classification_result', {}).get('applicable_frameworks', [])
+                })
+                
+            except Exception as e:
+                results.append({
+                    'agent_id': agent.id,
+                    'agent_name': agent.name,
+                    'status': 'failed',
+                    'error': str(e)
+                })
+        
+        successful_registrations = len([r for r in results if r['status'] == 'completed'])
+        
+        return jsonify({
+            'success': True,
+            'message': f'Auto-registration completed. {successful_registrations}/{len(results)} agents registered successfully',
+            'agents_processed': len(results),
+            'results': results
+        })
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.errorhandler(404)
