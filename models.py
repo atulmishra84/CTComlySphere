@@ -380,3 +380,172 @@ class ModelRegistrySync(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class AuditTrail(db.Model):
+    """Comprehensive audit trail for all user actions and system events"""
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Event identification
+    event_type = db.Column(db.String(50), nullable=False)  # login, scan, compliance_check, etc.
+    event_category = db.Column(db.String(50), nullable=False)  # security, compliance, user_action, system
+    action = db.Column(db.String(100), nullable=False)  # create, read, update, delete, execute
+    
+    # User and session information
+    user_id = db.Column(db.String(255))  # User identifier
+    session_id = db.Column(db.String(255))  # Session identifier
+    ip_address = db.Column(db.String(45))  # IPv4/IPv6 address
+    user_agent = db.Column(db.Text)  # Browser/client information
+    
+    # Resource information
+    resource_type = db.Column(db.String(50))  # agent, scan, evaluation, etc.
+    resource_id = db.Column(db.String(100))  # ID of the affected resource
+    resource_name = db.Column(db.String(255))  # Human-readable resource name
+    
+    # Event details
+    event_description = db.Column(db.Text, nullable=False)
+    event_data = db.Column(JSON)  # Additional event-specific data
+    outcome = db.Column(db.String(20), nullable=False)  # success, failure, warning
+    
+    # Risk and compliance
+    risk_level = db.Column(db.Enum(RiskLevel), default=RiskLevel.LOW)
+    compliance_relevant = db.Column(db.Boolean, default=False)
+    frameworks_affected = db.Column(JSON)  # List of compliance frameworks affected
+    
+    # Timing and metadata
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    duration_ms = db.Column(db.Integer)  # Event duration in milliseconds
+    correlation_id = db.Column(db.String(255))  # For correlating related events
+    
+    # Security context
+    authentication_method = db.Column(db.String(50))  # how user authenticated
+    authorization_context = db.Column(JSON)  # roles, permissions at time of event
+    sensitive_data_accessed = db.Column(db.Boolean, default=False)
+    
+    # Retention and archival
+    retention_period_days = db.Column(db.Integer, default=2555)  # 7 years default for compliance
+    archived = db.Column(db.Boolean, default=False)
+    archived_at = db.Column(db.DateTime)
+
+
+class CustomerOnboarding(db.Model):
+    """Track customer onboarding progress and configuration"""
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Customer identification
+    customer_id = db.Column(db.String(255), unique=True, nullable=False)
+    organization_name = db.Column(db.String(255), nullable=False)
+    primary_contact_email = db.Column(db.String(255), nullable=False)
+    industry_type = db.Column(db.String(100))  # healthcare, fintech, government, etc.
+    
+    # Onboarding status
+    onboarding_status = db.Column(db.String(50), default='started')  # started, in_progress, completed, paused
+    current_step = db.Column(db.String(100), default='welcome')
+    completion_percentage = db.Column(db.Float, default=0.0)
+    
+    # Configuration preferences
+    deployment_type = db.Column(db.String(50))  # cloud, on_premise, hybrid
+    cloud_providers = db.Column(JSON)  # List of cloud providers used
+    compliance_requirements = db.Column(JSON)  # Required compliance frameworks
+    ai_use_cases = db.Column(JSON)  # Types of AI systems they use
+    
+    # Security and access
+    security_level = db.Column(db.String(20), default='standard')  # basic, standard, enterprise
+    sso_enabled = db.Column(db.Boolean, default=False)
+    mfa_enabled = db.Column(db.Boolean, default=False)
+    api_access_enabled = db.Column(db.Boolean, default=False)
+    
+    # Setup progress tracking
+    steps_completed = db.Column(JSON, default=list)  # List of completed onboarding steps
+    configuration_data = db.Column(JSON)  # Customer-specific configuration
+    integration_status = db.Column(JSON)  # Status of various integrations
+    
+    # Timeline tracking
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime)
+    last_activity = db.Column(db.DateTime, default=datetime.utcnow)
+    estimated_completion = db.Column(db.DateTime)
+    
+    # Support and assistance
+    assigned_specialist = db.Column(db.String(255))  # Customer success manager
+    support_tickets = db.Column(JSON)  # List of related support tickets
+    training_sessions = db.Column(JSON)  # Scheduled training sessions
+    
+    # Business context
+    company_size = db.Column(db.String(50))  # startup, small, medium, enterprise
+    expected_agent_count = db.Column(db.Integer)
+    budget_tier = db.Column(db.String(50))  # basic, professional, enterprise
+    go_live_target = db.Column(db.DateTime)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class OnboardingStep(db.Model):
+    """Define onboarding steps and workflow"""
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Step identification
+    step_key = db.Column(db.String(100), unique=True, nullable=False)
+    step_name = db.Column(db.String(255), nullable=False)
+    step_description = db.Column(db.Text)
+    step_order = db.Column(db.Integer, nullable=False)
+    
+    # Step configuration
+    step_type = db.Column(db.String(50), nullable=False)  # form, integration, verification, training
+    is_required = db.Column(db.Boolean, default=True)
+    estimated_time_minutes = db.Column(db.Integer, default=5)
+    
+    # Dependencies and prerequisites
+    prerequisites = db.Column(JSON)  # List of required previous steps
+    conditional_logic = db.Column(JSON)  # Conditions for showing this step
+    
+    # Content and guidance
+    instructions = db.Column(db.Text)
+    help_content = db.Column(db.Text)
+    video_url = db.Column(db.String(500))
+    documentation_links = db.Column(JSON)
+    
+    # Validation and completion
+    validation_rules = db.Column(JSON)  # Rules for step completion
+    completion_criteria = db.Column(JSON)  # What constitutes completion
+    
+    # Metadata
+    category = db.Column(db.String(50))  # setup, security, integration, training
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class CustomerProgress(db.Model):
+    """Track individual customer progress through onboarding steps"""
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # References
+    customer_id = db.Column(db.String(255), db.ForeignKey('customer_onboarding.customer_id'), nullable=False)
+    step_key = db.Column(db.String(100), db.ForeignKey('onboarding_step.step_key'), nullable=False)
+    
+    # Progress tracking
+    status = db.Column(db.String(50), default='not_started')  # not_started, in_progress, completed, skipped, failed
+    attempts = db.Column(db.Integer, default=0)
+    completion_data = db.Column(JSON)  # Data submitted/collected in this step
+    
+    # Timing
+    started_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    time_spent_minutes = db.Column(db.Float)
+    
+    # Support and feedback
+    feedback = db.Column(db.Text)  # Customer feedback on this step
+    support_notes = db.Column(db.Text)  # Internal support notes
+    difficulty_rating = db.Column(db.Integer)  # 1-5 difficulty rating from customer
+    
+    # Relationships
+    customer = db.relationship('CustomerOnboarding', backref='progress_records')
+    step = db.relationship('OnboardingStep', backref='progress_records')
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Unique constraint to prevent duplicate progress records
+    __table_args__ = (db.UniqueConstraint('customer_id', 'step_key'),)
