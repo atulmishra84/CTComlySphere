@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block title %}Agent Classification Dashboard - Healthcare AI Compliance Platform{% endblock %}
+
+{% block content %}
+<!-- Agent Classification Dashboard -->
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="display-5 mb-0 text-primary fw-bold">
+                    <i class="fas fa-robot me-2"></i>
+                    Agent Classification & Registration
+                </h1>
+                <div class="btn-group">
+                    <button id="autoRegisterBtn" class="btn btn-success">
+                        <i class="fas fa-play me-1"></i>Auto-Register All
+                    </button>
+                    <button id="refreshBtn" class="btn btn-outline-primary">
+                        <i class="fas fa-sync me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4 g-3">
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow-sm bg-gradient-primary text-white">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50 mb-1">Total Agents</h6>
+                            <h3 class="fw-bold mb-0">{{ stats.total_agents or 0 }}</h3>
+                        </div>
+                        <div class="opacity-75">
+                            <i class="fas fa-robot fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow-sm bg-gradient-success text-white">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50 mb-1">Classified</h6>
+                            <h3 class="fw-bold mb-0">{{ stats.classified_agents or 0 }}</h3>
+                        </div>
+                        <div class="opacity-75">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow-sm bg-gradient-warning text-white">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50 mb-1">Unclassified</h6>
+                            <h3 class="fw-bold mb-0">{{ stats.unclassified_agents or 0 }}</h3>
+                        </div>
+                        <div class="opacity-75">
+                            <i class="fas fa-question-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow-sm bg-gradient-info text-white">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white-50 mb-1">Healthcare AI</h6>
+                            <h3 class="fw-bold mb-0">{{ stats.healthcare_ai or 0 }}</h3>
+                        </div>
+                        <div class="opacity-75">
+                            <i class="fas fa-heartbeat fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classification Type Distribution -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient border-0">
+                    <h5 class="card-title mb-0 text-primary">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Agent Classification Distribution
+                    </h5>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="text-danger fs-4 fw-bold">{{ stats.healthcare_ai or 0 }}</div>
+                                <small class="text-muted">Healthcare AI</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="text-success fs-4 fw-bold">{{ stats.financial_ai or 0 }}</div>
+                                <small class="text-muted">Financial AI</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="text-info fs-4 fw-bold">{{ stats.operational_ai or 0 }}</div>
+                                <small class="text-muted">Operational AI</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="text-warning fs-4 fw-bold">{{ stats.research_ai or 0 }}</div>
+                                <small class="text-muted">Research AI</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center p-2 bg-light rounded">
+                                <div class="text-purple fs-4 fw-bold">{{ stats.personal_data_ai or 0 }}</div>
+                                <small class="text-muted">Personal Data AI</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agents Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient border-0">
+                    <h5 class="card-title mb-0 text-primary">
+                        <i class="fas fa-list me-2"></i>
+                        Agent Registry
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0">Agent</th>
+                                    <th class="border-0">Protocol</th>
+                                    <th class="border-0">Classification</th>
+                                    <th class="border-0">Frameworks</th>
+                                    <th class="border-0">Controls</th>
+                                    <th class="border-0">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in agents %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-gradient-primary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                <i class="fas fa-robot text-white small"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ item.agent.name }}</div>
+                                                <small class="text-muted">{{ item.agent.type }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-gradient-{{ 'info' if item.agent.protocol == 'fhir' else 'success' if item.agent.protocol == 'hl7' else 'warning' if item.agent.protocol == 'dicom' else 'primary' }}">
+                                            {{ item.agent.protocol.upper() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if item.inventory and item.inventory.primary_classification %}
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-gradient-success me-2">Classified</span>
+                                                <small class="text-muted">{{ item.inventory.primary_classification.replace('_', ' ').title() }}</small>
+                                            </div>
+                                            {% if item.inventory.classification_confidence %}
+                                                <div class="progress mt-1" style="height: 4px;">
+                                                    <div class="progress-bar bg-success" style="width: {{ (item.inventory.classification_confidence * 100) | round }}%"></div>
+                                                </div>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-gradient-warning">Unclassified</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.frameworks %}
+                                            {% for framework in item.frameworks[:2] %}
+                                                <span class="badge bg-gradient-secondary me-1">{{ framework }}</span>
+                                            {% endfor %}
+                                            {% if item.frameworks|length > 2 %}
+                                                <small class="text-muted">+{{ item.frameworks|length - 2 }} more</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">None</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.controls_status > 0 %}
+                                            <span class="badge bg-gradient-success">{{ item.controls_status }} Applied</span>
+                                        {% else %}
+                                            <span class="text-muted">None</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if not item.inventory or not item.inventory.primary_classification %}
+                                                <button class="btn btn-outline-primary classify-btn" data-agent-id="{{ item.agent.id }}">
+                                                    <i class="fas fa-search"></i> Classify
+                                                </button>
+                                            {% endif %}
+                                            <button class="btn btn-outline-success register-btn" data-agent-id="{{ item.agent.id }}">
+                                                <i class="fas fa-plus"></i> Register
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <i class="fas fa-robot fa-3x mb-3 opacity-25"></i>
+                                        <div>No agents found</div>
+                                        <small>Discover agents using the scanners to populate this registry</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Classification buttons
+    document.querySelectorAll('.classify-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const agentId = this.dataset.agentId;
+            classifyAgent(agentId);
+        });
+    });
+    
+    // Registration buttons
+    document.querySelectorAll('.register-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const agentId = this.dataset.agentId;
+            registerAgent(agentId);
+        });
+    });
+    
+    // Auto-register button
+    document.getElementById('autoRegisterBtn').addEventListener('click', function() {
+        autoRegisterAllAgents();
+    });
+    
+    // Refresh button
+    document.getElementById('refreshBtn').addEventListener('click', function() {
+        window.location.reload();
+    });
+});
+
+function classifyAgent(agentId) {
+    fetch(`/agents/${agentId}/classify`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('success', data.message);
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showNotification('error', 'Classification failed: ' + data.error);
+        }
+    })
+    .catch(error => {
+        showNotification('error', 'Error: ' + error.message);
+    });
+}
+
+function registerAgent(agentId) {
+    fetch(`/agents/${agentId}/register`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('success', data.message);
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            showNotification('error', 'Registration failed: ' + data.message);
+        }
+    })
+    .catch(error => {
+        showNotification('error', 'Error: ' + error.message);
+    });
+}
+
+function autoRegisterAllAgents() {
+    const btn = document.getElementById('autoRegisterBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
+    
+    fetch('/agents/auto-register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('success', data.message);
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            showNotification('error', 'Auto-registration failed: ' + data.error);
+        }
+    })
+    .catch(error => {
+        showNotification('error', 'Error: ' + error.message);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play me-1"></i>Auto-Register All';
+    });
+}
+
+function showNotification(type, message) {
+    // Simple notification system
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}
