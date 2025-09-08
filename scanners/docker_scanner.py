@@ -94,7 +94,9 @@ class DockerScanner(BaseScanner):
                     'status': container['status'],
                     'ports': container['ports'],
                     'environment': container['environment'],
-                    'labels': container['labels']
+                    'labels': container['labels'],
+                    'discovery_method': 'legacy-scan',
+                    'discovery_timestamp': datetime.utcnow().isoformat()
                 }
             }
             agents.append(agent_data)
@@ -157,7 +159,7 @@ class DockerScanner(BaseScanner):
         phi_exposure = False
         encryption_status = 'none'
         
-        container_meta = agent_data['metadata']
+        container_meta = agent_data['agent_metadata']
         env = container_meta.get('environment', {})
         labels = container_meta.get('labels', {})
         
