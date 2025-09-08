@@ -26,9 +26,7 @@ def agent_dashboard():
     
     # Get compliance summary for context
     total_agents = AIAgent.query.count()
-    recent_evaluations = ComplianceEvaluation.query.filter(
-        ComplianceEvaluation.created_at >= datetime.utcnow().replace(hour=0, minute=0, second=0)
-    ).all()
+    recent_evaluations = ComplianceEvaluation.query.all()
     
     context_data = {
         "total_agents": total_agents,
