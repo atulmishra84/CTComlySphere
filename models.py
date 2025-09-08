@@ -53,10 +53,23 @@ class RiskLevel(enum.Enum):
     HIGH = "HIGH"
     CRITICAL = "CRITICAL"
 
+class AIAgentType(enum.Enum):
+    TRADITIONAL_ML = "TRADITIONAL_ML"
+    GENAI = "GENAI"
+    AGENTIC_AI = "AGENTIC_AI"
+    COMPUTER_VISION = "COMPUTER_VISION"
+    NLP = "NLP"
+    RECOMMENDATION = "RECOMMENDATION"
+    PREDICTIVE_ANALYTICS = "PREDICTIVE_ANALYTICS"
+    AUTONOMOUS_SYSTEM = "AUTONOMOUS_SYSTEM"
+    CONVERSATIONAL_AI = "CONVERSATIONAL_AI"
+    MULTIMODAL_AI = "MULTIMODAL_AI"
+
 class AIAgent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     type = db.Column(db.String(100), nullable=False)  # GenAI, Agentic AI, etc.
+    ai_type = db.Column(db.Enum(AIAgentType), default=AIAgentType.TRADITIONAL_ML)
     protocol = db.Column(db.String(50), nullable=False)
     endpoint = db.Column(db.String(500), nullable=False)
     version = db.Column(db.String(50))
@@ -65,6 +78,22 @@ class AIAgent(db.Model):
     cloud_provider = db.Column(db.String(50))
     region = db.Column(db.String(100))
     agent_metadata = db.Column(JSON)
+    
+    # GenAI and Agentic AI specific fields
+    model_family = db.Column(db.String(100))  # GPT, Claude, LLaMA, etc.
+    model_size = db.Column(db.String(50))  # 7B, 13B, 70B, etc.
+    capabilities = db.Column(JSON)  # text, image, audio, video, code, etc.
+    training_data_sources = db.Column(JSON)  # known training data sources
+    fine_tuned = db.Column(db.Boolean, default=False)
+    multimodal = db.Column(db.Boolean, default=False)
+    
+    # Agentic AI specific fields
+    agent_framework = db.Column(db.String(100))  # LangChain, AutoGPT, CrewAI, etc.
+    autonomy_level = db.Column(db.String(50))  # low, medium, high, full
+    planning_capability = db.Column(db.Boolean, default=False)
+    memory_enabled = db.Column(db.Boolean, default=False)
+    tool_access = db.Column(JSON)  # list of tools/APIs the agent can access
+    safety_measures = db.Column(JSON)  # implemented safety measures
     
     # Relationships
     scan_results = db.relationship('ScanResult', backref='ai_agent', lazy=True)
