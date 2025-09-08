@@ -28,30 +28,50 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-    <!-- Top Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom fixed-top">
-        <div class="container-fluid">
-            <!-- Brand -->
-            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('dashboard') }}">
-                <i class="fas fa-shield-alt me-2 text-primary"></i>
-                <span class="fw-bold">Healthcare AI Compliance</span>
+    <!-- Compact Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom fixed-top py-1">
+        <div class="container-fluid px-3">
+            <!-- Brand with Logo Support -->
+            <a class="navbar-brand d-flex align-items-center py-1" href="{{ url_for('dashboard') }}">
+                <div class="brand-logo me-2">
+                    <!-- Custom Company Logo (if configured) -->
+                    <div id="customLogo" class="d-none">
+                        <img id="companyLogoImg" src="" alt="Company Logo" class="brand-logo-img">
+                    </div>
+                    <!-- Default Icon (fallback) -->
+                    <div id="defaultLogo">
+                        <i class="fas fa-shield-alt text-primary brand-icon"></i>
+                    </div>
+                </div>
+                <div class="brand-text">
+                    <span class="fw-bold brand-title">Healthcare AI Compliance</span>
+                    <small class="brand-subtitle d-block d-md-none">Platform</small>
+                </div>
             </a>
 
-            <!-- Mobile Toggle -->
+            <!-- Compact Controls -->
             <div class="d-flex align-items-center">
-                <button class="btn btn-outline-secondary d-lg-none me-2" type="button" id="sidebarToggle">
+                <!-- Logo Upload Button (Admin) -->
+                <button class="btn btn-sm btn-outline-primary me-2 d-none d-md-inline" type="button" 
+                        data-bs-toggle="modal" data-bs-target="#logoUploadModal" title="Customize Logo">
+                    <i class="fas fa-image"></i>
+                </button>
+                
+                <!-- Mobile Toggle -->
+                <button class="btn btn-outline-secondary btn-sm d-lg-none me-2" type="button" id="sidebarToggle">
                     <i class="fas fa-bars"></i>
                 </button>
                 
-                <!-- User Dropdown -->
+                <!-- Compact User Dropdown -->
                 <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user-circle me-1"></i>
-                        Admin
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="d-none d-md-inline ms-1">Admin</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Profile</a></li>
                         <li><a class="dropdown-item" href="#"><i class="fas fa-key me-2"></i>API Keys</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoUploadModal"><i class="fas fa-image me-2"></i>Customize Logo</a></li>
                         <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
@@ -262,6 +282,232 @@
         });
     </script>
     
+    <!-- Logo Upload Modal -->
+    <div class="modal fade" id="logoUploadModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-image me-2"></i>Customize Company Logo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="logoUpload" class="form-label">Upload Company Logo</label>
+                        <input type="file" class="form-control" id="logoUpload" accept="image/*">
+                        <div class="form-text">Recommended: PNG or SVG format, max 200x50px</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="companyName" class="form-label">Company Name (Optional)</label>
+                        <input type="text" class="form-control" id="companyName" placeholder="Your Company Name">
+                        <div class="form-text">Will replace "Healthcare AI Compliance" if provided</div>
+                    </div>
+                    
+                    <!-- Preview -->
+                    <div class="border rounded p-3 bg-light">
+                        <h6>Preview:</h6>
+                        <div class="d-flex align-items-center">
+                            <div id="logoPreview" class="me-2">
+                                <i class="fas fa-shield-alt text-primary"></i>
+                            </div>
+                            <span id="namePreview" class="fw-bold">Healthcare AI Compliance</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="resetLogo()">Reset to Default</button>
+                    <button type="button" class="btn btn-primary" onclick="applyLogo()">Apply Logo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% block scripts %}{% endblock %}
+    
+    <!-- Logo Management Script -->
+    <script>
+    // Logo Upload and Management
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load saved logo on page load
+        loadSavedLogo();
+        
+        // File upload handler
+        document.getElementById('logoUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const logoPreview = document.getElementById('logoPreview');
+                    logoPreview.innerHTML = `<img src="${e.target.result}" alt="Logo Preview" style="height: 24px; max-width: 120px; object-fit: contain;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Company name preview
+        document.getElementById('companyName').addEventListener('input', function(e) {
+            const namePreview = document.getElementById('namePreview');
+            namePreview.textContent = e.target.value || 'Healthcare AI Compliance';
+        });
+    });
+
+    function applyLogo() {
+        const logoFile = document.getElementById('logoUpload').files[0];
+        const companyName = document.getElementById('companyName').value;
+        
+        if (logoFile) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Save to localStorage
+                localStorage.setItem('customLogo', e.target.result);
+                localStorage.setItem('companyName', companyName);
+                
+                // Apply to current page
+                updateBrandDisplay(e.target.result, companyName);
+                
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('logoUploadModal')).hide();
+                
+                // Show success message
+                showNotification('Logo updated successfully!', 'success');
+            };
+            reader.readAsDataURL(logoFile);
+        } else if (companyName) {
+            // Just update company name
+            localStorage.setItem('companyName', companyName);
+            updateBrandDisplay(null, companyName);
+            bootstrap.Modal.getInstance(document.getElementById('logoUploadModal')).hide();
+            showNotification('Company name updated successfully!', 'success');
+        }
+    }
+
+    function resetLogo() {
+        // Clear localStorage
+        localStorage.removeItem('customLogo');
+        localStorage.removeItem('companyName');
+        
+        // Reset to default
+        updateBrandDisplay(null, 'Healthcare AI Compliance');
+        
+        // Reset form
+        document.getElementById('logoUpload').value = '';
+        document.getElementById('companyName').value = '';
+        document.getElementById('logoPreview').innerHTML = '<i class="fas fa-shield-alt text-primary"></i>';
+        document.getElementById('namePreview').textContent = 'Healthcare AI Compliance';
+        
+        bootstrap.Modal.getInstance(document.getElementById('logoUploadModal')).hide();
+        showNotification('Logo reset to default', 'info');
+    }
+
+    function loadSavedLogo() {
+        const savedLogo = localStorage.getItem('customLogo');
+        const savedName = localStorage.getItem('companyName');
+        
+        if (savedLogo || savedName) {
+            updateBrandDisplay(savedLogo, savedName || 'Healthcare AI Compliance');
+        }
+    }
+
+    function updateBrandDisplay(logoSrc, companyName) {
+        const customLogo = document.getElementById('customLogo');
+        const defaultLogo = document.getElementById('defaultLogo');
+        const brandTitle = document.querySelector('.brand-title');
+        
+        if (logoSrc) {
+            // Show custom logo
+            document.getElementById('companyLogoImg').src = logoSrc;
+            customLogo.classList.remove('d-none');
+            defaultLogo.classList.add('d-none');
+        } else {
+            // Show default icon
+            customLogo.classList.add('d-none');
+            defaultLogo.classList.remove('d-none');
+        }
+        
+        // Update company name
+        if (companyName) {
+            brandTitle.textContent = companyName;
+        }
+    }
+
+    function showNotification(message, type = 'info') {
+        // Create toast notification
+        const toastHtml = `
+            <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+        
+        // Add to toast container or create one
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            document.body.appendChild(toastContainer);
+        }
+        
+        toastContainer.innerHTML = toastHtml;
+        const toast = new bootstrap.Toast(toastContainer.querySelector('.toast'));
+        toast.show();
+    }
+    </script>
+    
+    <!-- Additional Compact Styles -->
+    <style>
+    .brand-logo-img {
+        height: 28px;
+        max-width: 140px;
+        object-fit: contain;
+    }
+    
+    .brand-icon {
+        font-size: 1.2rem;
+    }
+    
+    .brand-title {
+        font-size: 1rem;
+        line-height: 1.2;
+    }
+    
+    .brand-subtitle {
+        font-size: 0.7rem;
+        line-height: 1;
+        color: #6c757d;
+    }
+    
+    /* Compact navbar adjustments */
+    .navbar {
+        min-height: 50px;
+    }
+    
+    .navbar-brand {
+        padding: 0.25rem 0;
+    }
+    
+    /* Responsive logo handling */
+    @media (max-width: 768px) {
+        .brand-logo-img {
+            height: 24px;
+            max-width: 100px;
+        }
+        
+        .brand-title {
+            font-size: 0.9rem;
+        }
+    }
+    
+    /* Toast notifications */
+    .toast-container {
+        z-index: 9999;
+    }
+    </style>
 </body>
 </html>
