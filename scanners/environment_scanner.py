@@ -15,7 +15,7 @@ Discovers and monitors AI agents across infrastructure using multiple discovery 
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Set
+from typing import Dict, List, Optional, Any, Tuple, Set
 from dataclasses import dataclass
 from enum import Enum
 import json
@@ -176,36 +176,49 @@ class EnvironmentScanner:
         return scan_id
     
     async def _execute_scan(self, scan_result: ScanResult):
-        """Execute the actual scanning process"""
+        """Execute the actual scanning process with enhanced performance and accuracy"""
         try:
             scan_result.status = ScanStatus.RUNNING
-            self.logger.info(f"Executing scan {scan_result.scan_id}")
+            self.logger.info(f"Executing enhanced scan {scan_result.scan_id}")
             
-            # Execute each scanner type
+            # Enhanced parallel scanning for performance
+            scanner_tasks = []
             all_discovered_agents = []
             scanner_stats = {}
             
+            # Create parallel tasks for each scanner
             for scanner_type in scan_result.target.scan_types:
                 if scanner_type not in self.scanners:
                     scan_result.errors.append(f"Scanner {scanner_type.value} not available")
                     continue
                 
-                try:
-                    scanner = self.scanners[scanner_type]
-                    agents = await scanner.discover_agents(scan_result.target)
-                    
-                    all_discovered_agents.extend(agents)
-                    scanner_stats[scanner_type.value] = {
-                        "agents_discovered": len(agents),
-                        "scan_duration": getattr(scanner, 'last_scan_duration', 0)
-                    }
-                    
-                    self.logger.info(f"{scanner_type.value} scanner discovered {len(agents)} agents")
-                    
-                except Exception as e:
-                    error_msg = f"{scanner_type.value} scanner failed: {str(e)}"
+                scanner = self.scanners[scanner_type]
+                task = asyncio.create_task(
+                    self._enhanced_scanner_execution(scanner, scanner_type, scan_result.target)
+                )
+                scanner_tasks.append((scanner_type, task))
+            
+            # Execute scanners in parallel for improved performance
+            completed_results = await asyncio.gather(
+                *[task for _, task in scanner_tasks], 
+                return_exceptions=True
+            )
+            
+            # Process results with enhanced accuracy
+            for i, (scanner_type, _) in enumerate(scanner_tasks):
+                result = completed_results[i]
+                
+                if isinstance(result, Exception):
+                    error_msg = f"{scanner_type.value} scanner failed: {str(result)}"
                     scan_result.errors.append(error_msg)
                     self.logger.error(error_msg)
+                    continue
+                
+                agents, stats = result
+                all_discovered_agents.extend(agents)
+                scanner_stats[scanner_type.value] = stats
+                
+                self.logger.info(f"{scanner_type.value} scanner discovered {len(agents)} agents with enhanced accuracy")
             
             # Process and deduplicate discovered agents
             unique_agents = self._deduplicate_agents(all_discovered_agents)
@@ -243,19 +256,181 @@ class EnvironmentScanner:
                 del self.active_scans[scan_result.scan_id]
     
     def _deduplicate_agents(self, agents: List[DiscoveredAgent]) -> List[DiscoveredAgent]:
-        """Remove duplicate agents based on unique identifiers"""
+        """Enhanced deduplication with improved accuracy and fuzzy matching"""
         seen_agents = set()
         unique_agents = []
+        similarity_threshold = 0.85
         
         for agent in agents:
-            # Create unique identifier from key attributes
-            agent_key = f"{agent.name}_{agent.protocol}_{agent.type}"
+            # Enhanced unique identifier with more attributes
+            agent_key = f"{agent.name}_{agent.protocol}_{agent.type}_{getattr(agent, 'endpoint', '')}_{getattr(agent, 'version', '')}"
             
+            # Check for exact match first
             if agent_key not in seen_agents:
-                seen_agents.add(agent_key)
-                unique_agents.append(agent)
+                is_duplicate = False
+                
+                # Enhanced similarity checking for better deduplication
+                for existing_agent in unique_agents:
+                    similarity_score = self._calculate_agent_similarity(agent, existing_agent)
+                    if similarity_score > similarity_threshold:
+                        is_duplicate = True
+                        # Merge metadata from duplicate agents
+                        self._merge_agent_metadata(existing_agent, agent)
+                        break
+                
+                if not is_duplicate:
+                    seen_agents.add(agent_key)
+                    unique_agents.append(agent)
         
+        self.logger.info(f"Enhanced deduplication: {len(agents)} -> {len(unique_agents)} unique agents")
         return unique_agents
+    
+    def _calculate_agent_similarity(self, agent1: DiscoveredAgent, agent2: DiscoveredAgent) -> float:
+        """Calculate similarity score between two agents for enhanced deduplication"""
+        try:
+            similarity_factors = {
+                'name': 0.4,
+                'protocol': 0.3,
+                'type': 0.2,
+                'endpoint': 0.1
+            }
+            
+            total_score = 0.0
+            
+            # Name similarity (fuzzy matching)
+            name_similarity = self._fuzzy_string_match(agent1.name, agent2.name)
+            total_score += name_similarity * similarity_factors['name']
+            
+            # Protocol exact match
+            if agent1.protocol == agent2.protocol:
+                total_score += similarity_factors['protocol']
+            
+            # Type exact match
+            if agent1.type == agent2.type:
+                total_score += similarity_factors['type']
+            
+            # Endpoint similarity
+            endpoint1 = getattr(agent1, 'endpoint', '')
+            endpoint2 = getattr(agent2, 'endpoint', '')
+            if endpoint1 and endpoint2:
+                endpoint_similarity = self._fuzzy_string_match(endpoint1, endpoint2)
+                total_score += endpoint_similarity * similarity_factors['endpoint']
+            
+            return total_score
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating agent similarity: {str(e)}")
+            return 0.0
+    
+    def _fuzzy_string_match(self, str1: str, str2: str) -> float:
+        """Simple fuzzy string matching for improved accuracy"""
+        if not str1 or not str2:
+            return 0.0
+        
+        # Simple character-based similarity
+        str1_lower = str1.lower()
+        str2_lower = str2.lower()
+        
+        if str1_lower == str2_lower:
+            return 1.0
+        
+        # Calculate character overlap
+        set1 = set(str1_lower)
+        set2 = set(str2_lower)
+        intersection = len(set1.intersection(set2))
+        union = len(set1.union(set2))
+        
+        return intersection / union if union > 0 else 0.0
+    
+    def _merge_agent_metadata(self, existing_agent: DiscoveredAgent, duplicate_agent: DiscoveredAgent):
+        """Merge metadata from duplicate agents to improve data quality"""
+        try:
+            # Merge discovery timestamps to track multiple discoveries
+            if hasattr(existing_agent, 'discovery_timestamps'):
+                existing_agent.discovery_timestamps.append(duplicate_agent.discovery_timestamp)
+            else:
+                existing_agent.discovery_timestamps = [existing_agent.discovery_timestamp, duplicate_agent.discovery_timestamp]
+            
+            # Merge metadata dictionaries
+            if hasattr(existing_agent, 'metadata') and hasattr(duplicate_agent, 'metadata'):
+                if isinstance(existing_agent.metadata, dict) and isinstance(duplicate_agent.metadata, dict):
+                    for key, value in duplicate_agent.metadata.items():
+                        if key not in existing_agent.metadata:
+                            existing_agent.metadata[key] = value
+                        elif isinstance(value, list) and isinstance(existing_agent.metadata[key], list):
+                            existing_agent.metadata[key].extend(value)
+            
+            # Update discovery count
+            if hasattr(existing_agent, 'discovery_count'):
+                existing_agent.discovery_count += 1
+            else:
+                existing_agent.discovery_count = 2
+                
+        except Exception as e:
+            self.logger.error(f"Error merging agent metadata: {str(e)}")
+    
+    async def _enhanced_scanner_execution(self, scanner, scanner_type, target) -> Tuple[List[DiscoveredAgent], Dict]:
+        """Enhanced scanner execution with performance monitoring and error handling"""
+        start_time = datetime.utcnow()
+        
+        try:
+            # Enhanced error handling and retry logic
+            max_retries = 3
+            retry_delay = 1.0
+            
+            for attempt in range(max_retries):
+                try:
+                    # Execute scanner with timeout
+                    agents = await asyncio.wait_for(
+                        scanner.discover_agents(target), 
+                        timeout=300  # 5 minute timeout
+                    )
+                    
+                    # Calculate enhanced statistics
+                    scan_duration = (datetime.utcnow() - start_time).total_seconds()
+                    
+                    stats = {
+                        "agents_discovered": len(agents),
+                        "scan_duration": scan_duration,
+                        "scan_efficiency": len(agents) / scan_duration if scan_duration > 0 else 0,
+                        "retry_attempts": attempt + 1,
+                        "success_rate": 1.0,
+                        "enhanced_metrics": {
+                            "accuracy_score": getattr(scanner, 'accuracy_score', 0.0),
+                            "confidence_level": getattr(scanner, 'confidence_level', 0.0),
+                            "coverage_percentage": getattr(scanner, 'coverage_percentage', 0.0)
+                        }
+                    }
+                    
+                    return agents, stats
+                    
+                except asyncio.TimeoutError:
+                    self.logger.warning(f"{scanner_type.value} scanner timeout on attempt {attempt + 1}")
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delay * (attempt + 1))
+                        continue
+                    else:
+                        raise
+                        
+                except Exception as e:
+                    self.logger.warning(f"{scanner_type.value} scanner error on attempt {attempt + 1}: {str(e)}")
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delay * (attempt + 1))
+                        continue
+                    else:
+                        raise
+        
+        except Exception as e:
+            scan_duration = (datetime.utcnow() - start_time).total_seconds()
+            stats = {
+                "agents_discovered": 0,
+                "scan_duration": scan_duration,
+                "scan_efficiency": 0,
+                "retry_attempts": max_retries,
+                "success_rate": 0.0,
+                "error": str(e)
+            }
+            return [], stats
     
     async def _store_discovered_agents(self, agents: List[DiscoveredAgent]):
         """Store discovered agents in database"""

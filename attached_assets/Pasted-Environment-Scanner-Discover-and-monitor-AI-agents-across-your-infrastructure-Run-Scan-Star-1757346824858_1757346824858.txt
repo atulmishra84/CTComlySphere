@@ -1,0 +1,106 @@
+Environment Scanner
+Discover and monitor AI agents across your infrastructure
+
+
+Run Scan
+
+Start Auto-Scan
+Targeted Environment Scanning
+Scan specific environments or filter by customer to discover targeted AI agents. For real client environments, deploy scanning agents using our deployment guide.
+Target Environment
+All Environments
+Customer Filter (Optional)
+Enter customer name or ID
+Scan Target: All environments
+
+💡 Currently showing simulated data. Deploy scanning agents to capture real client environments.View deployment guide
+
+Discovered Agents (0)
+Compliance Scanner
+Discovery Methods (8)
+Kubernetes Scanner
+Discovers AI services deployed in Kubernetes clusters
+Discovery Targets
+Pods with AI labels
+Services with ML annotations
+Deployments with model metadata
+Capabilities
+Auto-registration
+Metadata extraction
+Risk assessment
+Docker Scanner
+Finds AI containers in Docker environments
+Discovery Targets
+Containers with AI images
+ML framework containers
+Model serving containers
+Capabilities
+Image analysis
+Environment variable parsing
+Port detection
+Cloud Service Scanner
+Detects managed AI services from cloud providers
+Discovery Targets
+AWS SageMaker
+Azure Cognitive Services
+GCP Vertex AI
+Custom AI APIs
+Capabilities
+Service enumeration
+Configuration analysis
+Cost assessment
+A2A Communication Scanner
+Discovers Application-to-Application AI integrations
+Discovery Targets
+Inter-app API calls
+AI service integrations
+Real-time data flows
+Cross-system communications
+Capabilities
+Protocol detection
+Data flow analysis
+Integration mapping
+Performance monitoring
+MCP Protocol Scanner
+Finds Model Context Protocol enabled AI agents
+Discovery Targets
+MCP endpoints
+Context-aware agents
+Protocol-based communications
+Multi-agent systems
+Capabilities
+Context analysis
+Protocol validation
+Agent capability detection
+Context window assessment
+API Endpoint Scanner
+Probes API endpoints for AI services
+Discovery Targets
+Common ML paths
+OpenAPI specs
+Health check endpoints
+Capabilities
+Endpoint probing
+Schema analysis
+Version detection
+Model Registry Scanner
+Scans model registries and ML platforms
+Discovery Targets
+MLflow Registry
+Weights & Biases
+Hugging Face Hub
+Custom registries
+Capabilities
+Model enumeration
+Version tracking
+Metadata extraction
+Process Scanner
+Identifies AI processes running on systems
+Discovery Targets
+TensorFlow processes
+PyTorch applications
+Scikit-learn services
+Capabilities
+Process identification
+Resource monitoring
+Framework detection

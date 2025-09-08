@@ -66,56 +66,187 @@ class EnhancedDecisionEngine:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         
-        # Decision history for learning
-        self.decision_history = deque(maxlen=10000)
+        # Enhanced decision history with performance metrics
+        self.decision_history = deque(maxlen=50000)  # Increased capacity
         self.pattern_cache = {}
         self.risk_models = {}
         
-        # Initialize risk prediction models
-        self.initialize_risk_models()
+        # Advanced analytics engines
+        self.predictive_models = {
+            "compliance_forecasting": None,
+            "risk_trajectory": None,
+            "anomaly_prediction": None,
+            "impact_assessment": None
+        }
         
-        # Performance tracking
+        # Performance optimization
+        self.optimization_config = {
+            "parallel_processing": True,
+            "cache_enabled": True,
+            "batch_predictions": True,
+            "real_time_learning": True
+        }
+        
+        # Accuracy enhancement features
+        self.accuracy_features = {
+            "ensemble_methods": True,
+            "cross_validation": True,
+            "uncertainty_quantification": True,
+            "confidence_calibration": True
+        }
+        
+        # External data integration
+        self.external_data_sources = {
+            "threat_intelligence": [],
+            "regulatory_updates": [],
+            "industry_benchmarks": [],
+            "security_advisories": []
+        }
+        
+        # Initialize enhanced capabilities
+        self.initialize_risk_models()
+        self.initialize_advanced_analytics()
+        
+        # Performance tracking with detailed metrics
         self.prediction_accuracy = {}
         self.decision_outcomes = defaultdict(list)
+        self.performance_metrics = {
+            "avg_prediction_time": 0.0,
+            "accuracy_score": 0.0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1_score": 0.0
+        }
         
-        self.logger.info("Enhanced Decision Engine initialized")
+        self.logger.info("Enhanced Decision Engine initialized with advanced capabilities")
     
     def initialize_risk_models(self):
-        """Initialize risk prediction models for different frameworks"""
+        """Initialize enhanced risk prediction models for different frameworks"""
         self.risk_models = {
             "HIPAA": {
                 "risk_factors": {
-                    "phi_exposure": {"weight": 0.35, "threshold": 0.7},
-                    "encryption_status": {"weight": 0.25, "threshold": 0.8},
-                    "access_controls": {"weight": 0.20, "threshold": 0.75},
-                    "audit_logging": {"weight": 0.15, "threshold": 0.8},
-                    "breach_history": {"weight": 0.05, "threshold": 0.9}
+                    "phi_exposure": {"weight": 0.35, "threshold": 0.7, "criticality": "high"},
+                    "encryption_status": {"weight": 0.25, "threshold": 0.8, "criticality": "high"},
+                    "access_controls": {"weight": 0.20, "threshold": 0.75, "criticality": "medium"},
+                    "audit_logging": {"weight": 0.15, "threshold": 0.8, "criticality": "medium"},
+                    "breach_history": {"weight": 0.05, "threshold": 0.9, "criticality": "critical"}
                 },
                 "base_threshold": 0.75,
-                "prediction_window": 30
+                "prediction_window": 30,
+                "ml_model": "ensemble_classifier",
+                "accuracy_target": 0.95,
+                "security_enhancements": {
+                    "behavioral_analysis": True,
+                    "anomaly_detection": True,
+                    "threat_correlation": True
+                }
             },
             "FDA": {
                 "risk_factors": {
-                    "clinical_validation": {"weight": 0.40, "threshold": 0.9},
-                    "risk_management": {"weight": 0.25, "threshold": 0.85},
-                    "change_control": {"weight": 0.20, "threshold": 0.8},
-                    "post_market_surveillance": {"weight": 0.15, "threshold": 0.85}
+                    "clinical_validation": {"weight": 0.40, "threshold": 0.9, "criticality": "critical"},
+                    "risk_management": {"weight": 0.25, "threshold": 0.85, "criticality": "high"},
+                    "change_control": {"weight": 0.20, "threshold": 0.8, "criticality": "high"},
+                    "post_market_surveillance": {"weight": 0.15, "threshold": 0.85, "criticality": "medium"}
                 },
                 "base_threshold": 0.85,
-                "prediction_window": 60
+                "prediction_window": 60,
+                "ml_model": "deep_neural_network",
+                "accuracy_target": 0.97,
+                "security_enhancements": {
+                    "medical_device_specific": True,
+                    "clinical_risk_assessment": True,
+                    "safety_monitoring": True
+                }
             },
             "GDPR": {
                 "risk_factors": {
-                    "data_processing_consent": {"weight": 0.30, "threshold": 0.8},
-                    "data_subject_rights": {"weight": 0.25, "threshold": 0.75},
-                    "privacy_by_design": {"weight": 0.20, "threshold": 0.8},
-                    "breach_notification": {"weight": 0.15, "threshold": 0.9},
-                    "cross_border_transfer": {"weight": 0.10, "threshold": 0.85}
+                    "data_processing_consent": {"weight": 0.30, "threshold": 0.8, "criticality": "high"},
+                    "data_subject_rights": {"weight": 0.25, "threshold": 0.75, "criticality": "high"},
+                    "privacy_by_design": {"weight": 0.20, "threshold": 0.8, "criticality": "medium"},
+                    "breach_notification": {"weight": 0.15, "threshold": 0.9, "criticality": "critical"},
+                    "cross_border_transfer": {"weight": 0.10, "threshold": 0.85, "criticality": "medium"}
                 },
                 "base_threshold": 0.8,
-                "prediction_window": 45
+                "prediction_window": 45,
+                "ml_model": "gradient_boosting",
+                "accuracy_target": 0.93,
+                "security_enhancements": {
+                    "privacy_impact_assessment": True,
+                    "data_flow_analysis": True,
+                    "consent_management": True
+                }
+            },
+            "HITRUST": {
+                "risk_factors": {
+                    "information_protection": {"weight": 0.25, "threshold": 0.85, "criticality": "high"},
+                    "endpoint_protection": {"weight": 0.20, "threshold": 0.8, "criticality": "high"},
+                    "secure_transmission": {"weight": 0.20, "threshold": 0.85, "criticality": "high"},
+                    "mobile_device_security": {"weight": 0.15, "threshold": 0.75, "criticality": "medium"},
+                    "application_security": {"weight": 0.20, "threshold": 0.8, "criticality": "high"}
+                },
+                "base_threshold": 0.82,
+                "prediction_window": 90,
+                "ml_model": "random_forest",
+                "accuracy_target": 0.94,
+                "security_enhancements": {
+                    "comprehensive_security": True,
+                    "risk_based_approach": True,
+                    "continuous_monitoring": True
+                }
+            },
+            "SOC2": {
+                "risk_factors": {
+                    "security_controls": {"weight": 0.30, "threshold": 0.85, "criticality": "high"},
+                    "availability_controls": {"weight": 0.25, "threshold": 0.8, "criticality": "high"},
+                    "processing_integrity": {"weight": 0.20, "threshold": 0.8, "criticality": "medium"},
+                    "confidentiality": {"weight": 0.15, "threshold": 0.85, "criticality": "high"},
+                    "privacy_controls": {"weight": 0.10, "threshold": 0.8, "criticality": "medium"}
+                },
+                "base_threshold": 0.8,
+                "prediction_window": 60,
+                "ml_model": "support_vector_machine",
+                "accuracy_target": 0.92,
+                "security_enhancements": {
+                    "service_organization_controls": True,
+                    "operational_effectiveness": True,
+                    "design_effectiveness": True
+                }
             }
         }
+    
+    def initialize_advanced_analytics(self):
+        """Initialize advanced analytics engines"""
+        try:
+            # Compliance forecasting model
+            self.predictive_models["compliance_forecasting"] = {
+                "model_type": "lstm_neural_network",
+                "features": ["historical_compliance", "risk_trends", "regulatory_changes"],
+                "prediction_horizon": 180,  # 6 months
+                "accuracy": 0.0,
+                "last_trained": None
+            }
+            
+            # Risk trajectory analysis
+            self.predictive_models["risk_trajectory"] = {
+                "model_type": "time_series_analysis",
+                "features": ["risk_scores", "incidents", "remediation_effectiveness"],
+                "prediction_horizon": 90,  # 3 months
+                "accuracy": 0.0,
+                "last_trained": None
+            }
+            
+            # Anomaly prediction
+            self.predictive_models["anomaly_prediction"] = {
+                "model_type": "isolation_forest",
+                "features": ["system_behavior", "access_patterns", "data_flows"],
+                "prediction_horizon": 7,  # 1 week
+                "accuracy": 0.0,
+                "last_trained": None
+            }
+            
+            self.logger.info("Advanced analytics engines initialized")
+        except Exception as e:
+            self.logger.error(f"Error initializing advanced analytics: {str(e)}")
     
     async def predict_compliance_risk(self, context: DecisionContext) -> RiskPrediction:
         """
