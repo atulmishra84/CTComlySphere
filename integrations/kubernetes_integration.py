@@ -111,7 +111,7 @@ class KubernetesIntegration:
                 return 'Ready' if condition.status == 'True' else 'NotReady'
         return 'Unknown'
     
-    def discover_ai_workloads(self, namespace: str = None) -> List[Dict[str, Any]]:
+    def discover_ai_workloads(self, namespace: Optional[str] = None) -> List[Dict[str, Any]]:
         """Discover AI workloads across the cluster in real-time"""
         if not self.is_connected:
             return []
