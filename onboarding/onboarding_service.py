@@ -23,7 +23,7 @@ class OnboardingService:
     
     def __init__(self):
         self.logger = logger
-        self._ensure_default_steps()
+        self._default_steps_created = False
     
     def start_customer_onboarding(self, 
                                 organization_name: str,
@@ -98,6 +98,9 @@ class OnboardingService:
         Returns:
             Comprehensive progress information
         """
+        
+        # Ensure default steps exist
+        self._ensure_default_steps()
         
         customer = self.get_customer_onboarding(customer_id)
         if not customer:
@@ -411,6 +414,9 @@ class OnboardingService:
     
     def _ensure_default_steps(self):
         """Ensure default onboarding steps exist"""
+        if self._default_steps_created:
+            return
+            
         default_steps = [
             {
                 'step_key': 'welcome',
@@ -499,6 +505,7 @@ class OnboardingService:
                     db.session.add(step)
             
             db.session.commit()
+            self._default_steps_created = True
             
         except Exception as e:
             db.session.rollback()
