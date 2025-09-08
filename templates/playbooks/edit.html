@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit {{ playbook.name }} - Healthcare AI Compliance</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" href="/">
+                    <i class="fas fa-shield-alt"></i> Healthcare AI Compliance
+                </a>
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/">Dashboard</a>
+                    <a class="nav-link" href="/playbooks">Playbooks</a>
+                    <a class="nav-link" href="/playbooks/inventory">AI Inventory</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mt-4">
+            <div class="row">
+                <div class="col-12">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/playbooks">Playbooks</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('playbooks.view_playbook', id=playbook.id) }}">{{ playbook.name }}</a></li>
+                            <li class="breadcrumb-item active">Edit</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-edit"></i> Edit Registration Playbook</h5>
+                            <small class="text-muted">Update your plain English configuration - backend code will be regenerated automatically!</small>
+                        </div>
+                        <div class="card-body">
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                    {% for category, message in messages %}
+                                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                                            {{ message }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
+
+                            <form method="POST">
+                                <div class="mb-3">
+                                    <label for="playbook_name" class="form-label">Playbook Name</label>
+                                    <input type="text" class="form-control" id="playbook_name" value="{{ playbook.name }}" readonly>
+                                    <div class="form-text">Name cannot be changed after creation</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="playbook_description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="playbook_description" rows="2" readonly>{{ playbook.description }}</textarea>
+                                    <div class="form-text">Description cannot be changed after creation</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="plain_english_config" class="form-label">
+                                        Plain English Configuration
+                                        <i class="fas fa-info-circle text-muted" data-bs-toggle="tooltip" 
+                                           title="Update your registration process description. Backend code will be automatically regenerated!"></i>
+                                    </label>
+                                    <textarea class="form-control" id="plain_english_config" name="plain_english_config" 
+                                              rows="15" required>{{ playbook.plain_english_config }}</textarea>
+                                    <div class="form-text">
+                                        <strong>Current Status:</strong>
+                                        {% if playbook.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                        {% if playbook.auto_onboarding_enabled %}
+                                            <span class="badge bg-primary">Auto-Onboarding Enabled</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('playbooks.view_playbook', id=playbook.id) }}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left"></i> Back to Playbook
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-magic"></i> Update & Regenerate Code
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Current Configuration Summary -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-cog"></i> Current Configuration</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>Created:</strong><br>
+                                <small class="text-muted">{{ playbook.created_at.strftime('%Y-%m-%d %H:%M') }} by {{ playbook.created_by }}</small>
+                            </div>
+                            {% if playbook.updated_at != playbook.created_at %}
+                            <div class="mb-3">
+                                <strong>Last Updated:</strong><br>
+                                <small class="text-muted">{{ playbook.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            {% endif %}
+                            
+                            {% if playbook.trigger_conditions %}
+                            <div class="mb-3">
+                                <strong>Trigger Conditions:</strong>
+                                <ul class="list-unstyled mt-2">
+                                    {% for key, value in playbook.trigger_conditions.items() %}
+                                    <li><small>• {{ key|title|replace('_', ' ') }}: {{ value }}</small></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+
+                            {% if playbook.onboarding_steps %}
+                            <div class="mb-3">
+                                <strong>Onboarding Steps:</strong>
+                                <ul class="list-unstyled mt-2">
+                                    {% for step in playbook.onboarding_steps %}
+                                    <li><small>• {{ step.type|title|replace('_', ' ') }}</small></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+
+                            {% if playbook.compliance_requirements %}
+                            <div class="mb-3">
+                                <strong>Compliance Requirements:</strong>
+                                <div class="mt-2">
+                                    {% for requirement in playbook.compliance_requirements %}
+                                        <span class="badge bg-info me-1">{{ requirement }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Tips -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-lightbulb"></i> Editing Tips</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="mb-0">
+                                <li><strong>Auto-Generation:</strong> Any changes will automatically regenerate the backend code</li>
+                                <li><strong>Live Updates:</strong> Active playbooks will use the new configuration immediately</li>
+                                <li><strong>Safe Editing:</strong> Existing registrations are not affected by changes</li>
+                                <li><strong>Validation:</strong> The system validates your changes before applying them</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Generated Code Preview -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-code"></i> Current Generated Code (Read-Only)</h6>
+                            <small class="text-muted">This will be updated when you save your changes</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="bg-dark p-3 rounded" style="max-height: 400px; overflow-y: auto;">
+                                <pre style="color: #e9ecef; margin: 0;"><code>{{ playbook.generated_code or 'No code generated yet.' }}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    </script>
+</body>
+</html>

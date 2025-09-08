@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent Inventory - Healthcare AI Compliance</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" href="/">
+                    <i class="fas fa-shield-alt"></i> Healthcare AI Compliance
+                </a>
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/">Dashboard</a>
+                    <a class="nav-link" href="/playbooks">Playbooks</a>
+                    <a class="nav-link active" href="/playbooks/inventory">AI Inventory</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mt-4">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1><i class="fas fa-list"></i> AI Agent Inventory</h1>
+                            <p class="text-muted">Centralized tracking and management of discovered AI agents</p>
+                        </div>
+                        <a href="/playbooks" class="btn btn-outline-primary">
+                            <i class="fas fa-play-circle"></i> Manage Playbooks
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Total Discovered</h5>
+                                    <h2 class="mb-0">{{ summary.total_discovered }}</h2>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-search fa-2x opacity-75"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Registered</h5>
+                                    <h2 class="mb-0">{{ summary.total_registered }}</h2>
+                                    <small class="text-light">{{ "%.1f"|format(summary.registration_rate) }}% rate</small>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">By Protocol</h5>
+                                    <div class="small">
+                                        {% for protocol, count in summary.by_protocol.items() %}
+                                            <div>{{ protocol }}: {{ count }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-network-wired fa-2x opacity-75"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">By Cloud</h5>
+                                    <div class="small">
+                                        {% for cloud, count in summary.by_cloud_provider.items() %}
+                                            <div>{{ cloud }}: {{ count }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-cloud fa-2x opacity-75"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Inventory Status Distribution -->
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-chart-pie"></i> Inventory Status Distribution</h6>
+                        </div>
+                        <div class="card-body">
+                            {% for status, count in status_counts.items() %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-{% if status == 'registered' %}success{% elif status == 'active' %}primary{% elif status == 'inactive' %}warning{% elif status == 'deprecated' %}danger{% else %}secondary{% endif %}">
+                                    {{ status|title }}
+                                </span>
+                                <span class="fw-bold">{{ count }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Registrations -->
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-clock"></i> Recent Agent Registrations</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_registrations %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Agent Name</th>
+                                                <th>Type</th>
+                                                <th>Protocol</th>
+                                                <th>Status</th>
+                                                <th>Added</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for inventory, agent in recent_registrations %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ agent.name }}</strong>
+                                                    {% if inventory.use_case %}
+                                                        <br><small class="text-muted">{{ inventory.use_case[:50] }}{% if inventory.use_case|length > 50 %}...{% endif %}</small>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ agent.type }}</td>
+                                                <td>
+                                                    <span class="badge bg-outline-secondary">{{ agent.protocol }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-{% if inventory.inventory_status.value == 'registered' %}success{% elif inventory.inventory_status.value == 'active' %}primary{% elif inventory.inventory_status.value == 'inactive' %}warning{% else %}secondary{% endif %}">
+                                                        {{ inventory.inventory_status.value|title }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ inventory.added_to_inventory.strftime('%m/%d %H:%M') }}</td>
+                                                <td>
+                                                    <a href="{{ url_for('playbooks.inventory_details', agent_id=agent.id) }}" 
+                                                       class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                    <h6>No Registered Agents Yet</h6>
+                                    <p class="text-muted">Agents will appear here once they're registered through playbooks.</p>
+                                    <a href="/playbooks/create" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Create Registration Playbook
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-bolt"></i> Quick Actions</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <button class="btn btn-outline-primary w-100 mb-2" onclick="refreshInventory()">
+                                        <i class="fas fa-sync"></i> Refresh Inventory Data
+                                    </button>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-outline-info w-100 mb-2" onclick="showUnregisteredAgents()">
+                                        <i class="fas fa-search"></i> View Unregistered Agents
+                                    </button>
+                                </div>
+                                <div class="col-md-4">
+                                    <a href="/playbooks" class="btn btn-outline-success w-100 mb-2">
+                                        <i class="fas fa-magic"></i> Auto-Register with Playbooks
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unregistered Agents Modal -->
+    <div class="modal fade" id="unregisteredModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Unregistered AI Agents</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="unregisteredAgentsContent">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a href="/playbooks/create" class="btn btn-primary">Create Playbook to Register</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function refreshInventory() {
+            location.reload();
+        }
+
+        function showUnregisteredAgents() {
+            const modal = new bootstrap.Modal(document.getElementById('unregisteredModal'));
+            modal.show();
+
+            // Load unregistered agents
+            fetch('/playbooks/api/agents/unregistered')
+                .then(response => response.json())
+                .then(agents => {
+                    const content = document.getElementById('unregisteredAgentsContent');
+                    
+                    if (agents.length === 0) {
+                        content.innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                <h6>All Agents Registered!</h6>
+                                <p class="text-muted">All discovered AI agents have been registered in the inventory.</p>
+                            </div>
+                        `;
+                    } else {
+                        const tableHtml = `
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Type</th>
+                                            <th>Protocol</th>
+                                            <th>Cloud Provider</th>
+                                            <th>Discovered</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${agents.map(agent => `
+                                            <tr>
+                                                <td><strong>${agent.name}</strong></td>
+                                                <td>${agent.type}</td>
+                                                <td><span class="badge bg-outline-secondary">${agent.protocol}</span></td>
+                                                <td>${agent.cloud_provider || 'N/A'}</td>
+                                                <td>${agent.discovered_at ? new Date(agent.discovered_at).toLocaleDateString() : 'N/A'}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Found ${agents.length} unregistered agent(s).</strong> 
+                                Create a registration playbook to automatically process these agents.
+                            </div>
+                        `;
+                        content.innerHTML = tableHtml;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('unregisteredAgentsContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Error loading unregistered agents: ${error.message}
+                        </div>
+                    `;
+                });
+        }
+    </script>
+</body>
+</html>

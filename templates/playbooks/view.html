@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ playbook.name }} - Healthcare AI Compliance</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism-dark.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" href="/">
+                    <i class="fas fa-shield-alt"></i> Healthcare AI Compliance
+                </a>
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/">Dashboard</a>
+                    <a class="nav-link" href="/playbooks">Playbooks</a>
+                    <a class="nav-link" href="/playbooks/inventory">AI Inventory</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mt-4">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/playbooks">Playbooks</a></li>
+                            <li class="breadcrumb-item active">{{ playbook.name }}</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Playbook Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4><i class="fas fa-play-circle"></i> {{ playbook.name }}</h4>
+                                    <p class="mb-0 text-muted">{{ playbook.description }}</p>
+                                    <small class="text-muted">
+                                        Created {{ playbook.created_at.strftime('%Y-%m-%d %H:%M') }} by {{ playbook.created_by }}
+                                        {% if playbook.updated_at != playbook.created_at %}
+                                            • Updated {{ playbook.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="mb-2">
+                                        {% if playbook.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                        {% if playbook.auto_onboarding_enabled %}
+                                            <span class="badge bg-primary">Auto-Onboarding</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('playbooks.edit_playbook', id=playbook.id) }}" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                        <button class="btn btn-outline-{% if playbook.is_active %}warning{% else %}success{% endif %} btn-sm" 
+                                                onclick="togglePlaybook({{ playbook.id }})">
+                                            <i class="fas fa-{% if playbook.is_active %}pause{% else %}play{% endif %}"></i>
+                                            {{ 'Deactivate' if playbook.is_active else 'Activate' }}
+                                        </button>
+                                        <button class="btn btn-outline-{% if playbook.auto_onboarding_enabled %}danger{% else %}info{% endif %} btn-sm" 
+                                                onclick="toggleAutoOnboarding({{ playbook.id }})">
+                                            <i class="fas fa-magic"></i>
+                                            {{ 'Disable Auto' if playbook.auto_onboarding_enabled else 'Enable Auto' }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Plain English Configuration -->
+                <div class="col-lg-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-comments"></i> Plain English Configuration</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="bg-dark p-3 rounded">
+                                <pre class="mb-0" style="color: #e9ecef; white-space: pre-wrap;">{{ playbook.plain_english_config }}</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Onboarding Steps -->
+                    {% if playbook.onboarding_steps %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-list-ol"></i> Onboarding Steps</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group list-group-flush">
+                                {% for step in playbook.onboarding_steps %}
+                                <div class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div class="ms-2 me-auto">
+                                        <div class="fw-bold">{{ step.type|title|replace('_', ' ') }}</div>
+                                        <small>{{ step.description }}</small>
+                                    </div>
+                                    <span class="badge bg-{% if step.required %}primary{% else %}secondary{% endif %} rounded-pill">
+                                        {% if step.required %}Required{% else %}Optional{% endif %}
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Trigger Conditions -->
+                    {% if playbook.trigger_conditions %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-filter"></i> Trigger Conditions</h6>
+                        </div>
+                        <div class="card-body">
+                            {% for key, value in playbook.trigger_conditions.items() %}
+                            <div class="mb-2">
+                                <strong>{{ key|title|replace('_', ' ') }}:</strong>
+                                {% if value is iterable and value is not string %}
+                                    <div class="ms-3">
+                                        {% for item in value %}
+                                            <span class="badge bg-info me-1">{{ item }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-info">{{ value }}</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Auto-Generated Code -->
+                <div class="col-lg-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-code"></i> Auto-Generated Backend Code</h6>
+                            <small class="text-muted">Automatically generated from plain English configuration</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="bg-dark p-3 rounded" style="max-height: 600px; overflow-y: auto;">
+                                <pre><code class="language-python">{{ playbook.generated_code or 'No code generated yet.' }}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-history"></i> Recent Registrations</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if registrations %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Agent</th>
+                                                <th>Status</th>
+                                                <th>Started</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for registration in registrations %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ registration.agent.name }}</strong><br>
+                                                    <small class="text-muted">{{ registration.agent.type }}</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-{% if registration.registration_status.value == 'completed' %}success{% elif registration.registration_status.value == 'failed' %}danger{% elif registration.registration_status.value == 'in_progress' %}warning{% else %}secondary{% endif %}">
+                                                        {{ registration.registration_status.value|title }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ registration.started_at.strftime('%m/%d %H:%M') }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center">No registrations yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-play"></i> Recent Executions</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if executions %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Agent</th>
+                                                <th>Status</th>
+                                                <th>Duration</th>
+                                                <th>Started</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for execution in executions %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ execution.agent.name }}</strong>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-{% if execution.execution_status.value == 'completed' %}success{% elif execution.execution_status.value == 'failed' %}danger{% elif execution.execution_status.value == 'running' %}warning{% else %}secondary{% endif %}">
+                                                        {{ execution.execution_status.value|title }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if execution.execution_time %}
+                                                        {{ "%.2f"|format(execution.execution_time) }}s
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ execution.started_at.strftime('%m/%d %H:%M') }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center">No executions yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Execution -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-play-circle"></i> Manual Execution</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Execute this playbook manually for a specific agent.</p>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <select class="form-select" id="agentSelect">
+                                        <option value="">Select an unregistered agent...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-primary w-100" onclick="executePlaybook()">
+                                        <i class="fas fa-play"></i> Execute Playbook
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-python.min.js"></script>
+    <script>
+        function togglePlaybook(playbookId) {
+            fetch(`/playbooks/${playbookId}/toggle`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => alert('Error: ' + error));
+        }
+
+        function toggleAutoOnboarding(playbookId) {
+            fetch(`/playbooks/${playbookId}/auto-onboarding`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => alert('Error: ' + error));
+        }
+
+        function executePlaybook() {
+            const agentId = document.getElementById('agentSelect').value;
+            if (!agentId) {
+                alert('Please select an agent first.');
+                return;
+            }
+
+            fetch('/playbooks/execute', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    agent_id: parseInt(agentId),
+                    playbook_id: {{ playbook.id }}
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Playbook execution started successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => alert('Error: ' + error));
+        }
+
+        // Load unregistered agents
+        fetch('/playbooks/api/agents/unregistered')
+            .then(response => response.json())
+            .then(agents => {
+                const select = document.getElementById('agentSelect');
+                agents.forEach(agent => {
+                    const option = document.createElement('option');
+                    option.value = agent.id;
+                    option.textContent = `${agent.name} (${agent.type})`;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Failed to load agents:', error));
+    </script>
+</body>
+</html>
