@@ -45,7 +45,7 @@ def dashboard():
 @app.route('/scan/start', methods=['POST'])
 def start_scan():
     """Start a new comprehensive scan"""
-    scanner = protocol_scanner.ProtocolScanner()
+    scanner = protocol_scanner
     
     # Get scan parameters
     protocols = request.form.getlist('protocols')
