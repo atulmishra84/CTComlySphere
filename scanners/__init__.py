@@ -6,6 +6,9 @@ from .grpc_scanner import GRPCScanner
 from .websocket_scanner import WebSocketScanner
 from .mqtt_scanner import MQTTScanner
 from .graphql_scanner import GraphQLScanner
+from .cloud_scanner import CloudServiceScanner
+from .a2a_scanner import A2ACommunicationScanner
+from .mcp_scanner import MCPScanner
 
 class ProtocolScanner:
     """Main scanner orchestrator that manages all protocol-specific scanners"""
@@ -18,7 +21,10 @@ class ProtocolScanner:
             'grpc': GRPCScanner(),
             'websocket': WebSocketScanner(),
             'mqtt': MQTTScanner(),
-            'graphql': GraphQLScanner()
+            'graphql': GraphQLScanner(),
+            'cloud_services': CloudServiceScanner(),
+            'a2a_communication': A2ACommunicationScanner(),
+            'mcp_protocol': MCPScanner()
         }
     
     def start_comprehensive_scan(self, protocols, cloud_providers=None):
