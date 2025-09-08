@@ -3,56 +3,80 @@
 {% block title %}Dashboard - Healthcare AI Compliance Platform{% endblock %}
 
 {% block content %}
-<!-- Enhanced Hero Section with Gradient Background -->
+<!-- Compact Hero Section -->
 <div class="hero-section bg-gradient-primary-to-secondary">
-    <div class="container hero-content py-5">
+    <div class="container hero-content py-3">
         <div class="row align-items-center">
-            <div class="col-lg-8">
-                <h1 class="display-4 mb-4 text-white fw-bold">Complete AI Agent Visibility Everywhere</h1>
-                <p class="lead text-white-50 mb-4 fs-5">
-                    Advanced healthcare AI compliance platform with comprehensive discovery across 15+ protocols including FHIR, HL7, DICOM, and WebRTC.
+            <div class="col-lg-7">
+                <h1 class="display-5 mb-2 text-white fw-bold">Healthcare AI Compliance Platform</h1>
+                <p class="text-white-50 mb-3">
+                    Comprehensive AI agent discovery across 15+ protocols including FHIR, HL7, DICOM, and WebRTC.
                 </p>
-                <div class="d-flex gap-3 mb-4 flex-wrap">
-                    <a href="{{ url_for('scan_results') }}" class="btn btn-light btn-lg shadow">
-                        <i class="fas fa-search me-2 text-primary"></i>View Security Scans
+                <div class="d-flex gap-2 mb-2 flex-wrap">
+                    <a href="{{ url_for('scan_results') }}" class="btn btn-light btn-sm shadow">
+                        <i class="fas fa-search me-1"></i>Security Scans
                     </a>
-                    <a href="{{ url_for('realtime_monitoring') }}" class="btn btn-outline-light btn-lg">
-                        <i class="fas fa-chart-line me-2"></i>Real-Time Monitoring
+                    <a href="{{ url_for('realtime_monitoring') }}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-chart-line me-1"></i>Monitoring
                     </a>
-                    <a href="{{ url_for('compliance_report') }}" class="btn btn-outline-light btn-lg">
-                        <i class="fas fa-shield-alt me-2"></i>Compliance Reports
+                    <a href="{{ url_for('compliance_report') }}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-shield-alt me-1"></i>Compliance
                     </a>
                 </div>
             </div>
-            <div class="col-lg-4">
-                <div class="stats-grid">
-                    <div class="stat-item bg-white shadow-sm">
-                        <div class="stat-icon bg-gradient-primary">
-                            <i class="fas fa-robot"></i>
+            <div class="col-lg-5">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="stat-item bg-white shadow-sm p-3">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon-sm bg-gradient-primary me-2">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div>
+                                    <span class="stat-number-sm text-primary">{{ total_agents or 0 }}</span>
+                                    <span class="stat-label-sm">AI Agents</span>
+                                </div>
+                            </div>
                         </div>
-                        <span class="stat-number text-primary">{{ total_agents or 0 }}</span>
-                        <span class="stat-label">AI Agents Secured</span>
                     </div>
-                    <div class="stat-item bg-white shadow-sm">
-                        <div class="stat-icon bg-gradient-success">
-                            <i class="fas fa-shield-alt"></i>
+                    <div class="col-6">
+                        <div class="stat-item bg-white shadow-sm p-3">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon-sm bg-gradient-success me-2">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div>
+                                    <span class="stat-number-sm text-success">15</span>
+                                    <span class="stat-label-sm">Protocols</span>
+                                </div>
+                            </div>
                         </div>
-                        <span class="stat-number text-success">15</span>
-                        <span class="stat-label">Protocol Scanners</span>
                     </div>
-                    <div class="stat-item bg-white shadow-sm">
-                        <div class="stat-icon bg-gradient-warning">
-                            <i class="fas fa-heartbeat"></i>
+                    <div class="col-6">
+                        <div class="stat-item bg-white shadow-sm p-3">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon-sm bg-gradient-info me-2">
+                                    <i class="fas fa-heartbeat"></i>
+                                </div>
+                                <div>
+                                    <span class="stat-number-sm text-info">4</span>
+                                    <span class="stat-label-sm">Healthcare</span>
+                                </div>
+                            </div>
                         </div>
-                        <span class="stat-number text-warning">{{ recent_scans|length or 0 }}</span>
-                        <span class="stat-label">Healthcare Protocols</span>
                     </div>
-                    <div class="stat-item bg-white shadow-sm">
-                        <div class="stat-icon bg-gradient-info">
-                            <i class="fas fa-chart-pie"></i>
+                    <div class="col-6">
+                        <div class="stat-item bg-white shadow-sm p-3">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon-sm bg-gradient-warning me-2">
+                                    <i class="fas fa-chart-pie"></i>
+                                </div>
+                                <div>
+                                    <span class="stat-number-sm text-warning">95%</span>
+                                    <span class="stat-label-sm">Compliant</span>
+                                </div>
+                            </div>
                         </div>
-                        <span class="stat-number text-info">{{ ((compliance_summary.values() | map(attribute='average_score') | sum) / (compliance_summary | length)) | round(0) if compliance_summary else 95 }}%</span>
-                        <span class="stat-label">Avg Compliance</span>
                     </div>
                 </div>
             </div>
@@ -62,20 +86,20 @@
 
 <div class="container-fluid">
 
-    <!-- Enhanced Key Metrics Row with Better Spacing -->
-    <div class="row mb-5 g-4">
+    <!-- Compact Key Metrics Row -->
+    <div class="row mb-3 g-3">
         <div class="col-lg-3 col-md-6">
-            <div class="metric-card border-0 shadow-sm h-100">
-                <div class="d-flex justify-content-between align-items-center p-4">
+            <div class="metric-card border-0 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center p-3">
                     <div>
-                        <h6 class="text-muted mb-2 fw-semibold">AI Agents Discovered</h6>
-                        <h2 class="text-primary mb-2 fw-bold">{{ total_agents or 0 }}</h2>
+                        <h6 class="text-muted mb-1 fw-semibold small">AI Agents Discovered</h6>
+                        <h4 class="text-primary mb-1 fw-bold">{{ total_agents or 0 }}</h4>
                         <small class="text-success d-flex align-items-center">
                             <i class="fas fa-arrow-up me-1"></i>
                             +{{ (total_agents or 0) // 10 }} this week
                         </small>
                     </div>
-                    <div class="feature-icon bg-gradient-primary">
+                    <div class="feature-icon-sm bg-gradient-primary">
                         <i class="fas fa-robot"></i>
                     </div>
                 </div>
@@ -83,17 +107,17 @@
         </div>
         
         <div class="col-lg-3 col-md-6">
-            <div class="metric-card border-0 shadow-sm h-100">
-                <div class="d-flex justify-content-between align-items-center p-4">
+            <div class="metric-card border-0 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center p-3">
                     <div>
-                        <h6 class="text-muted mb-2 fw-semibold">HIPAA Compliance</h6>
-                        <h2 class="text-success mb-2 fw-bold">{{ compliance_summary.get('HIPAA', {}).get('compliant_percentage', 92) }}%</h2>
+                        <h6 class="text-muted mb-1 fw-semibold small">HIPAA Compliance</h6>
+                        <h4 class="text-success mb-1 fw-bold">{{ compliance_summary.get('HIPAA', {}).get('compliant_percentage', 92) }}%</h4>
                         <small class="text-success d-flex align-items-center">
                             <i class="fas fa-arrow-up me-1"></i>
                             +3% this month
                         </small>
                     </div>
-                    <div class="feature-icon bg-gradient-success">
+                    <div class="feature-icon-sm bg-gradient-success">
                         <i class="fas fa-shield-alt"></i>
                     </div>
                 </div>
@@ -101,17 +125,17 @@
         </div>
         
         <div class="col-lg-3 col-md-6">
-            <div class="metric-card border-0 shadow-sm h-100 alert-medium">
-                <div class="d-flex justify-content-between align-items-center p-4">
+            <div class="metric-card border-0 shadow-sm alert-medium">
+                <div class="d-flex justify-content-between align-items-center p-3">
                     <div>
-                        <h6 class="text-muted mb-2 fw-semibold">High-Risk Systems</h6>
-                        <h2 class="text-warning mb-2 fw-bold">{{ risk_distribution.get('HIGH', 0) + risk_distribution.get('CRITICAL', 0) }}</h2>
+                        <h6 class="text-muted mb-1 fw-semibold small">High-Risk Systems</h6>
+                        <h4 class="text-warning mb-1 fw-bold">{{ risk_distribution.get('HIGH', 0) + risk_distribution.get('CRITICAL', 0) }}</h4>
                         <small class="text-warning d-flex align-items-center">
                             <i class="fas fa-exclamation-triangle me-1"></i>
                             Requires attention
                         </small>
                     </div>
-                    <div class="feature-icon bg-gradient-warning">
+                    <div class="feature-icon-sm bg-gradient-warning">
                         <i class="fas fa-exclamation-triangle"></i>
                     </div>
                 </div>
@@ -119,17 +143,17 @@
         </div>
         
         <div class="col-lg-3 col-md-6">
-            <div class="metric-card border-0 shadow-sm h-100">
-                <div class="d-flex justify-content-between align-items-center p-4">
+            <div class="metric-card border-0 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center p-3">
                     <div>
-                        <h6 class="text-muted mb-2 fw-semibold">Healthcare Protocols</h6>
-                        <h2 class="text-info mb-2 fw-bold">4</h2>
+                        <h6 class="text-muted mb-1 fw-semibold small">Healthcare Protocols</h6>
+                        <h4 class="text-info mb-1 fw-bold">4</h4>
                         <small class="text-info d-flex align-items-center">
                             <i class="fas fa-heartbeat me-1"></i>
                             FHIR, HL7, DICOM, WebRTC
                         </small>
                     </div>
-                    <div class="feature-icon bg-gradient-info">
+                    <div class="feature-icon-sm bg-gradient-info">
                         <i class="fas fa-heartbeat"></i>
                     </div>
                 </div>
@@ -137,216 +161,213 @@
         </div>
     </div>
 
-    <!-- Charts and Analytics Row -->
-    <div class="row mb-4">
+    <!-- Compact Charts Grid -->
+    <div class="row mb-3 g-3">
         <!-- Risk Distribution Chart -->
-        <div class="col-xl-4 col-lg-6 mb-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-header bg-gradient border-0">
-                    <h5 class="card-title mb-0 text-primary">
-                        <i class="fas fa-chart-pie me-2"></i>
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient border-0 py-2">
+                    <h6 class="card-title mb-0 text-primary">
+                        <i class="fas fa-chart-pie me-1"></i>
                         Risk Distribution
-                    </h5>
+                    </h6>
                 </div>
-                <div class="card-body p-4">
-                    <canvas id="riskDistributionChart" height="250"></canvas>
+                <div class="card-body p-3">
+                    <canvas id="riskDistributionChart" height="180"></canvas>
                 </div>
             </div>
         </div>
         
         <!-- Compliance Scores Chart -->
-        <div class="col-xl-4 col-lg-6 mb-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-header bg-gradient border-0">
-                    <h5 class="card-title mb-0 text-success">
-                        <i class="fas fa-chart-bar me-2"></i>
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient border-0 py-2">
+                    <h6 class="card-title mb-0 text-success">
+                        <i class="fas fa-chart-bar me-1"></i>
                         Compliance Scores
-                    </h5>
+                    </h6>
                 </div>
-                <div class="card-body p-4">
-                    <canvas id="complianceScoresChart" height="250"></canvas>
+                <div class="card-body p-3">
+                    <canvas id="complianceScoresChart" height="180"></canvas>
                 </div>
             </div>
         </div>
 
         <!-- Protocol Activity Chart -->
-        <div class="col-xl-4 col-lg-12 mb-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-header bg-gradient border-0">
-                    <h5 class="card-title mb-0 text-info">
-                        <i class="fas fa-network-wired me-2"></i>
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient border-0 py-2">
+                    <h6 class="card-title mb-0 text-info">
+                        <i class="fas fa-network-wired me-1"></i>
                         Protocol Activity
-                    </h5>
+                    </h6>
                 </div>
-                <div class="card-body p-4">
-                    <canvas id="protocolActivityChart" height="250"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Additional Analytics Row -->
-    <div class="row mb-4">
-        <!-- Scan Timeline Chart -->
-        <div class="col-lg-8 mb-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-header bg-gradient border-0">
-                    <h5 class="card-title mb-0 text-warning">
-                        <i class="fas fa-chart-line me-2"></i>
-                        Security Scan Timeline (Last 7 Days)
-                    </h5>
-                </div>
-                <div class="card-body p-4">
-                    <canvas id="scanTimelineChart" height="200"></canvas>
+                <div class="card-body p-3">
+                    <canvas id="protocolActivityChart" height="180"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Healthcare Protocols Overview -->
-        <div class="col-lg-4 mb-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-header bg-gradient border-0">
-                    <h5 class="card-title mb-0 text-purple">
-                        <i class="fas fa-heartbeat me-2"></i>
+        <!-- Healthcare Protocols Chart -->
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient border-0 py-2">
+                    <h6 class="card-title mb-0 text-warning">
+                        <i class="fas fa-heartbeat me-1"></i>
                         Healthcare Protocols
-                    </h5>
+                    </h6>
                 </div>
-                <div class="card-body p-4">
-                    <canvas id="healthcareProtocolsChart" height="200"></canvas>
+                <div class="card-body p-3">
+                    <canvas id="healthcareProtocolsChart" height="180"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Enhanced Protocol and Activity Grid -->
-    <div class="row mb-4">
-        <!-- Enhanced Protocol Distribution -->
-        <div class="col-lg-5 mb-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-header bg-gradient border-0">
-                    <h5 class="card-title mb-0 text-primary">
-                        <i class="fas fa-network-wired me-2"></i>
-                        All Protocol Distribution
-                    </h5>
+    <!-- Scan Timeline Chart -->
+    <div class="row mb-3 g-3">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient border-0 py-2">
+                    <h6 class="card-title mb-0 text-primary">
+                        <i class="fas fa-chart-line me-1"></i>
+                        Security Scan Timeline (Last 7 Days)
+                    </h6>
                 </div>
-                <div class="card-body p-4">
-                    <div id="protocolList">
+                <div class="card-body p-3">
+                    <canvas id="scanTimelineChart" height="160"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compact Protocol and Activity Grid -->
+    <div class="row mb-3 g-3">
+        <!-- Protocol Distribution -->
+        <div class="col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient border-0 py-2">
+                    <h6 class="card-title mb-0 text-primary">
+                        <i class="fas fa-network-wired me-1"></i>
+                        Protocol Distribution
+                    </h6>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-2">
                         <!-- Container Protocols -->
-                        <h6 class="text-primary mb-3"><i class="fas fa-cube me-2"></i>Container Platforms</h6>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span><i class="fab fa-docker me-2 text-primary"></i>Docker</span>
-                            <span class="badge bg-gradient-primary">12</span>
+                        <div class="col-12">
+                            <small class="text-primary fw-bold d-block mb-2"><i class="fas fa-cube me-1"></i>Container Platforms</small>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small><i class="fab fa-docker me-1 text-primary"></i>Docker</small>
+                                <span class="badge bg-gradient-primary">12</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small><i class="fas fa-dharmachakra me-1 text-info"></i>Kubernetes</small>
+                                <span class="badge bg-gradient-info">8</span>
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span><i class="fas fa-dharmachakra me-2 text-info"></i>Kubernetes</span>
-                            <span class="badge bg-gradient-info">8</span>
-                        </div>
-
                         <!-- API Protocols -->
-                        <h6 class="text-success mb-3"><i class="fas fa-globe me-2"></i>API Protocols</h6>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span><i class="fas fa-globe me-2 text-success"></i>REST API</span>
-                            <span class="badge bg-gradient-success">15</span>
+                        <div class="col-12">
+                            <small class="text-success fw-bold d-block mb-2"><i class="fas fa-globe me-1"></i>API Protocols</small>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small><i class="fas fa-globe me-1 text-success"></i>REST API</small>
+                                <span class="badge bg-gradient-success">15</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small><i class="fas fa-stream me-1 text-warning"></i>gRPC</small>
+                                <span class="badge bg-gradient-warning">6</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small><i class="fas fa-project-diagram me-1 text-purple"></i>GraphQL</small>
+                                <span class="badge bg-gradient-purple">4</span>
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span><i class="fas fa-stream me-2 text-warning"></i>gRPC</span>
-                            <span class="badge bg-gradient-warning">6</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span><i class="fas fa-project-diagram me-2 text-purple"></i>GraphQL</span>
-                            <span class="badge bg-gradient-purple">4</span>
-                        </div>
-
                         <!-- Healthcare Protocols -->
-                        <h6 class="text-danger mb-3"><i class="fas fa-heartbeat me-2"></i>Healthcare Protocols</h6>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span><i class="fas fa-hospital me-2 text-danger"></i>FHIR</span>
-                            <span class="badge bg-gradient-danger">7</span>
+                        <div class="col-12">
+                            <small class="text-danger fw-bold d-block mb-2"><i class="fas fa-heartbeat me-1"></i>Healthcare Protocols</small>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small><i class="fas fa-hospital me-1 text-danger"></i>FHIR</small>
+                                <span class="badge bg-gradient-danger">7</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small><i class="fas fa-notes-medical me-1 text-info"></i>HL7</small>
+                                <span class="badge bg-gradient-info">5</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small><i class="fas fa-x-ray me-1 text-warning"></i>DICOM</small>
+                                <span class="badge bg-gradient-warning">3</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small><i class="fas fa-video me-1 text-primary"></i>WebRTC</small>
+                                <span class="badge bg-gradient-primary">6</span>
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span><i class="fas fa-notes-medical me-2 text-info"></i>HL7</span>
-                            <span class="badge bg-gradient-info">5</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span><i class="fas fa-x-ray me-2 text-warning"></i>DICOM</span>
-                            <span class="badge bg-gradient-warning">3</span>
-                        </div>
-
                         <!-- Communication Protocols -->
-                        <h6 class="text-info mb-3"><i class="fas fa-comments me-2"></i>Real-time Communication</h6>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span><i class="fas fa-exchange-alt me-2 text-success"></i>WebSocket</span>
-                            <span class="badge bg-gradient-success">4</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span><i class="fas fa-video me-2 text-primary"></i>WebRTC</span>
-                            <span class="badge bg-gradient-primary">6</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span><i class="fas fa-satellite me-2 text-warning"></i>MQTT</span>
-                            <span class="badge bg-gradient-warning">3</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span><i class="fas fa-envelope me-2 text-info"></i>AMQP</span>
-                            <span class="badge bg-gradient-info">5</span>
+                        <div class="col-12">
+                            <small class="text-info fw-bold d-block mb-2"><i class="fas fa-comments me-1"></i>Real-time Messaging</small>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small><i class="fas fa-exchange-alt me-1 text-success"></i>WebSocket</small>
+                                <span class="badge bg-gradient-success">4</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small><i class="fas fa-satellite me-1 text-warning"></i>MQTT</small>
+                                <span class="badge bg-gradient-warning">3</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small><i class="fas fa-envelope me-1 text-info"></i>AMQP</small>
+                                <span class="badge bg-gradient-info">5</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Enhanced Recent Activity Dashboard -->
-        <div class="col-lg-7 mb-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-header bg-gradient border-0">
-                    <h5 class="card-title mb-0 text-success">
-                        <i class="fas fa-history me-2"></i>
+        <!-- Recent Activity Dashboard -->
+        <div class="col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-gradient border-0 py-2">
+                    <h6 class="card-title mb-0 text-success">
+                        <i class="fas fa-history me-1"></i>
                         Recent Security Activity
-                    </h5>
+                    </h6>
                 </div>
-                <div class="card-body p-4">
+                <div class="card-body p-3">
                     {% if recent_scans %}
                         <div class="table-responsive">
-                            <table class="table table-hover table-borderless">
+                            <table class="table table-hover table-borderless table-sm">
                                 <thead class="table-light">
                                     <tr>
-                                        <th class="border-0">Agent</th>
-                                        <th class="border-0">Protocol</th>
-                                        <th class="border-0">Risk Level</th>
-                                        <th class="border-0">Vulnerabilities</th>
-                                        <th class="border-0">PHI Exposure</th>
-                                        <th class="border-0">Time</th>
+                                        <th class="border-0 small">Agent</th>
+                                        <th class="border-0 small">Protocol</th>
+                                        <th class="border-0 small">Risk</th>
+                                        <th class="border-0 small">Issues</th>
+                                        <th class="border-0 small">PHI</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for scan in recent_scans[:8] %}
+                                    {% for scan in recent_scans[:6] %}
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <div class="avatar-sm bg-gradient-primary rounded-circle d-flex align-items-center justify-content-center me-2">
-                                                    <i class="fas fa-robot text-white small"></i>
+                                                <div class="avatar-xs bg-gradient-primary rounded-circle d-flex align-items-center justify-content-center me-1">
+                                                    <i class="fas fa-robot text-white" style="font-size: 0.6rem;"></i>
                                                 </div>
-                                                <div>
-                                                    <small class="fw-bold">{{ scan.ai_agent.name if scan.ai_agent else 'Unknown' }}</small>
-                                                </div>
+                                                <small class="fw-bold">{{ scan.ai_agent.name if scan.ai_agent else 'Unknown' }}</small>
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="badge bg-gradient-{{ 'info' if scan.ai_agent.protocol == 'fhir' else 'success' if scan.ai_agent.protocol == 'hl7' else 'warning' if scan.ai_agent.protocol == 'dicom' else 'primary' }}">
+                                            <span class="badge bg-gradient-{{ 'info' if scan.ai_agent.protocol == 'fhir' else 'success' if scan.ai_agent.protocol == 'hl7' else 'warning' if scan.ai_agent.protocol == 'dicom' else 'primary' }} badge-sm">
                                                 {{ scan.ai_agent.protocol.upper() if scan.ai_agent else 'N/A' }}
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="badge bg-gradient-{{ 'danger' if scan.risk_level.value == 'CRITICAL' else 'warning' if scan.risk_level.value == 'HIGH' else 'success' if scan.risk_level.value == 'LOW' else 'info' }}">
-                                                <i class="fas fa-{{ 'exclamation-triangle' if scan.risk_level.value == 'CRITICAL' else 'exclamation-circle' if scan.risk_level.value == 'HIGH' else 'check-circle' if scan.risk_level.value == 'LOW' else 'info-circle' }} me-1"></i>
+                                            <span class="badge bg-gradient-{{ 'danger' if scan.risk_level.value == 'CRITICAL' else 'warning' if scan.risk_level.value == 'HIGH' else 'success' if scan.risk_level.value == 'LOW' else 'info' }} badge-sm">
                                                 {{ scan.risk_level.value }}
                                             </span>
                                         </td>
                                         <td>
-                                            <div class="d-flex align-items-center">
-                                                <span class="badge bg-gradient-warning me-1">{{ scan.vulnerabilities_found }}</span>
-                                                <small class="text-muted">issues</small>
-                                            </div>
+                                            <span class="badge bg-gradient-warning badge-sm">{{ scan.vulnerabilities_found }}</span>
                                         </td>
                                         <td>
                                             <small>
