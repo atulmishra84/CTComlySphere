@@ -240,26 +240,26 @@
         </div>
         <div class="col-md-4">
             <div class="card">
-                <div class="card-header py-2">
-                    <h6 class="card-title mb-0 text-truncate">
-                        <i class="fas fa-dollar-sign me-2"></i>
-                        Monthly Cost Breakdown
+                <div class="card-header py-1">
+                    <h6 class="card-title mb-0 text-truncate small">
+                        <i class="fas fa-dollar-sign me-1"></i>
+                        Monthly Cost
                     </h6>
                 </div>
-                <div class="card-body py-2">
-                    <canvas id="costBreakdownChart" height="100"></canvas>
-                    <div class="mt-2">
+                <div class="card-body py-1">
+                    <canvas id="costBreakdownChart" height="80"></canvas>
+                    <div class="mt-1">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <small><i class="fab fa-aws me-1"></i>AWS</small>
-                            <small class="fw-bold">${{ (deployment_status | selectattr('provider', 'equalto', 'AWS') | list | length * 148) }}</small>
+                            <span class="small text-muted"><i class="fab fa-aws me-1 text-warning"></i>AWS</span>
+                            <span class="small fw-bold">${{ (deployment_status | selectattr('provider', 'equalto', 'AWS') | list | length * 148) }}</span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <small><i class="fab fa-microsoft me-1"></i>Azure</small>
-                            <small class="fw-bold">${{ (deployment_status | selectattr('provider', 'equalto', 'Azure') | list | length * 132) }}</small>
+                            <span class="small text-muted"><i class="fab fa-microsoft me-1 text-info"></i>Azure</span>
+                            <span class="small fw-bold">${{ (deployment_status | selectattr('provider', 'equalto', 'Azure') | list | length * 132) }}</span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
-                            <small><i class="fab fa-google me-1"></i>GCP</small>
-                            <small class="fw-bold">${{ (deployment_status | selectattr('provider', 'equalto', 'GCP') | list | length * 156) }}</small>
+                            <span class="small text-muted"><i class="fab fa-google me-1 text-primary"></i>GCP</span>
+                            <span class="small fw-bold">${{ (deployment_status | selectattr('provider', 'equalto', 'GCP') | list | length * 156) }}</span>
                         </div>
                     </div>
                 </div>
