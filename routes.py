@@ -67,27 +67,58 @@ def scan_results():
     """Display scan results with filtering"""
     page = request.args.get('page', 1, type=int)
     risk_filter = request.args.get('risk_level')
-    agent_filter = request.args.get('agent_id', type=int)
+    protocol_filter = request.args.get('protocol')
+    cloud_filter = request.args.get('cloud_provider')
     
-    query = ScanResult.query
+    # Build agent query with filters
+    agent_query = AIAgent.query
     
-    if risk_filter:
-        query = query.filter(ScanResult.risk_level == getattr(RiskLevel, risk_filter))
+    if protocol_filter:
+        agent_query = agent_query.filter(AIAgent.protocol == protocol_filter)
     
-    if agent_filter:
-        query = query.filter(ScanResult.ai_agent_id == agent_filter)
+    if cloud_filter:
+        agent_query = agent_query.filter(AIAgent.cloud_provider == cloud_filter)
     
-    scan_results = query.order_by(ScanResult.created_at.desc()).paginate(
+    # Paginate agents
+    agents = agent_query.order_by(AIAgent.discovered_at.desc()).paginate(
         page=page, per_page=20, error_out=False
     )
     
-    agents = AIAgent.query.all()
+    # Get agent data with latest scans for display
+    agent_data = []
+    for agent in agents.items:
+        latest_scan = ScanResult.query.filter_by(ai_agent_id=agent.id).order_by(
+            ScanResult.created_at.desc()
+        ).first()
+        
+        # Apply risk filter if specified
+        if risk_filter and latest_scan:
+            if latest_scan.risk_level.value != risk_filter:
+                continue
+        elif risk_filter and not latest_scan:
+            continue
+            
+        agent_data.append({
+            'agent': agent,
+            'latest_scan': latest_scan
+        })
     
     return render_template('scan_results.html',
-                         scan_results=scan_results,
                          agents=agents,
+                         agent_data=agent_data,
                          current_risk_filter=risk_filter,
-                         current_agent_filter=agent_filter)
+                         current_protocol_filter=protocol_filter,
+                         current_cloud_filter=cloud_filter)
+
+
+@app.route('/agents/<int:agent_id>/evaluate-compliance')
+def evaluate_compliance(agent_id):
+    """Evaluate compliance for a specific agent"""
+    agent = AIAgent.query.get_or_404(agent_id)
+    
+    # Redirect to compliance report for now
+    flash(f'Compliance evaluation for {agent.name} - feature in development', 'info')
+    return redirect(url_for('compliance_report'))
 
 
 @app.route('/compliance/report')
