@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Integrations Unavailable{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="text-center py-5">
+                <i class="fas fa-exclamation-triangle fa-4x text-warning mb-4"></i>
+                <h2 class="mb-4">Integrations Not Available</h2>
+                <p class="lead text-muted mb-4">
+                    The Kubernetes and Docker integrations require additional dependencies to be installed.
+                </p>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Required Dependencies</h5>
+                    </div>
+                    <div class="card-body text-start">
+                        <p>To enable real-time integrations, please install the following:</p>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>Kubernetes Integration:</strong>
+                                <code>kubernetes</code> Python package
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Docker Integration:</strong>
+                                <code>docker</code> Python package
+                            </li>
+                        </ul>
+                        
+                        <hr>
+                        
+                        <p class="text-muted mb-0">
+                            These dependencies have been automatically installed. Please restart the application
+                            if the integrations are still not available.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Return to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
