@@ -272,24 +272,25 @@ function initializeComplianceFrameworkChart() {
             datasets: [{
                 label: 'Compliance Score',
                 data: [85, 88, 75, 82, 90],
-                backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                borderColor: '#3b82f6',
+                borderWidth: 3,
                 pointBackgroundColor: [
-                    'rgb(34, 197, 94)',    // Green for HIPAA
-                    'rgb(59, 130, 246)',   // Blue for HITRUST
-                    'rgb(249, 115, 22)',   // Orange for FDA
-                    'rgb(168, 85, 247)',   // Purple for GDPR
-                    'rgb(236, 72, 153)'    // Pink for SOC2
+                    '#22c55e',    // Green for HIPAA
+                    '#3b82f6',   // Blue for HITRUST
+                    '#f97316',   // Orange for FDA
+                    '#a855f7',   // Purple for GDPR
+                    '#ec4899'    // Pink for SOC2
                 ],
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
                 pointHoverBackgroundColor: '#fff',
                 pointHoverBorderColor: [
-                    'rgb(34, 197, 94)',
-                    'rgb(59, 130, 246)',
-                    'rgb(249, 115, 22)',
-                    'rgb(168, 85, 247)',
-                    'rgb(236, 72, 153)'
+                    '#22c55e',
+                    '#3b82f6',
+                    '#f97316',
+                    '#a855f7',
+                    '#ec4899'
                 ],
                 pointHoverBorderWidth: 3,
                 pointRadius: 5,
