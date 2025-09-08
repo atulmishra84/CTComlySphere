@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Healthcare AI Compliance Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-3">
+                <i class="fas fa-tachometer-alt me-3"></i>
+                Healthcare AI Compliance Dashboard
+            </h1>
+            <p class="text-muted">
+                Comprehensive overview of AI agent discovery, security scanning, and compliance status
+            </p>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scanModal">
+                <i class="fas fa-play me-2"></i>Start New Scan
+            </button>
+        </div>
+    </div>
+
+    <!-- Key Metrics Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="card-title">{{ total_agents }}</h3>
+                            <p class="card-text">AI Agents Discovered</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-robot fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="card-title">{{ compliance_summary.get('HIPAA', {}).get('compliant_percentage', 0) }}%</h3>
+                            <p class="card-text">HIPAA Compliance Rate</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-shield-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="card-title">{{ risk_distribution.get('HIGH', 0) + risk_distribution.get('CRITICAL', 0) }}</h3>
+                            <p class="card-text">High-Risk Systems</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="card-title">{{ recent_scans|length }}</h3>
+                            <p class="card-text">Recent Scans (24h)</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-search fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Analytics Row -->
+    <div class="row mb-4">
+        <!-- Risk Distribution Chart -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Risk Level Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="riskDistributionChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Compliance Scores Chart -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Compliance Framework Scores
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="complianceScoresChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Protocol Distribution and Recent Activity Row -->
+    <div class="row mb-4">
+        <!-- Protocol Distribution -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-network-wired me-2"></i>
+                        Protocol Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="protocolList">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span><i class="fab fa-docker me-2"></i>Docker</span>
+                            <span class="badge bg-secondary">12</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span><i class="fas fa-dharmachakra me-2"></i>Kubernetes</span>
+                            <span class="badge bg-secondary">8</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span><i class="fas fa-globe me-2"></i>REST API</span>
+                            <span class="badge bg-secondary">15</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span><i class="fas fa-stream me-2"></i>gRPC</span>
+                            <span class="badge bg-secondary">6</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span><i class="fas fa-exchange-alt me-2"></i>WebSocket</span>
+                            <span class="badge bg-secondary">4</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span><i class="fas fa-satellite me-2"></i>MQTT</span>
+                            <span class="badge bg-secondary">3</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Scan Activity -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Recent Scan Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_scans %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Agent</th>
+                                        <th>Risk Level</th>
+                                        <th>Vulnerabilities</th>
+                                        <th>PHI Exposure</th>
+                                        <th>Scan Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for scan in recent_scans[:5] %}
+                                    <tr>
+                                        <td>
+                                            <small>{{ scan.ai_agent.name if scan.ai_agent else 'Unknown' }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'danger' if scan.risk_level.value == 'CRITICAL' else 'warning' if scan.risk_level.value == 'HIGH' else 'secondary' }}">
+                                                {{ scan.risk_level.value }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small>{{ scan.vulnerabilities_found }}</small>
+                                        </td>
+                                        <td>
+                                            <small>
+                                                {% if scan.phi_exposure_detected %}
+                                                    <i class="fas fa-exclamation-triangle text-warning"></i> Yes
+                                                {% else %}
+                                                    <i class="fas fa-check text-success"></i> No
+                                                {% endif %}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ scan.created_at.strftime('%m/%d %H:%M') }}</small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-search fa-2x mb-2"></i>
+                            <p>No recent scan activity</p>
+                            <small>Start a new scan to see results here</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compliance Framework Summary -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clipboard-check me-2"></i>
+                        Compliance Framework Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for framework, data in compliance_summary.items() %}
+                        <div class="col-md-2 col-sm-6 mb-3">
+                            <div class="text-center">
+                                <h6 class="mb-2">{{ framework.replace('_', ' ') }}</h6>
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div class="progress-bar 
+                                        {% if data.average_score >= 80 %}bg-success
+                                        {% elif data.average_score >= 60 %}bg-warning
+                                        {% else %}bg-danger{% endif %}" 
+                                        style="width: {{ data.average_score }}%"></div>
+                                </div>
+                                <small class="text-muted">{{ data.average_score }}% avg</small><br>
+                                <small class="text-muted">{{ data.compliant_percentage }}% compliant</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Start Scan Modal -->
+<div class="modal fade" id="scanModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('start_scan') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-play me-2"></i>
+                        Start New Compliance Scan
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Select Protocols to Scan</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="protocols" value="kubernetes" checked>
+                                <label class="form-check-label">
+                                    <i class="fas fa-dharmachakra me-2"></i>Kubernetes
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="protocols" value="docker" checked>
+                                <label class="form-check-label">
+                                    <i class="fab fa-docker me-2"></i>Docker
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="protocols" value="rest_api" checked>
+                                <label class="form-check-label">
+                                    <i class="fas fa-globe me-2"></i>REST API
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="protocols" value="grpc">
+                                <label class="form-check-label">
+                                    <i class="fas fa-stream me-2"></i>gRPC
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Additional Protocols</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="protocols" value="websocket">
+                                <label class="form-check-label">
+                                    <i class="fas fa-exchange-alt me-2"></i>WebSocket
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="protocols" value="mqtt">
+                                <label class="form-check-label">
+                                    <i class="fas fa-satellite me-2"></i>MQTT
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="protocols" value="graphql">
+                                <label class="form-check-label">
+                                    <i class="fas fa-project-diagram me-2"></i>GraphQL
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="mb-3">Cloud Providers</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="cloud_providers" value="aws">
+                                <label class="form-check-label">
+                                    <i class="fab fa-aws me-2"></i>AWS
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="cloud_providers" value="azure">
+                                <label class="form-check-label">
+                                    <i class="fab fa-microsoft me-2"></i>Azure
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="cloud_providers" value="gcp">
+                                <label class="form-check-label">
+                                    <i class="fab fa-google me-2"></i>GCP
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play me-2"></i>Start Scan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize charts on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+});
+
+function initializeCharts() {
+    // Risk Distribution Chart
+    const riskCtx = document.getElementById('riskDistributionChart').getContext('2d');
+    new Chart(riskCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Low', 'Medium', 'High', 'Critical'],
+            datasets: [{
+                data: [
+                    {{ risk_distribution.get('LOW', 0) }},
+                    {{ risk_distribution.get('MEDIUM', 0) }},
+                    {{ risk_distribution.get('HIGH', 0) }},
+                    {{ risk_distribution.get('CRITICAL', 0) }}
+                ],
+                backgroundColor: [
+                    'var(--bs-success)',
+                    'var(--bs-warning)',
+                    'var(--bs-danger)',
+                    '#dc3545'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Compliance Scores Chart
+    const complianceCtx = document.getElementById('complianceScoresChart').getContext('2d');
+    new Chart(complianceCtx, {
+        type: 'bar',
+        data: {
+            labels: [
+                {% for framework in compliance_summary.keys() %}
+                '{{ framework.replace("_", " ") }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Compliance Score %',
+                data: [
+                    {% for data in compliance_summary.values() %}
+                    {{ data.average_score }},
+                    {% endfor %}
+                ],
+                backgroundColor: 'var(--bs-primary)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,476 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Results - Healthcare AI Compliance Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-3">
+                <i class="fas fa-search me-3"></i>
+                AI Agent Scan Results
+            </h1>
+            <p class="text-muted">
+                Discovered AI agents with security scanning and risk assessment results
+            </p>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-primary" onclick="location.href='{{ url_for('start_scan') }}'">
+                <i class="fas fa-refresh me-2"></i>Refresh Scans
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ agents.total }}</h4>
+                            <p class="card-text mb-0">Total Agents</p>
+                        </div>
+                        <i class="fas fa-robot fa-2x align-self-center"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ agent_data | selectattr('latest_scan') | selectattr('latest_scan.risk_level.value', 'equalto', 'LOW') | list | length }}</h4>
+                            <p class="card-text mb-0">Low Risk</p>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x align-self-center"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ agent_data | selectattr('latest_scan') | selectattr('latest_scan.risk_level.value', 'in', ['MEDIUM', 'HIGH']) | list | length }}</h4>
+                            <p class="card-text mb-0">Medium/High Risk</p>
+                        </div>
+                        <i class="fas fa-exclamation-triangle fa-2x align-self-center"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ agent_data | selectattr('latest_scan') | selectattr('latest_scan.risk_level.value', 'equalto', 'CRITICAL') | list | length }}</h4>
+                            <p class="card-text mb-0">Critical Risk</p>
+                        </div>
+                        <i class="fas fa-skull fa-2x align-self-center"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Protocol</label>
+                            <select name="protocol" class="form-select">
+                                <option value="">All Protocols</option>
+                                <option value="kubernetes">Kubernetes</option>
+                                <option value="docker">Docker</option>
+                                <option value="rest_api">REST API</option>
+                                <option value="grpc">gRPC</option>
+                                <option value="websocket">WebSocket</option>
+                                <option value="mqtt">MQTT</option>
+                                <option value="graphql">GraphQL</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Risk Level</label>
+                            <select name="risk_level" class="form-select">
+                                <option value="">All Risk Levels</option>
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="HIGH">High</option>
+                                <option value="CRITICAL">Critical</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Cloud Provider</label>
+                            <select name="cloud_provider" class="form-select">
+                                <option value="">All Providers</option>
+                                <option value="AWS">AWS</option>
+                                <option value="Azure">Azure</option>
+                                <option value="GCP">GCP</option>
+                                <option value="Local">Local</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-secondary me-2">
+                                <i class="fas fa-filter me-1"></i>Filter
+                            </button>
+                            <a href="{{ url_for('scan_results') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan Results Table -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Discovered AI Agents
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if agent_data %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Agent Name</th>
+                                        <th>Type</th>
+                                        <th>Protocol</th>
+                                        <th>Cloud Provider</th>
+                                        <th>Risk Level</th>
+                                        <th>Vulnerabilities</th>
+                                        <th>PHI Exposure</th>
+                                        <th>Compliance</th>
+                                        <th>Last Scan</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for data in agent_data %}
+                                    {% set agent = data.agent %}
+                                    {% set scan = data.latest_scan %}
+                                    {% set compliance = data.latest_compliance %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">{{ agent.name }}</div>
+                                            <small class="text-muted">{{ agent.endpoint }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ agent.type }}</span>
+                                        </td>
+                                        <td>
+                                            {% if agent.protocol == 'kubernetes' %}
+                                                <i class="fas fa-dharmachakra me-1"></i>
+                                            {% elif agent.protocol == 'docker' %}
+                                                <i class="fab fa-docker me-1"></i>
+                                            {% elif agent.protocol == 'rest_api' %}
+                                                <i class="fas fa-globe me-1"></i>
+                                            {% elif agent.protocol == 'grpc' %}
+                                                <i class="fas fa-stream me-1"></i>
+                                            {% elif agent.protocol == 'websocket' %}
+                                                <i class="fas fa-exchange-alt me-1"></i>
+                                            {% elif agent.protocol == 'mqtt' %}
+                                                <i class="fas fa-satellite me-1"></i>
+                                            {% elif agent.protocol == 'graphql' %}
+                                                <i class="fas fa-project-diagram me-1"></i>
+                                            {% endif %}
+                                            {{ agent.protocol.replace('_', ' ').title() }}
+                                        </td>
+                                        <td>
+                                            {% if agent.cloud_provider == 'AWS' %}
+                                                <i class="fab fa-aws me-1"></i>
+                                            {% elif agent.cloud_provider == 'Azure' %}
+                                                <i class="fab fa-microsoft me-1"></i>
+                                            {% elif agent.cloud_provider == 'GCP' %}
+                                                <i class="fab fa-google me-1"></i>
+                                            {% else %}
+                                                <i class="fas fa-server me-1"></i>
+                                            {% endif %}
+                                            {{ agent.cloud_provider }}
+                                        </td>
+                                        <td>
+                                            {% if scan %}
+                                                {% if scan.risk_level.value == 'CRITICAL' %}
+                                                    <span class="badge bg-danger">{{ scan.risk_level.value }}</span>
+                                                {% elif scan.risk_level.value == 'HIGH' %}
+                                                    <span class="badge bg-warning">{{ scan.risk_level.value }}</span>
+                                                {% elif scan.risk_level.value == 'MEDIUM' %}
+                                                    <span class="badge bg-info">{{ scan.risk_level.value }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">{{ scan.risk_level.value }}</span>
+                                                {% endif %}
+                                                <div class="small text-muted">Score: {{ scan.risk_score }}</div>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Not Scanned</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if scan %}
+                                                <span class="badge bg-{{ 'danger' if scan.vulnerabilities_found > 5 else 'warning' if scan.vulnerabilities_found > 2 else 'success' }}">
+                                                    {{ scan.vulnerabilities_found }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if scan %}
+                                                {% if scan.phi_exposure_detected %}
+                                                    <span class="text-danger">
+                                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                                        Yes
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-success">
+                                                        <i class="fas fa-check me-1"></i>
+                                                        No
+                                                    </span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if compliance %}
+                                                {% if compliance.is_compliant %}
+                                                    <span class="text-success">
+                                                        <i class="fas fa-check-circle me-1"></i>
+                                                        {{ compliance.compliance_score }}%
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-danger">
+                                                        <i class="fas fa-times-circle me-1"></i>
+                                                        {{ compliance.compliance_score }}%
+                                                    </span>
+                                                {% endif %}
+                                                <div class="small text-muted">{{ compliance.framework.value }}</div>
+                                            {% else %}
+                                                <span class="text-muted">Not Evaluated</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if scan %}
+                                                <div>{{ scan.created_at.strftime('%m/%d/%Y') }}</div>
+                                                <small class="text-muted">{{ scan.created_at.strftime('%H:%M') }}</small>
+                                            {% else %}
+                                                <span class="text-muted">Never</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('evaluate_compliance', agent_id=agent.id) }}" 
+                                                   class="btn btn-outline-primary" title="Evaluate Compliance">
+                                                    <i class="fas fa-clipboard-check"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-outline-info" 
+                                                        data-bs-toggle="modal" data-bs-target="#agentModal{{ agent.id }}"
+                                                        title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5>No AI Agents Found</h5>
+                            <p class="text-muted">No AI agents have been discovered yet. Start a new scan to discover agents in your environment.</p>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                                <i class="fas fa-play me-2"></i>Start New Scan
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if agents.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col">
+            <nav aria-label="Scan results pagination">
+                <ul class="pagination justify-content-center">
+                    {% if agents.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('scan_results', page=agents.prev_num) }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page in agents.iter_pages() %}
+                        {% if page %}
+                            {% if page != agents.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('scan_results', page=page) }}">{{ page }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if agents.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('scan_results', page=agents.next_num) }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Agent Detail Modals -->
+{% for data in agent_data %}
+{% set agent = data.agent %}
+{% set scan = data.latest_scan %}
+<div class="modal fade" id="agentModal{{ agent.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-robot me-2"></i>
+                    {{ agent.name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Agent Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Type:</strong></td>
+                                <td>{{ agent.type }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Protocol:</strong></td>
+                                <td>{{ agent.protocol }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Endpoint:</strong></td>
+                                <td><code>{{ agent.endpoint }}</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cloud Provider:</strong></td>
+                                <td>{{ agent.cloud_provider }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Region:</strong></td>
+                                <td>{{ agent.region }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Discovered:</strong></td>
+                                <td>{{ agent.discovered_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        {% if scan %}
+                        <h6>Latest Scan Results</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Risk Score:</strong></td>
+                                <td>{{ scan.risk_score }}/100</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Risk Level:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if scan.risk_level.value == 'CRITICAL' else 'warning' if scan.risk_level.value == 'HIGH' else 'info' if scan.risk_level.value == 'MEDIUM' else 'success' }}">
+                                        {{ scan.risk_level.value }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Vulnerabilities:</strong></td>
+                                <td>{{ scan.vulnerabilities_found }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PHI Exposure:</strong></td>
+                                <td>
+                                    {% if scan.phi_exposure_detected %}
+                                        <span class="text-danger">Yes</span>
+                                    {% else %}
+                                        <span class="text-success">No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Scan Duration:</strong></td>
+                                <td>{{ "%.2f"|format(scan.scan_duration) }}s</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Scan Date:</strong></td>
+                                <td>{{ scan.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                        </table>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No scan results available for this agent.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if scan and scan.recommendations %}
+                <hr>
+                <h6>Security Recommendations</h6>
+                <div class="list-group list-group-flush">
+                    {% for rec in scan.recommendations %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">
+                                <span class="badge bg-{{ 'danger' if rec.priority == 'critical' else 'warning' if rec.priority == 'high' else 'info' }}">
+                                    {{ rec.priority.title() }}
+                                </span>
+                                {{ rec.category.replace('_', ' ').title() }}
+                            </h6>
+                        </div>
+                        <p class="mb-1">{{ rec.description }}</p>
+                        <small><strong>Action:</strong> {{ rec.action }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('evaluate_compliance', agent_id=agent.id) }}" class="btn btn-primary">
+                    <i class="fas fa-clipboard-check me-2"></i>Evaluate Compliance
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

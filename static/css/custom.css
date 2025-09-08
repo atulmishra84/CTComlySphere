@@ -1,0 +1,549 @@
+/**
+ * Custom CSS for Healthcare AI Compliance Platform
+ * Extends Bootstrap dark theme with healthcare-specific styling
+ */
+
+/* Root variables for healthcare AI theme */
+:root {
+    --healthcare-primary: #4a90e2;
+    --healthcare-secondary: #7b68ee;
+    --healthcare-success: #28a745;
+    --healthcare-danger: #dc3545;
+    --healthcare-warning: #ffc107;
+    --healthcare-info: #17a2b8;
+    --healthcare-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --pulse-animation: pulse 2s infinite;
+    --glow-blue: 0 0 20px rgba(74, 144, 226, 0.5);
+    --glow-red: 0 0 20px rgba(220, 53, 69, 0.5);
+    --glow-green: 0 0 20px rgba(40, 167, 69, 0.5);
+}
+
+/* Custom gradient backgrounds for key metrics */
+.bg-gradient {
+    background: var(--healthcare-gradient) !important;
+}
+
+.card.bg-gradient {
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Healthcare-specific card styling */
+.card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Risk level indicators */
+.risk-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.risk-low { background-color: var(--healthcare-success); }
+.risk-medium { background-color: var(--healthcare-warning); }
+.risk-high { background-color: var(--healthcare-danger); }
+.risk-critical { 
+    background-color: var(--healthcare-danger);
+    animation: var(--pulse-animation);
+    box-shadow: var(--glow-red);
+}
+
+/* Protocol icons styling */
+.protocol-icon {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    margin-right: 8px;
+    font-size: 14px;
+    color: white;
+}
+
+.protocol-kubernetes { background-color: #326ce5; }
+.protocol-docker { background-color: #2496ed; }
+.protocol-rest-api { background-color: #61dafb; }
+.protocol-grpc { background-color: #4285f4; }
+.protocol-websocket { background-color: #010101; }
+.protocol-mqtt { background-color: #660066; }
+.protocol-graphql { background-color: #e10098; }
+
+/* Compliance status styling */
+.compliance-status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.compliance-compliant {
+    background-color: rgba(40, 167, 69, 0.2);
+    color: var(--healthcare-success);
+    border: 1px solid var(--healthcare-success);
+}
+
+.compliance-non-compliant {
+    background-color: rgba(220, 53, 69, 0.2);
+    color: var(--healthcare-danger);
+    border: 1px solid var(--healthcare-danger);
+}
+
+.compliance-partial {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: var(--healthcare-warning);
+    border: 1px solid var(--healthcare-warning);
+}
+
+/* Advanced table styling */
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+.table th {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+}
+
+/* Progress bar enhancements */
+.progress {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    transition: width 0.6s ease;
+}
+
+.progress-animated {
+    background-size: 1rem 1rem;
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+/* Scan progress styling */
+.scan-progress {
+    position: relative;
+    background: linear-gradient(45deg, transparent 25%, rgba(255,255,255,.1) 25%, rgba(255,255,255,.1) 50%, transparent 50%, transparent 75%, rgba(255,255,255,.1) 75%);
+    background-size: 1rem 1rem;
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+/* Alert enhancements */
+.alert {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%);
+    border-left: 4px solid var(--healthcare-success);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.05) 100%);
+    border-left: 4px solid var(--healthcare-danger);
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+    border-left: 4px solid var(--healthcare-warning);
+}
+
+.alert-info {
+    background: linear-gradient(135deg, rgba(23, 162, 184, 0.1) 0%, rgba(23, 162, 184, 0.05) 100%);
+    border-left: 4px solid var(--healthcare-info);
+}
+
+/* Modal enhancements */
+.modal-content {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Button enhancements */
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+    background: var(--healthcare-gradient);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #8b7bc7 100%);
+}
+
+/* Badge enhancements */
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* Loading states */
+.loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Emergency scan state */
+.emergency-scan {
+    animation: emergency-pulse 1s infinite alternate;
+}
+
+@keyframes emergency-pulse {
+    from { 
+        box-shadow: var(--glow-red);
+        border-color: var(--healthcare-danger);
+    }
+    to { 
+        box-shadow: 0 0 30px rgba(220, 53, 69, 0.8);
+        border-color: rgba(220, 53, 69, 0.8);
+    }
+}
+
+/* Chart container styling */
+.chart-container {
+    position: relative;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+/* Analytics dashboard specific styles */
+.analytics-metric {
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.analytics-metric h4 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.analytics-metric p {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin-bottom: 0.25rem;
+}
+
+.analytics-metric small {
+    font-size: 0.875rem;
+    opacity: 0.7;
+}
+
+/* Data flow visualization styles */
+.data-flow-tooltip {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.4;
+    max-width: 200px;
+}
+
+.node {
+    transition: r 0.2s ease, stroke-width 0.2s ease;
+}
+
+.node:hover {
+    filter: brightness(1.2);
+}
+
+.link {
+    transition: opacity 0.3s ease;
+}
+
+/* Multi-cloud provider styling */
+.cloud-aws { background: linear-gradient(135deg, #ff9a00 0%, #ffad33 100%); }
+.cloud-azure { background: linear-gradient(135deg, #0078d4 0%, #4db6e6 100%); }
+.cloud-gcp { background: linear-gradient(135deg, #4285f4 0%, #34a853 100%); }
+
+/* Timeline styling */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--healthcare-primary), var(--healthcare-secondary));
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    border-left: 3px solid var(--healthcare-primary);
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -23px;
+    top: 15px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--bs-body-bg);
+    z-index: 1;
+}
+
+.timeline-simple .timeline-item {
+    border-left: 3px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 10px;
+    padding: 8px 12px;
+}
+
+/* Webhook status indicators */
+.webhook-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: var(--pulse-animation);
+}
+
+.status-active { background-color: var(--healthcare-success); }
+.status-inactive { background-color: var(--bs-secondary); animation: none; }
+.status-error { background-color: var(--healthcare-danger); }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .analytics-metric h4 {
+        font-size: 2rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .timeline {
+        padding-left: 20px;
+    }
+    
+    .timeline-marker {
+        left: -18px;
+        width: 12px;
+        height: 12px;
+    }
+}
+
+/* Accessibility improvements */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+    border-color: var(--healthcare-primary);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .card {
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .badge {
+        border: 1px solid currentColor;
+    }
+    
+    .progress {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .loading::after {
+        animation: none;
+    }
+    
+    .emergency-scan {
+        animation: none;
+        box-shadow: var(--glow-red);
+    }
+}
+
+/* Print styles */
+@media print {
+    .navbar,
+    .btn,
+    .modal,
+    .alert-dismissible .btn-close {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+    }
+    
+    .table {
+        border-collapse: collapse !important;
+    }
+    
+    .table th,
+    .table td {
+        border: 1px solid #000 !important;
+    }
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--healthcare-primary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--healthcare-secondary);
+}
+
+/* Focus indicators for better accessibility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Animation classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+@keyframes progress-bar-stripes {
+    0% { background-position: 1rem 0; }
+    100% { background-position: 0 0; }
+}
+
+/* Utility classes */
+.text-gradient {
+    background: var(--healthcare-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.border-gradient {
+    border: 2px solid transparent;
+    background: linear-gradient(var(--bs-body-bg), var(--bs-body-bg)) padding-box,
+                var(--healthcare-gradient) border-box;
+}
+
+.shadow-healthcare {
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.2) !important;
+}
+
+.glow {
+    box-shadow: var(--glow-blue);
+}
+
+.glow-success {
+    box-shadow: var(--glow-green);
+}
+
+.glow-danger {
+    box-shadow: var(--glow-red);
+}

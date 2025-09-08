@@ -1,0 +1,164 @@
+{
+  "supported_protocols": [
+    {
+      "name": "kubernetes",
+      "display_name": "Kubernetes",
+      "description": "Container orchestration platform for AI workloads",
+      "default_ports": [8080, 6443, 10250],
+      "healthcare_use_cases": [
+        "Medical imaging AI containers",
+        "Clinical decision support systems",
+        "Healthcare microservices"
+      ],
+      "security_considerations": [
+        "Pod security policies",
+        "Network policies",
+        "RBAC configuration",
+        "Secrets management"
+      ],
+      "compliance_frameworks": ["HIPAA", "HITRUST_CSF", "SOC2_TYPE_II"]
+    },
+    {
+      "name": "docker",
+      "display_name": "Docker",
+      "description": "Containerized AI applications and services",
+      "default_ports": [2375, 2376, 8080, 8501],
+      "healthcare_use_cases": [
+        "Drug discovery AI models",
+        "EHR AI assistants",
+        "Medical data processing"
+      ],
+      "security_considerations": [
+        "Container image scanning",
+        "Runtime security",
+        "Network isolation",
+        "Volume encryption"
+      ],
+      "compliance_frameworks": ["HIPAA", "GDPR", "FDA_SAMD"]
+    },
+    {
+      "name": "rest_api",
+      "display_name": "REST API",
+      "description": "RESTful web services for AI inference and management",
+      "default_ports": [80, 443, 8080, 8000, 5000],
+      "healthcare_use_cases": [
+        "Medical imaging analysis APIs",
+        "Clinical data processing",
+        "Healthcare chatbots",
+        "Diagnostic assistance APIs"
+      ],
+      "security_considerations": [
+        "HTTPS encryption",
+        "API authentication",
+        "Rate limiting",
+        "Input validation"
+      ],
+      "compliance_frameworks": ["HIPAA", "GDPR", "HITRUST_CSF", "SOC2_TYPE_II"]
+    },
+    {
+      "name": "grpc",
+      "display_name": "gRPC",
+      "description": "High-performance RPC framework for AI services",
+      "default_ports": [9090, 9091, 50051, 50052],
+      "healthcare_use_cases": [
+        "Real-time medical data streaming",
+        "High-throughput AI inference",
+        "Medical device communication",
+        "Microservices architecture"
+      ],
+      "security_considerations": [
+        "TLS encryption",
+        "Authentication metadata",
+        "Service mesh security",
+        "Certificate management"
+      ],
+      "compliance_frameworks": ["HIPAA", "FDA_SAMD", "HITRUST_CSF"]
+    },
+    {
+      "name": "websocket",
+      "display_name": "WebSocket",
+      "description": "Real-time bidirectional communication for healthcare AI",
+      "default_ports": [8080, 8081, 3000, 8765],
+      "healthcare_use_cases": [
+        "Real-time patient monitoring",
+        "Telemedicine platforms",
+        "Live medical consultations",
+        "IoT health device communication"
+      ],
+      "security_considerations": [
+        "WSS (WebSocket Secure)",
+        "Origin validation",
+        "Authentication tokens",
+        "Message encryption"
+      ],
+      "compliance_frameworks": ["HIPAA", "GDPR", "HITRUST_CSF"]
+    },
+    {
+      "name": "mqtt",
+      "display_name": "MQTT",
+      "description": "Lightweight messaging for medical IoT and AI devices",
+      "default_ports": [1883, 8883, 8884],
+      "healthcare_use_cases": [
+        "Medical IoT devices",
+        "Patient monitoring sensors",
+        "Smart hospital infrastructure",
+        "Wearable health devices"
+      ],
+      "security_considerations": [
+        "TLS encryption (MQTTS)",
+        "Client certificates",
+        "Topic access control",
+        "Message payload encryption"
+      ],
+      "compliance_frameworks": ["HIPAA", "FDA_SAMD", "GDPR"]
+    },
+    {
+      "name": "graphql",
+      "display_name": "GraphQL",
+      "description": "Flexible query language for healthcare AI APIs",
+      "default_ports": [4000, 8080, 3000],
+      "healthcare_use_cases": [
+        "Healthcare data aggregation",
+        "Clinical research APIs",
+        "Patient portal backends",
+        "Medical record integration"
+      ],
+      "security_considerations": [
+        "Query depth limiting",
+        "Rate limiting",
+        "Schema introspection control",
+        "Field-level authorization"
+      ],
+      "compliance_frameworks": ["HIPAA", "GDPR", "HITRUST_CSF", "SOC2_TYPE_II"]
+    }
+  ],
+  "scanning_configurations": {
+    "timeout_seconds": 30,
+    "max_concurrent_scans": 10,
+    "retry_attempts": 3,
+    "scan_frequency_hours": 24,
+    "high_priority_protocols": ["kubernetes", "rest_api", "grpc"]
+  },
+  "compliance_mappings": {
+    "HIPAA": {
+      "critical_protocols": ["rest_api", "websocket", "mqtt"],
+      "required_security": ["encryption", "authentication", "audit_logging"]
+    },
+    "HITRUST_CSF": {
+      "critical_protocols": ["kubernetes", "docker", "grpc"],
+      "required_security": ["access_control", "network_security", "data_protection"]
+    },
+    "FDA_SAMD": {
+      "critical_protocols": ["grpc", "mqtt", "docker"],
+      "required_security": ["validation", "traceability", "change_control"]
+    },
+    "GDPR": {
+      "critical_protocols": ["rest_api", "websocket", "graphql"],
+      "required_security": ["consent_management", "data_minimization", "encryption"]
+    },
+    "SOC2_TYPE_II": {
+      "critical_protocols": ["kubernetes", "rest_api", "graphql"],
+      "required_security": ["logical_access", "monitoring", "confidentiality"]
+    }
+  }
+}

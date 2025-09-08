@@ -1,0 +1,289 @@
+{
+  "frameworks": {
+    "HIPAA": {
+      "name": "Health Insurance Portability and Accountability Act",
+      "version": "2013 Final Rule",
+      "jurisdiction": "United States",
+      "applicable_entities": [
+        "Covered entities",
+        "Business associates",
+        "Healthcare AI vendors",
+        "Medical device manufacturers"
+      ],
+      "key_requirements": {
+        "administrative_safeguards": {
+          "description": "Administrative actions and policies to manage security",
+          "controls": [
+            "Conduct an accurate and thorough assessment of potential risks",
+            "Implement procedures to authorize access to PHI",
+            "Implement procedures for workforce training",
+            "Implement procedures to address security incidents",
+            "Establish business associate agreements"
+          ]
+        },
+        "physical_safeguards": {
+          "description": "Physical measures to protect electronic systems",
+          "controls": [
+            "Implement policies for facility access and control",
+            "Implement policies for workstation use",
+            "Implement policies for device and media controls"
+          ]
+        },
+        "technical_safeguards": {
+          "description": "Technology controls to protect and control access to PHI",
+          "controls": [
+            "Implement procedures for access control",
+            "Implement hardware, software, and procedural mechanisms for audit controls",
+            "Implement procedures to guard against unauthorized access to PHI",
+            "Implement procedures for person or entity authentication",
+            "Implement technical security measures for transmission security"
+          ]
+        }
+      },
+      "penalties": {
+        "willful_neglect_corrected": "$1,000 - $50,000 per violation",
+        "willful_neglect_not_corrected": "$10,000 - $50,000 per violation",
+        "criminal_penalties": "Up to $250,000 and 10 years imprisonment"
+      }
+    },
+    "HITRUST_CSF": {
+      "name": "HITRUST Common Security Framework",
+      "version": "9.6",
+      "jurisdiction": "International",
+      "applicable_entities": [
+        "Healthcare organizations",
+        "Healthcare technology vendors",
+        "Business associates",
+        "Cloud service providers"
+      ],
+      "key_requirements": {
+        "control_categories": [
+          "Information Security Management",
+          "Access Control",
+          "Human Resources Security",
+          "Physical and Environmental Security",
+          "Communications and Operations Management",
+          "Information Systems Acquisition",
+          "Information Security Incident Management",
+          "Business Continuity Management",
+          "Compliance"
+        ],
+        "maturity_levels": [
+          "Level 1: Basic - Fundamental security controls",
+          "Level 2: Advanced - Enhanced security controls",
+          "Level 3: Innovative - Leading-edge security controls"
+        ],
+        "assessment_types": [
+          "Self-Assessment",
+          "Validated Assessment",
+          "Certified Assessment"
+        ]
+      },
+      "certification_benefits": [
+        "Reduced audit fatigue",
+        "Standardized compliance approach",
+        "Risk-based framework",
+        "Industry recognition"
+      ]
+    },
+    "FDA_SAMD": {
+      "name": "FDA Software as Medical Device Guidance",
+      "version": "2021 Update",
+      "jurisdiction": "United States",
+      "applicable_entities": [
+        "Medical device manufacturers",
+        "Software developers",
+        "AI/ML algorithm developers",
+        "Healthcare technology companies"
+      ],
+      "key_requirements": {
+        "software_categories": {
+          "Class_I": "Low risk software with minimal patient impact",
+          "Class_II": "Moderate risk software requiring special controls",
+          "Class_III": "High risk software requiring premarket approval"
+        },
+        "quality_system_requirements": [
+          "Design controls",
+          "Risk management (ISO 14971)",
+          "Software lifecycle processes (IEC 62304)",
+          "Clinical evaluation",
+          "Post-market surveillance"
+        ],
+        "cybersecurity_requirements": [
+          "Security risk assessment",
+          "Security controls implementation",
+          "Vulnerability management",
+          "Incident response procedures"
+        ],
+        "ai_ml_specific": [
+          "Algorithm validation and verification",
+          "Training data quality and bias assessment",
+          "Model performance monitoring",
+          "Continuous learning considerations"
+        ]
+      },
+      "regulatory_pathways": [
+        "510(k) Premarket Notification",
+        "De Novo Classification",
+        "Premarket Approval (PMA)",
+        "Software Precertification Program"
+      ]
+    },
+    "GDPR": {
+      "name": "General Data Protection Regulation",
+      "version": "2018",
+      "jurisdiction": "European Union",
+      "applicable_entities": [
+        "Data controllers",
+        "Data processors",
+        "Healthcare organizations",
+        "AI system operators"
+      ],
+      "key_requirements": {
+        "lawful_basis": [
+          "Consent",
+          "Contract",
+          "Legal obligation",
+          "Vital interests",
+          "Public task",
+          "Legitimate interests"
+        ],
+        "data_subject_rights": [
+          "Right to information",
+          "Right of access",
+          "Right to rectification",
+          "Right to erasure",
+          "Right to restrict processing",
+          "Right to data portability",
+          "Right to object",
+          "Rights related to automated decision making"
+        ],
+        "privacy_principles": [
+          "Lawfulness, fairness and transparency",
+          "Purpose limitation",
+          "Data minimisation",
+          "Accuracy",
+          "Storage limitation",
+          "Integrity and confidentiality",
+          "Accountability"
+        ],
+        "special_protections": {
+          "health_data": "Explicit consent or substantial public interest required",
+          "automated_decision_making": "Right not to be subject to automated processing",
+          "children_data": "Enhanced protection for individuals under 16"
+        }
+      },
+      "penalties": {
+        "administrative_fines": "Up to 4% of annual global turnover or €20 million",
+        "data_subject_compensation": "Material and non-material damages"
+      }
+    },
+    "SOC2_TYPE_II": {
+      "name": "Service Organization Control 2 Type II",
+      "version": "2017 Trust Services Criteria",
+      "jurisdiction": "United States (widely adopted internationally)",
+      "applicable_entities": [
+        "Service organizations",
+        "Cloud service providers",
+        "SaaS companies",
+        "Healthcare technology vendors"
+      ],
+      "key_requirements": {
+        "trust_service_categories": {
+          "security": {
+            "description": "Protection against unauthorized access",
+            "criteria": [
+              "Logical and physical access controls",
+              "System operations",
+              "Change management",
+              "Risk mitigation"
+            ]
+          },
+          "availability": {
+            "description": "System availability for operation and use",
+            "criteria": [
+              "System monitoring",
+              "Backup and recovery procedures",
+              "Capacity management"
+            ]
+          },
+          "processing_integrity": {
+            "description": "System processing is complete, valid, accurate, timely",
+            "criteria": [
+              "Data input completeness and accuracy",
+              "Data processing completeness and accuracy",
+              "Data output completeness and accuracy"
+            ]
+          },
+          "confidentiality": {
+            "description": "Protection of confidential information",
+            "criteria": [
+              "Access restrictions",
+              "Data encryption",
+              "Secure disposal"
+            ]
+          },
+          "privacy": {
+            "description": "Personal information protection",
+            "criteria": [
+              "Notice and communication",
+              "Choice and consent",
+              "Collection and retention",
+              "Use and disclosure"
+            ]
+          }
+        },
+        "report_types": {
+          "Type_I": "Design effectiveness at a point in time",
+          "Type_II": "Operating effectiveness over a period of time (minimum 6 months)"
+        }
+      },
+      "audit_requirements": [
+        "Independent CPA firm",
+        "Management assertion",
+        "Testing of controls",
+        "Exception reporting"
+      ]
+    }
+  },
+  "cross_framework_mappings": {
+    "common_controls": {
+      "access_control": ["HIPAA", "HITRUST_CSF", "SOC2_TYPE_II"],
+      "encryption": ["HIPAA", "GDPR", "HITRUST_CSF", "SOC2_TYPE_II"],
+      "audit_logging": ["HIPAA", "HITRUST_CSF", "SOC2_TYPE_II", "FDA_SAMD"],
+      "incident_response": ["HIPAA", "HITRUST_CSF", "GDPR", "FDA_SAMD"],
+      "risk_assessment": ["HIPAA", "HITRUST_CSF", "FDA_SAMD", "SOC2_TYPE_II"]
+    },
+    "healthcare_specific": {
+      "phi_protection": ["HIPAA", "HITRUST_CSF"],
+      "medical_device_security": ["FDA_SAMD", "HITRUST_CSF"],
+      "clinical_data_integrity": ["FDA_SAMD", "HIPAA", "SOC2_TYPE_II"]
+    }
+  },
+  "ai_specific_considerations": {
+    "algorithmic_transparency": {
+      "applicable_frameworks": ["GDPR", "FDA_SAMD"],
+      "requirements": [
+        "Explainable AI mechanisms",
+        "Decision-making logic documentation",
+        "Bias detection and mitigation"
+      ]
+    },
+    "data_governance": {
+      "applicable_frameworks": ["GDPR", "HIPAA", "HITRUST_CSF"],
+      "requirements": [
+        "Training data provenance",
+        "Data quality assurance",
+        "Consent management for AI training"
+      ]
+    },
+    "model_validation": {
+      "applicable_frameworks": ["FDA_SAMD", "SOC2_TYPE_II"],
+      "requirements": [
+        "Performance validation testing",
+        "Continuous monitoring",
+        "Version control and change management"
+      ]
+    }
+  }
+}
