@@ -1149,6 +1149,37 @@ def auto_register_discovered_agents():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/upload_logo', methods=['POST'])
+def upload_logo():
+    """Handle logo upload for header customization"""
+    try:
+        if 'logo' not in request.files:
+            return jsonify({'success': False, 'message': 'No file selected'})
+        
+        file = request.files['logo']
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No file selected'})
+        
+        if file and file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg')):
+            import os
+            import uuid
+            filename = f"logo_{uuid.uuid4().hex[:8]}.{file.filename.split('.')[-1]}"
+            filepath = os.path.join('static', 'img', filename)
+            
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+            file.save(filepath)
+            
+            return jsonify({
+                'success': True, 
+                'message': 'Logo uploaded successfully',
+                'logo_url': f'/static/img/{filename}'
+            })
+        
+        return jsonify({'success': False, 'message': 'Invalid file type. Please upload an image file.'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Upload failed: {str(e)}'})
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('404.html'), 404
