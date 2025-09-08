@@ -31,6 +31,7 @@ function initializeAnalyticsDashboard() {
     initializeRiskTrendChart();
     initializeRiskGaugeChart();
     initializeProtocolRiskChart();
+    initializeComplianceFrameworkChart();
     initializeCloudRiskChart();
     initializeVulnerabilityPredictionChart();
     initializeModelPerformanceCharts();
@@ -194,7 +195,7 @@ function initializeRiskGaugeChart() {
 }
 
 /**
- * Initialize protocol risk chart
+ * Initialize protocol risk chart with vibrant colors
  */
 function initializeProtocolRiskChart() {
     const ctx = document.getElementById('protocolRiskChart');
@@ -207,12 +208,12 @@ function initializeProtocolRiskChart() {
             datasets: [{
                 label: 'Risk Score',
                 data: [65, 78, 45, 52, 68, 72, 38],
-                backgroundColor: 'rgba(var(--bs-primary-rgb), 0.2)',
-                borderColor: 'var(--bs-primary)',
-                pointBackgroundColor: 'var(--bs-primary)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgb(255, 99, 132)',
+                pointBackgroundColor: 'rgb(255, 99, 132)',
                 pointBorderColor: '#fff',
                 pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: 'var(--bs-primary)'
+                pointHoverBorderColor: 'rgb(255, 99, 132)'
             }]
         },
         options: {
@@ -221,7 +222,22 @@ function initializeProtocolRiskChart() {
             scales: {
                 r: {
                     angleLines: {
-                        display: true
+                        display: true,
+                        color: 'rgba(255, 99, 132, 0.1)'
+                    },
+                    grid: {
+                        color: 'rgba(255, 99, 132, 0.1)'
+                    },
+                    pointLabels: {
+                        color: '#495057',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        color: '#6c757d',
+                        backdropColor: 'rgba(255, 255, 255, 0.75)'
                     },
                     suggestedMin: 0,
                     suggestedMax: 100
@@ -230,10 +246,127 @@ function initializeProtocolRiskChart() {
             plugins: {
                 legend: {
                     display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    cornerRadius: 8
                 }
             }
         }
     });
+}
+
+/**
+ * Initialize compliance framework radar chart with colorful design
+ */
+function initializeComplianceFrameworkChart() {
+    const ctx = document.getElementById('complianceFrameworkChart');
+    if (!ctx) return;
+
+    const complianceFrameworkChart = new Chart(ctx.getContext('2d'), {
+        type: 'radar',
+        data: {
+            labels: ['HIPAA', 'HITRUST CSF', 'FDA SaMD', 'GDPR', 'SOC 2 Type II'],
+            datasets: [{
+                label: 'Compliance Score',
+                data: [85, 88, 75, 82, 90],
+                backgroundColor: [
+                    'rgba(34, 197, 94, 0.2)',   // Green for HIPAA
+                    'rgba(59, 130, 246, 0.2)',  // Blue for HITRUST
+                    'rgba(249, 115, 22, 0.2)',  // Orange for FDA
+                    'rgba(168, 85, 247, 0.2)',  // Purple for GDPR
+                    'rgba(236, 72, 153, 0.2)'   // Pink for SOC2
+                ],
+                borderColor: [
+                    'rgb(34, 197, 94)',   // Green
+                    'rgb(59, 130, 246)',  // Blue
+                    'rgb(249, 115, 22)',  // Orange
+                    'rgb(168, 85, 247)',  // Purple
+                    'rgb(236, 72, 153)'   // Pink
+                ],
+                pointBackgroundColor: [
+                    'rgb(34, 197, 94)',
+                    'rgb(59, 130, 246)',
+                    'rgb(249, 115, 22)',
+                    'rgb(168, 85, 247)',
+                    'rgb(236, 72, 153)'
+                ],
+                pointBorderColor: '#fff',
+                pointBorderWidth: 3,
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: [
+                    'rgb(34, 197, 94)',
+                    'rgb(59, 130, 246)',
+                    'rgb(249, 115, 22)',
+                    'rgb(168, 85, 247)',
+                    'rgb(236, 72, 153)'
+                ],
+                pointHoverBorderWidth: 3,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: {
+                        display: true,
+                        color: 'rgba(156, 163, 175, 0.3)'
+                    },
+                    grid: {
+                        color: 'rgba(156, 163, 175, 0.2)'
+                    },
+                    pointLabels: {
+                        color: '#374151',
+                        font: {
+                            size: 13,
+                            weight: '600'
+                        }
+                    },
+                    ticks: {
+                        color: '#6b7280',
+                        backdropColor: 'rgba(255, 255, 255, 0.8)',
+                        font: {
+                            size: 11
+                        }
+                    },
+                    suggestedMin: 0,
+                    suggestedMax: 100
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleColor: '#f9fafb',
+                    bodyColor: '#f9fafb',
+                    borderColor: 'rgba(156, 163, 175, 0.2)',
+                    borderWidth: 1,
+                    cornerRadius: 12,
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ' + context.parsed.r + '%';
+                        }
+                    }
+                }
+            },
+            elements: {
+                line: {
+                    tension: 0.1
+                }
+            }
+        }
+    });
+
+    return complianceFrameworkChart;
 }
 
 /**

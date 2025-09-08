@@ -161,6 +161,73 @@
 
     <!-- Protocol & Cloud Analytics -->
     <div class="row mb-4">
+        <!-- Framework Compliance Overview -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Framework Compliance Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="complianceFrameworkChart" height="180"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="compliance-table">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Framework</th>
+                                                <th>Score</th>
+                                                <th>Status</th>
+                                                <th>Trend</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><i class="fas fa-user-md text-success me-1"></i> HIPAA</td>
+                                                <td><span class="badge bg-success rounded-pill">85%</span></td>
+                                                <td><i class="fas fa-check-circle text-success me-1"></i> Compliant</td>
+                                                <td><i class="fas fa-arrow-up text-success"></i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-cogs text-primary me-1"></i> HITRUST CSF</td>
+                                                <td><span class="badge bg-primary rounded-pill">88%</span></td>
+                                                <td><i class="fas fa-check-circle text-success me-1"></i> Compliant</td>
+                                                <td><i class="fas fa-arrow-up text-success"></i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-pills text-warning me-1"></i> FDA SaMD</td>
+                                                <td><span class="badge bg-warning rounded-pill">75%</span></td>
+                                                <td><i class="fas fa-exclamation-triangle text-warning me-1"></i> Partial</td>
+                                                <td><i class="fas fa-minus text-muted"></i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-globe text-info me-1"></i> GDPR</td>
+                                                <td><span class="badge bg-info rounded-pill">82%</span></td>
+                                                <td><i class="fas fa-check-circle text-success me-1"></i> Compliant</td>
+                                                <td><i class="fas fa-arrow-up text-success"></i></td>
+                                            </tr>
+                                            <tr>
+                                                <td><i class="fas fa-lock me-1" style="color: #8B5CF6;"></i> SOC 2 Type II</td>
+                                                <td><span class="badge bg-success rounded-pill">90%</span></td>
+                                                <td><i class="fas fa-check-circle text-success me-1"></i> Compliant</td>
+                                                <td><i class="fas fa-arrow-up text-success"></i></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Protocol Risk Distribution -->
         <div class="col-md-6">
             <div class="card">
@@ -175,31 +242,6 @@
                     <div class="mt-3">
                         <div class="row text-center">
                             {% for stat in protocol_stats %}
-                            <div class="col">
-                                <h6>{{ stat[1] }}</h6>
-                                <small class="text-muted">{{ stat[0] }}</small>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Cloud Provider Analysis -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-cloud me-2"></i>
-                        Multi-Cloud Risk Distribution
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="cloudRiskChart" height="150"></canvas>
-                    <div class="mt-3">
-                        <div class="row text-center">
-                            {% for stat in cloud_stats %}
                             <div class="col">
                                 <h6>{{ stat[1] }}</h6>
                                 <small class="text-muted">{{ stat[0] }}</small>
@@ -416,4 +458,90 @@ function exportAnalytics() {
     URL.revokeObjectURL(url);
 }
 </script>
+
+<style>
+.compliance-table .table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.875rem;
+}
+
+.compliance-table .table td {
+    vertical-align: middle;
+    padding: 0.75rem 0.5rem;
+    border-color: #e9ecef;
+}
+
+.compliance-table .badge {
+    font-weight: 600;
+    min-width: 45px;
+}
+
+.compliance-table i.fas {
+    width: 16px;
+    text-align: center;
+}
+
+/* Enhanced hover effects for the table */
+.compliance-table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    transform: translateX(2px);
+    transition: all 0.2s ease;
+}
+
+/* Pulse animation for status icons */
+.compliance-table .fa-check-circle {
+    animation: pulse-success 2s infinite;
+}
+
+.compliance-table .fa-exclamation-triangle {
+    animation: pulse-warning 2s infinite;
+}
+
+@keyframes pulse-success {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+@keyframes pulse-warning {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+/* Enhanced card styling */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Framework Compliance Overview specific styling */
+.card-header h5 i {
+    color: #007bff;
+}
+
+/* Colorful gradient backgrounds for badges */
+.bg-success.rounded-pill {
+    background: linear-gradient(45deg, #28a745, #20c997) !important;
+}
+
+.bg-primary.rounded-pill {
+    background: linear-gradient(45deg, #007bff, #6610f2) !important;
+}
+
+.bg-warning.rounded-pill {
+    background: linear-gradient(45deg, #ffc107, #fd7e14) !important;
+}
+
+.bg-info.rounded-pill {
+    background: linear-gradient(45deg, #17a2b8, #6f42c1) !important;
+}
+</style>
 {% endblock %}
