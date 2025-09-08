@@ -7,8 +7,13 @@ from analytics.risk_scoring import RiskScorer
 from analytics.predictive import PredictiveAnalytics
 from webhooks.continuous_scanner import ContinuousScanner
 from cloud.multi_cloud import MultiCloudManager
+from routes.playbook_routes import playbook_bp
+from playbooks.playbook_manager import PlaybookManager
 import json
 from datetime import datetime, timedelta
+
+# Register playbook blueprint
+app.register_blueprint(playbook_bp)
 
 @app.route('/')
 def dashboard():

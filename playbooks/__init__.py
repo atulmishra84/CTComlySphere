@@ -1,0 +1,1 @@
+# Playbook management system for AI agent registration

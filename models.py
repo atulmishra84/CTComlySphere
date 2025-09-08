@@ -16,6 +16,31 @@ class ScanStatus(enum.Enum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
+
+class RegistrationStatus(enum.Enum):
+    PENDING = 'pending'
+    IN_PROGRESS = 'in_progress'
+    COMPLETED = 'completed'
+    FAILED = 'failed'
+    CANCELLED = 'cancelled'
+
+
+class InventoryStatus(enum.Enum):
+    DISCOVERED = 'discovered'
+    REGISTERED = 'registered'
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+    DEPRECATED = 'deprecated'
+    DECOMMISSIONED = 'decommissioned'
+
+
+class ExecutionStatus(enum.Enum):
+    PENDING = 'pending'
+    RUNNING = 'running'
+    COMPLETED = 'completed'
+    FAILED = 'failed'
+    CANCELLED = 'cancelled'
+
 class RiskLevel(enum.Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
@@ -94,3 +119,91 @@ class DataFlowMap(db.Model):
     compliance_status = db.Column(db.String(50))
     discovered_at = db.Column(db.DateTime, default=datetime.utcnow)
     flow_metadata = db.Column(JSON)
+    
+    # Relationships
+    source_agent = db.relationship('AIAgent', foreign_keys=[source_agent_id], backref='outgoing_flows')
+    destination_agent = db.relationship('AIAgent', foreign_keys=[destination_agent_id], backref='incoming_flows')
+
+
+class RegistrationPlaybook(db.Model):
+    """Agent registration playbooks with plain English configuration"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False, unique=True)
+    description = db.Column(db.Text, nullable=False)
+    plain_english_config = db.Column(db.Text, nullable=False)  # User-friendly configuration
+    generated_code = db.Column(db.Text)  # Auto-generated backend code
+    is_active = db.Column(db.Boolean, default=True)
+    auto_onboarding_enabled = db.Column(db.Boolean, default=False)
+    trigger_conditions = db.Column(JSON)  # Conditions for auto-triggering
+    onboarding_steps = db.Column(JSON)  # Structured onboarding workflow
+    compliance_requirements = db.Column(JSON)  # Required compliance checks
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = db.Column(db.String(100), default='system')
+    
+    # Relationships
+    agent_registrations = db.relationship('AgentRegistration', backref='playbook', lazy=True)
+
+
+class AgentRegistration(db.Model):
+    """Agent registration records using playbooks"""
+    id = db.Column(db.Integer, primary_key=True)
+    agent_id = db.Column(db.Integer, db.ForeignKey('ai_agent.id'), nullable=False)
+    playbook_id = db.Column(db.Integer, db.ForeignKey('registration_playbook.id'), nullable=False)
+    registration_status = db.Column(db.Enum(RegistrationStatus), default=RegistrationStatus.PENDING)
+    onboarding_progress = db.Column(JSON)  # Step-by-step progress tracking
+    compliance_status = db.Column(JSON)  # Compliance check results
+    registration_data = db.Column(JSON)  # Custom registration fields
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime)
+    error_log = db.Column(db.Text)
+    
+    # Relationships
+    agent = db.relationship('AIAgent', backref='registrations')
+
+
+class AIAgentInventory(db.Model):
+    """Centralized AI Agent inventory with comprehensive tracking"""
+    id = db.Column(db.Integer, primary_key=True)
+    agent_id = db.Column(db.Integer, db.ForeignKey('ai_agent.id'), nullable=False, unique=True)
+    inventory_status = db.Column(db.Enum(InventoryStatus), default=InventoryStatus.DISCOVERED)
+    business_owner = db.Column(db.String(200))
+    technical_owner = db.Column(db.String(200))
+    department = db.Column(db.String(100))
+    use_case = db.Column(db.Text)
+    data_classification = db.Column(db.String(50))  # public, internal, confidential, restricted
+    criticality_level = db.Column(db.String(20))  # low, medium, high, critical
+    regulatory_scope = db.Column(JSON)  # HIPAA, GDPR, FDA, etc.
+    deployment_environment = db.Column(db.String(50))  # dev, staging, prod
+    backup_strategy = db.Column(db.Text)
+    disaster_recovery = db.Column(db.Text)
+    monitoring_alerts = db.Column(JSON)
+    maintenance_schedule = db.Column(JSON)
+    cost_center = db.Column(db.String(100))
+    budget_allocation = db.Column(db.Float)
+    vendor_info = db.Column(JSON)
+    license_info = db.Column(JSON)
+    documentation_links = db.Column(JSON)
+    added_to_inventory = db.Column(db.DateTime, default=datetime.utcnow)
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    agent = db.relationship('AIAgent', backref='inventory_record')
+
+
+class PlaybookExecution(db.Model):
+    """Track playbook execution history and results"""
+    id = db.Column(db.Integer, primary_key=True)
+    playbook_id = db.Column(db.Integer, db.ForeignKey('registration_playbook.id'), nullable=False)
+    agent_id = db.Column(db.Integer, db.ForeignKey('ai_agent.id'), nullable=False)
+    execution_status = db.Column(db.Enum(ExecutionStatus), default=ExecutionStatus.RUNNING)
+    execution_log = db.Column(db.Text)
+    step_results = db.Column(JSON)  # Results for each step
+    error_details = db.Column(db.Text)
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime)
+    execution_time = db.Column(db.Float)  # seconds
+    
+    # Relationships
+    playbook = db.relationship('RegistrationPlaybook', backref='executions')
+    agent = db.relationship('AIAgent', backref='playbook_executions')
