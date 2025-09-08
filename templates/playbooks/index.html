@@ -76,59 +76,78 @@
                 </div>
                 <div class="card-body p-0">
                     <!-- Healthcare AI Registration -->
-                    <div class="playbook-item border-bottom">
-                        <div class="p-4">
-                            <div class="d-flex align-items-start justify-content-between">
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <h6 class="mb-0 me-3">Healthcare AI Registration</h6>
-                                        <span class="badge bg-danger me-2">Critical</span>
-                                        <small class="text-muted">Priority: 100</small>
-                                    </div>
-                                    <p class="text-muted mb-3 small">Auto-register AI agents handling healthcare data with HIPAA compliance</p>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6 class="text-primary small mb-2">
-                                                <i class="fas fa-filter me-1"></i>Conditions
-                                            </h6>
-                                            <div class="condition-list">
-                                                <div class="condition-item mb-1">
-                                                    <code class="bg-light px-2 py-1 rounded">type</code> <span class="text-muted">contains</span> <code class="bg-warning px-2 py-1 rounded">"healthcare"</code>
-                                                </div>
-                                                <div class="condition-item mb-1">
-                                                    <code class="bg-light px-2 py-1 rounded">handlesPersonalData</code> <span class="text-muted">equals</span> <code class="bg-info text-white px-2 py-1 rounded">true</code>
-                                                </div>
-                                            </div>
+                    <div class="playbook-card">
+                        <div class="playbook-header">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div class="priority-indicator priority-critical me-3"></div>
+                                    <div>
+                                        <h5 class="mb-1 fw-bold">Healthcare AI Registration</h5>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge badge-critical">Critical</span>
+                                            <span class="priority-text">Priority: 100</span>
                                         </div>
-                                        <div class="col-md-6">
-                                            <h6 class="text-success small mb-2">
-                                                <i class="fas fa-cog me-1"></i>Actions
-                                            </h6>
-                                            <div class="action-list">
-                                                <div class="action-item mb-1">
-                                                    <strong>register:</strong> <span class="badge bg-primary me-1">HIPAA</span><span class="badge bg-primary">HITRUST</span>
-                                                </div>
-                                                <div class="action-item mb-1">
-                                                    <strong>set_risk_level:</strong> <a href="#" class="text-decoration-none">Configure action</a>
-                                                </div>
-                                                <div class="action-item">
-                                                    <strong>trigger_scan:</strong> <a href="#" class="text-decoration-none">Configure action</a>
-                                                </div>
+                                    </div>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
+                                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="playbook-description mt-2 mb-0">Auto-register AI agents handling healthcare data with HIPAA compliance</p>
+                        </div>
+                        
+                        <div class="playbook-body">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="conditions-section">
+                                        <h6 class="section-title">
+                                            <i class="fas fa-filter section-icon"></i>
+                                            Conditions
+                                        </h6>
+                                        <div class="condition-rules">
+                                            <div class="rule-item">
+                                                <span class="rule-field">type</span>
+                                                <span class="rule-operator">contains</span>
+                                                <span class="rule-value rule-value-string">"healthcare"</span>
+                                            </div>
+                                            <div class="rule-item">
+                                                <span class="rule-field">handlesPersonalData</span>
+                                                <span class="rule-operator">equals</span>
+                                                <span class="rule-value rule-value-boolean">true</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="ms-3">
-                                    <div class="dropdown">
-                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
-                                        </ul>
+                                <div class="col-lg-6">
+                                    <div class="actions-section">
+                                        <h6 class="section-title">
+                                            <i class="fas fa-cog section-icon"></i>
+                                            Actions
+                                        </h6>
+                                        <div class="action-rules">
+                                            <div class="action-item">
+                                                <span class="action-type">register</span>
+                                                <div class="framework-badges">
+                                                    <span class="framework-badge">HIPAA</span>
+                                                    <span class="framework-badge">HITRUST</span>
+                                                </div>
+                                            </div>
+                                            <div class="action-item">
+                                                <span class="action-type">set_risk_level</span>
+                                                <span class="action-link">Configure action</span>
+                                            </div>
+                                            <div class="action-item">
+                                                <span class="action-type">trigger_scan</span>
+                                                <span class="action-link">Configure action</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -136,56 +155,74 @@
                     </div>
 
                     <!-- Financial AI Registration -->
-                    <div class="playbook-item border-bottom">
-                        <div class="p-4">
-                            <div class="d-flex align-items-start justify-content-between">
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <h6 class="mb-0 me-3">Financial AI Registration</h6>
-                                        <span class="badge bg-danger me-2">Critical</span>
-                                        <small class="text-muted">Priority: 95</small>
-                                    </div>
-                                    <p class="text-muted mb-3 small">Auto-register AI agents in financial services with appropriate compliance</p>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6 class="text-primary small mb-2">
-                                                <i class="fas fa-filter me-1"></i>Conditions
-                                            </h6>
-                                            <div class="condition-list">
-                                                <div class="condition-item mb-1">
-                                                    <code class="bg-light px-2 py-1 rounded">type</code> <span class="text-muted">contains</span> <code class="bg-warning px-2 py-1 rounded">"financial"</code>
-                                                </div>
-                                                <div class="condition-item mb-1">
-                                                    <code class="bg-light px-2 py-1 rounded">name</code> <span class="text-muted">matches</span> <code class="bg-secondary text-white px-2 py-1 rounded">{}</code>
-                                                </div>
-                                            </div>
+                    <div class="playbook-card">
+                        <div class="playbook-header">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div class="priority-indicator priority-critical me-3"></div>
+                                    <div>
+                                        <h5 class="mb-1 fw-bold">Financial AI Registration</h5>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge badge-critical">Critical</span>
+                                            <span class="priority-text">Priority: 95</span>
                                         </div>
-                                        <div class="col-md-6">
-                                            <h6 class="text-success small mb-2">
-                                                <i class="fas fa-cog me-1"></i>Actions
-                                            </h6>
-                                            <div class="action-list">
-                                                <div class="action-item mb-1">
-                                                    <strong>register:</strong> <span class="badge bg-primary me-1">NIST AI RMF</span><span class="badge bg-primary">CSA AICM</span>
-                                                </div>
-                                                <div class="action-item">
-                                                    <strong>set_risk_level:</strong> <a href="#" class="text-decoration-none">Configure action</a>
-                                                </div>
+                                    </div>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
+                                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="playbook-description mt-2 mb-0">Auto-register AI agents in financial services with appropriate compliance</p>
+                        </div>
+                        
+                        <div class="playbook-body">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="conditions-section">
+                                        <h6 class="section-title">
+                                            <i class="fas fa-filter section-icon"></i>
+                                            Conditions
+                                        </h6>
+                                        <div class="condition-rules">
+                                            <div class="rule-item">
+                                                <span class="rule-field">type</span>
+                                                <span class="rule-operator">contains</span>
+                                                <span class="rule-value rule-value-string">"financial"</span>
+                                            </div>
+                                            <div class="rule-item">
+                                                <span class="rule-field">name</span>
+                                                <span class="rule-operator">matches</span>
+                                                <span class="rule-value rule-value-boolean">{}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="ms-3">
-                                    <div class="dropdown">
-                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
-                                        </ul>
+                                <div class="col-lg-6">
+                                    <div class="actions-section">
+                                        <h6 class="section-title">
+                                            <i class="fas fa-cog section-icon"></i>
+                                            Actions
+                                        </h6>
+                                        <div class="action-rules">
+                                            <div class="action-item">
+                                                <span class="action-type">register</span>
+                                                <div class="framework-badges">
+                                                    <span class="framework-badge">NIST AI RMF</span>
+                                                    <span class="framework-badge">CSA AICM</span>
+                                                </div>
+                                            </div>
+                                            <div class="action-item">
+                                                <span class="action-type">set_risk_level</span>
+                                                <span class="action-link">Configure action</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -193,56 +230,75 @@
                     </div>
 
                     <!-- Critical System AI Registration -->
-                    <div class="playbook-item border-bottom">
-                        <div class="p-4">
-                            <div class="d-flex align-items-start justify-content-between">
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <h6 class="mb-0 me-3">Critical System AI Registration</h6>
-                                        <span class="badge bg-danger me-2">Critical</span>
-                                        <small class="text-muted">Priority: 90</small>
-                                    </div>
-                                    <p class="text-muted mb-3 small">Auto-register critical system AI agents with comprehensive frameworks</p>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6 class="text-primary small mb-2">
-                                                <i class="fas fa-filter me-1"></i>Conditions
-                                            </h6>
-                                            <div class="condition-list">
-                                                <div class="condition-item mb-1">
-                                                    <code class="bg-light px-2 py-1 rounded">criticalSystem</code> <span class="text-muted">equals</span> <code class="bg-info text-white px-2 py-1 rounded">true</code>
-                                                </div>
-                                            </div>
+                    <div class="playbook-card">
+                        <div class="playbook-header">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div class="priority-indicator priority-critical me-3"></div>
+                                    <div>
+                                        <h5 class="mb-1 fw-bold">Critical System AI Registration</h5>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge badge-critical">Critical</span>
+                                            <span class="priority-text">Priority: 90</span>
                                         </div>
-                                        <div class="col-md-6">
-                                            <h6 class="text-success small mb-2">
-                                                <i class="fas fa-cog me-1"></i>Actions
-                                            </h6>
-                                            <div class="action-list">
-                                                <div class="action-item mb-1">
-                                                    <strong>register:</strong> <span class="badge bg-primary me-1">NIST AI RMF</span><span class="badge bg-primary me-1">CSA AICM</span><span class="badge bg-primary me-1">OWASP AI Security</span><span class="badge bg-primary">MITRE ATLAS</span>
-                                                </div>
-                                                <div class="action-item mb-1">
-                                                    <strong>set_risk_level:</strong> <a href="#" class="text-decoration-none">Configure action</a>
-                                                </div>
-                                                <div class="action-item">
-                                                    <strong>trigger_scan:</strong> <a href="#" class="text-decoration-none">Configure action</a>
-                                                </div>
+                                    </div>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
+                                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="playbook-description mt-2 mb-0">Auto-register critical system AI agents with comprehensive frameworks</p>
+                        </div>
+                        
+                        <div class="playbook-body">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="conditions-section">
+                                        <h6 class="section-title">
+                                            <i class="fas fa-filter section-icon"></i>
+                                            Conditions
+                                        </h6>
+                                        <div class="condition-rules">
+                                            <div class="rule-item">
+                                                <span class="rule-field">criticalSystem</span>
+                                                <span class="rule-operator">equals</span>
+                                                <span class="rule-value rule-value-boolean">true</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="ms-3">
-                                    <div class="dropdown">
-                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
-                                        </ul>
+                                <div class="col-lg-6">
+                                    <div class="actions-section">
+                                        <h6 class="section-title">
+                                            <i class="fas fa-cog section-icon"></i>
+                                            Actions
+                                        </h6>
+                                        <div class="action-rules">
+                                            <div class="action-item">
+                                                <span class="action-type">register</span>
+                                                <div class="framework-badges">
+                                                    <span class="framework-badge">NIST AI RMF</span>
+                                                    <span class="framework-badge">CSA AICM</span>
+                                                    <span class="framework-badge">OWASP AI Security</span>
+                                                    <span class="framework-badge">MITRE ATLAS</span>
+                                                </div>
+                                            </div>
+                                            <div class="action-item">
+                                                <span class="action-type">set_risk_level</span>
+                                                <span class="action-link">Configure action</span>
+                                            </div>
+                                            <div class="action-item">
+                                                <span class="action-type">trigger_scan</span>
+                                                <span class="action-link">Configure action</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -250,53 +306,70 @@
                     </div>
 
                     <!-- High Risk AI Registration -->
-                    <div class="playbook-item border-bottom">
-                        <div class="p-4">
-                            <div class="d-flex align-items-start justify-content-between">
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <h6 class="mb-0 me-3">High Risk AI Registration</h6>
-                                        <span class="badge bg-warning text-dark me-2">High</span>
-                                        <small class="text-muted">Priority: 85</small>
-                                    </div>
-                                    <p class="text-muted mb-3 small">Auto-register high-risk AI agents with security-focused frameworks</p>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6 class="text-primary small mb-2">
-                                                <i class="fas fa-filter me-1"></i>Conditions
-                                            </h6>
-                                            <div class="condition-list">
-                                                <div class="condition-item mb-1">
-                                                    <code class="bg-light px-2 py-1 rounded">isHighRisk</code> <span class="text-muted">equals</span> <code class="bg-info text-white px-2 py-1 rounded">true</code>
-                                                </div>
-                                            </div>
+                    <div class="playbook-card">
+                        <div class="playbook-header">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div class="priority-indicator priority-high me-3"></div>
+                                    <div>
+                                        <h5 class="mb-1 fw-bold">High Risk AI Registration</h5>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge badge-high">High</span>
+                                            <span class="priority-text">Priority: 85</span>
                                         </div>
-                                        <div class="col-md-6">
-                                            <h6 class="text-success small mb-2">
-                                                <i class="fas fa-cog me-1"></i>Actions
-                                            </h6>
-                                            <div class="action-list">
-                                                <div class="action-item mb-1">
-                                                    <strong>register:</strong> <span class="badge bg-primary me-1">OWASP AI Security</span><span class="badge bg-primary me-1">Lumenalta AI Security</span><span class="badge bg-primary">MITRE ATLAS</span>
-                                                </div>
-                                                <div class="action-item">
-                                                    <strong>set_risk_level:</strong> <a href="#" class="text-decoration-none">Configure action</a>
-                                                </div>
+                                    </div>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
+                                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="playbook-description mt-2 mb-0">Auto-register high-risk AI agents with security-focused frameworks</p>
+                        </div>
+                        
+                        <div class="playbook-body">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="conditions-section">
+                                        <h6 class="section-title">
+                                            <i class="fas fa-filter section-icon"></i>
+                                            Conditions
+                                        </h6>
+                                        <div class="condition-rules">
+                                            <div class="rule-item">
+                                                <span class="rule-field">isHighRisk</span>
+                                                <span class="rule-operator">equals</span>
+                                                <span class="rule-value rule-value-boolean">true</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="ms-3">
-                                    <div class="dropdown">
-                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
-                                        </ul>
+                                <div class="col-lg-6">
+                                    <div class="actions-section">
+                                        <h6 class="section-title">
+                                            <i class="fas fa-cog section-icon"></i>
+                                            Actions
+                                        </h6>
+                                        <div class="action-rules">
+                                            <div class="action-item">
+                                                <span class="action-type">register</span>
+                                                <div class="framework-badges">
+                                                    <span class="framework-badge">OWASP AI Security</span>
+                                                    <span class="framework-badge">Lumenalta AI Security</span>
+                                                    <span class="framework-badge">MITRE ATLAS</span>
+                                                </div>
+                                            </div>
+                                            <div class="action-item">
+                                                <span class="action-type">set_risk_level</span>
+                                                <span class="action-link">Configure action</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -304,50 +377,66 @@
                     </div>
 
                     <!-- Cloud AI Service Registration -->
-                    <div class="playbook-item border-bottom">
-                        <div class="p-4">
-                            <div class="d-flex align-items-start justify-content-between">
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <h6 class="mb-0 me-3">Cloud AI Service Registration</h6>
-                                        <span class="badge bg-warning text-dark me-2">High</span>
-                                        <small class="text-muted">Priority: 80</small>
-                                    </div>
-                                    <p class="text-muted mb-3 small">Auto-register cloud-deployed AI services with enterprise frameworks</p>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6 class="text-primary small mb-2">
-                                                <i class="fas fa-filter me-1"></i>Conditions
-                                            </h6>
-                                            <div class="condition-list">
-                                                <div class="condition-item mb-1">
-                                                    <code class="bg-light px-2 py-1 rounded">cloudDeployment</code> <span class="text-muted">equals</span> <code class="bg-info text-white px-2 py-1 rounded">true</code>
-                                                </div>
-                                            </div>
+                    <div class="playbook-card">
+                        <div class="playbook-header">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <div class="priority-indicator priority-high me-3"></div>
+                                    <div>
+                                        <h5 class="mb-1 fw-bold">Cloud AI Service Registration</h5>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge badge-high">High</span>
+                                            <span class="priority-text">Priority: 80</span>
                                         </div>
-                                        <div class="col-md-6">
-                                            <h6 class="text-success small mb-2">
-                                                <i class="fas fa-cog me-1"></i>Actions
-                                            </h6>
-                                            <div class="action-list">
-                                                <div class="action-item">
-                                                    <strong>register:</strong> <span class="badge bg-primary me-1">CSA AICM</span><span class="badge bg-primary me-1">Google SAIF</span><span class="badge bg-primary">Databricks DASF</span>
-                                                </div>
+                                    </div>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
+                                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="playbook-description mt-2 mb-0">Auto-register cloud-deployed AI services with enterprise frameworks</p>
+                        </div>
+                        
+                        <div class="playbook-body">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="conditions-section">
+                                        <h6 class="section-title">
+                                            <i class="fas fa-filter section-icon"></i>
+                                            Conditions
+                                        </h6>
+                                        <div class="condition-rules">
+                                            <div class="rule-item">
+                                                <span class="rule-field">cloudDeployment</span>
+                                                <span class="rule-operator">equals</span>
+                                                <span class="rule-value rule-value-boolean">true</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="ms-3">
-                                    <div class="dropdown">
-                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
-                                            <li><a class="dropdown-item" href="#"><i class="fas fa-copy me-2"></i>Duplicate</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete</a></li>
-                                        </ul>
+                                <div class="col-lg-6">
+                                    <div class="actions-section">
+                                        <h6 class="section-title">
+                                            <i class="fas fa-cog section-icon"></i>
+                                            Actions
+                                        </h6>
+                                        <div class="action-rules">
+                                            <div class="action-item">
+                                                <span class="action-type">register</span>
+                                                <div class="framework-badges">
+                                                    <span class="framework-badge">CSA AICM</span>
+                                                    <span class="framework-badge">Google SAIF</span>
+                                                    <span class="framework-badge">Databricks DASF</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -570,27 +659,259 @@
 </div>
 
 <style>
-.playbook-item {
+/* Clear Playbook Design */
+.playbook-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 16px;
     transition: all 0.2s ease;
+    background: white;
 }
 
-.playbook-item:hover {
-    background-color: #f8f9fa;
+.playbook-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #d1d5db;
 }
 
-.condition-item,
-.action-item {
-    font-size: 0.85rem;
+.playbook-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    background: #fafbfc;
+}
+
+.playbook-header h5 {
+    color: #1f2937;
+    font-size: 1.1rem;
+}
+
+.playbook-description {
+    color: #6b7280;
+    font-size: 0.9rem;
     line-height: 1.4;
 }
 
-.condition-item code,
-.action-item code {
-    font-size: 0.8rem;
+.priority-indicator {
+    width: 4px;
+    height: 40px;
+    border-radius: 2px;
 }
 
-.badge {
+.priority-critical {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+}
+
+.priority-high {
+    background: linear-gradient(135deg, #ea580c, #f97316);
+}
+
+.priority-medium {
+    background: linear-gradient(135deg, #0284c7, #0ea5e9);
+}
+
+.priority-low {
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
+}
+
+.badge-critical {
+    background: #dc2626;
+    color: white;
+    font-weight: 600;
     font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.badge-high {
+    background: #ea580c;
+    color: white;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.badge-medium {
+    background: #0284c7;
+    color: white;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.badge-low {
+    background: #6b7280;
+    color: white;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.priority-text {
+    color: #6b7280;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.playbook-body {
+    padding: 20px 24px 24px;
+}
+
+.conditions-section,
+.actions-section {
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.section-icon {
+    font-size: 0.8rem;
+    margin-right: 6px;
+    color: #6b7280;
+}
+
+/* Condition Rules */
+.condition-rules {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.rule-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+}
+
+.rule-item:last-child {
+    margin-bottom: 0;
+}
+
+.rule-field {
+    background: #e5e7eb;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: #374151;
+    font-weight: 500;
+    min-width: fit-content;
+}
+
+.rule-operator {
+    color: #6b7280;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.rule-value {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.rule-value-string {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.rule-value-boolean {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+/* Action Rules */
+.actions-section {
+    border-left: 3px solid #10b981;
+    padding-left: 16px;
+}
+
+.action-rules {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.action-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+}
+
+.action-item:last-child {
+    margin-bottom: 0;
+}
+
+.action-type {
+    background: #065f46;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    min-width: fit-content;
+}
+
+.framework-badges {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.framework-badge {
+    background: #3b82f6;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.action-link {
+    color: #059669;
+    text-decoration: underline;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.action-link:hover {
+    color: #047857;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .playbook-header,
+    .playbook-body {
+        padding: 16px;
+    }
+    
+    .conditions-section {
+        margin-bottom: 24px;
+    }
+    
+    .actions-section {
+        border-left: none;
+        border-top: 3px solid #10b981;
+        padding-left: 0;
+        padding-top: 16px;
+    }
 }
 </style>
 
