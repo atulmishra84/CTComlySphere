@@ -44,7 +44,7 @@ class APIScanner(BaseScanner):
             }
     
     def discover_agents(self):
-        """Discover AI agents through API endpoints"""
+        """Discover AI agents through API endpoints with GenAI and Agentic AI detection"""
         agents = []
         
         # Common healthcare AI API patterns
@@ -55,8 +55,32 @@ class APIScanner(BaseScanner):
             'https://api.healthcare-ai.local/v2/',
         ]
         
+        # GenAI specific endpoints
+        genai_endpoints = [
+            'http://localhost:8000/v1/completions',
+            'http://localhost:8000/v1/chat/completions',
+            'http://localhost:8000/v1/embeddings',
+            'https://api.openai.com/v1/',
+            'https://api.anthropic.com/v1/',
+            'http://localhost:11434/api/',  # Ollama
+            'http://localhost:8080/generate',
+            'http://localhost:5000/chat'
+        ]
+        
+        # Agentic AI endpoints
+        agentic_endpoints = [
+            'http://localhost:8080/agents/',
+            'http://localhost:8000/agent/execute',
+            'http://localhost:5000/workflow/',
+            'http://localhost:8080/planning/',
+            'http://localhost:8000/tools/',
+            'https://api.langchain.com/v1/',
+            'http://localhost:8080/memory/',
+            'http://localhost:5000/reasoning/'
+        ]
+        
         # Add configured endpoints
-        all_endpoints = common_endpoints + self.api_endpoints
+        all_endpoints = common_endpoints + genai_endpoints + agentic_endpoints + self.api_endpoints
         
         for endpoint in all_endpoints:
             try:
@@ -79,7 +103,20 @@ class APIScanner(BaseScanner):
                 'info',
                 'metadata',
                 'models',
-                'api-docs'
+                'api-docs',
+                # GenAI specific paths
+                'v1/models',
+                'completions',
+                'chat/completions',
+                'embeddings',
+                'generate',
+                # Agentic AI specific paths
+                'agents',
+                'workflows',
+                'tools',
+                'memory',
+                'planning',
+                'reasoning'
             ]
             
             for path in discovery_paths:
@@ -105,31 +142,65 @@ class APIScanner(BaseScanner):
         return None
     
     def is_ai_service(self, data, headers):
-        """Determine if response indicates an AI service"""
-        ai_indicators = [
+        """Determine if response indicates an AI service with GenAI and Agentic AI detection"""
+        # Traditional AI indicators
+        traditional_ai_indicators = [
             'model', 'models', 'prediction', 'inference', 'tensorflow', 'pytorch',
             'scikit', 'keras', 'machine_learning', 'deep_learning', 'neural',
             'healthcare', 'medical', 'clinical', 'diagnostic', 'treatment'
         ]
         
+        # GenAI specific indicators
+        genai_indicators = [
+            'gpt', 'llm', 'large language model', 'generative', 'openai', 'claude', 'anthropic',
+            'palm', 'bard', 'gemini', 'llama', 'mistral', 'completion', 'completions', 'chat',
+            'conversation', 'text-generation', 'embedding', 'embeddings', 'transformer', 'bert',
+            'roberta', 'bloom', 'huggingface', 'transformers', 'stable-diffusion', 'dalle',
+            'midjourney', 'diffusion', 'gan', 'multimodal', 'vision-language', 'text-to-image',
+            'prompt', 'fine-tune', 'fine-tuning', 'text_generation'
+        ]
+        
+        # Agentic AI indicators
+        agentic_indicators = [
+            'agent', 'agents', 'autonomous', 'langchain', 'autogpt', 'crew', 'swarm',
+            'multi-agent', 'planning', 'reasoning', 'tool-use', 'function-calling',
+            'workflow', 'workflows', 'orchestration', 'decision-making', 'goal-oriented',
+            'task-execution', 'memory', 'context', 'retrieval', 'rag', 'knowledge-base',
+            'vector', 'api-calling', 'external-tools', 'tools', 'function_calling'
+        ]
+        
+        all_indicators = traditional_ai_indicators + genai_indicators + agentic_indicators
+        
         # Check response data
         data_str = json.dumps(data).lower()
-        for indicator in ai_indicators:
+        for indicator in all_indicators:
             if indicator in data_str:
                 return True
         
-        # Check headers
+        # Check headers for AI service indicators
         content_type = headers.get('content-type', '').lower()
         server = headers.get('server', '').lower()
+        user_agent = headers.get('user-agent', '').lower()
         
-        if any(ai_word in content_type + server for ai_word in ['ml', 'ai', 'model']):
+        all_header_text = content_type + server + user_agent
+        if any(ai_word in all_header_text for ai_word in ['ml', 'ai', 'model', 'llm', 'agent', 'gpt']):
             return True
         
         return False
     
     def is_ai_service_text(self, text):
-        """Check text response for AI service indicators"""
-        ai_keywords = ['tensorflow', 'pytorch', 'model', 'prediction', 'inference', 'healthcare ai']
+        """Check text response for AI service indicators including GenAI and Agentic AI"""
+        ai_keywords = [
+            # Traditional AI
+            'tensorflow', 'pytorch', 'model', 'prediction', 'inference', 'healthcare ai',
+            # GenAI
+            'gpt', 'llm', 'large language model', 'completion', 'chat', 'generative',
+            'embedding', 'transformer', 'huggingface', 'openai', 'claude', 'anthropic',
+            'text generation', 'conversational ai', 'stable diffusion', 'dalle',
+            # Agentic AI
+            'agent', 'autonomous', 'langchain', 'workflow', 'planning', 'reasoning',
+            'tool use', 'function calling', 'orchestration', 'multi-agent'
+        ]
         text_lower = text.lower()
         return any(keyword in text_lower for keyword in ai_keywords)
     
@@ -176,9 +247,47 @@ class APIScanner(BaseScanner):
         }
     
     def determine_service_type(self, data):
-        """Determine the type of AI service from API data"""
+        """Determine the type of AI service from API data with GenAI and Agentic detection"""
         data_str = json.dumps(data).lower()
         
+        # Check for GenAI indicators first (more specific)
+        genai_patterns = {
+            'gpt': 'GenAI - GPT Model',
+            'claude': 'GenAI - Claude Model',
+            'llama': 'GenAI - LLaMA Model',
+            'gemini': 'GenAI - Gemini Model',
+            'mistral': 'GenAI - Mistral Model',
+            'completion': 'GenAI - Text Generation',
+            'chat': 'GenAI - Conversational AI',
+            'embedding': 'GenAI - Embedding Model',
+            'text-generation': 'GenAI - Text Generation',
+            'text-to-image': 'GenAI - Multimodal',
+            'stable-diffusion': 'GenAI - Image Generation',
+            'dalle': 'GenAI - Image Generation'
+        }
+        
+        for pattern, ai_type in genai_patterns.items():
+            if pattern in data_str:
+                return ai_type
+        
+        # Check for Agentic AI indicators
+        agentic_patterns = {
+            'agent': 'Agentic AI - Autonomous Agent',
+            'workflow': 'Agentic AI - Workflow Agent',
+            'planning': 'Agentic AI - Planning Agent',
+            'reasoning': 'Agentic AI - Reasoning Agent',
+            'tool-use': 'Agentic AI - Tool-Using Agent',
+            'langchain': 'Agentic AI - LangChain Agent',
+            'autogpt': 'Agentic AI - AutoGPT Agent',
+            'multi-agent': 'Agentic AI - Multi-Agent System',
+            'orchestration': 'Agentic AI - Orchestration System'
+        }
+        
+        for pattern, ai_type in agentic_patterns.items():
+            if pattern in data_str:
+                return ai_type
+        
+        # Traditional healthcare AI patterns
         if 'imaging' in data_str or 'radiology' in data_str:
             return 'Medical Imaging AI'
         elif 'clinical' in data_str or 'diagnosis' in data_str:
