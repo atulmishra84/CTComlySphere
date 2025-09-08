@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from app import app, db
-from models import AIAgent, ScanResult, ComplianceEvaluation, RiskLevel, ComplianceFramework, InventoryStatus, AIAgentInventory, RegistrationPlaybook, AgentRegistration, PlaybookExecution
+from models import AIAgent, ScanResult, ComplianceEvaluation, RiskLevel, ComplianceFramework, InventoryStatus, AIAgentInventory, RegistrationPlaybook, AgentRegistration, PlaybookExecution, RemediationWorkflow, RemediationExecution, RemediationActionExecution
 from datetime import datetime, timedelta
 from scanners import ProtocolScanner
 import random
@@ -66,6 +66,15 @@ try:
 except ImportError as e:
     AGENT_AVAILABLE = False
     print(f"Warning: Healthcare Compliance Agent features not available: {e}")
+
+# Import remediation routes
+try:
+    from routes_pkg.remediation_routes import remediation_bp
+    app.register_blueprint(remediation_bp)
+    REMEDIATION_ROUTES_AVAILABLE = True
+except ImportError as e:
+    REMEDIATION_ROUTES_AVAILABLE = False
+    print(f"Warning: Remediation workflow features not available: {e}")
 
 
 @app.route('/')

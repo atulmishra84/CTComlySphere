@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Create Remediation Workflow{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-plus-circle me-2 text-primary"></i>
+                        Create Remediation Workflow
+                    </h1>
+                    <p class="text-muted mb-0">Define an automated workflow to remediate compliance and security issues</p>
+                </div>
+                <a href="{{ url_for('remediation.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cog me-2"></i>
+                        Workflow Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Workflow Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                                <div class="form-text">A descriptive name for this remediation workflow</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="workflow_type" class="form-label">Workflow Type *</label>
+                                <select class="form-select" id="workflow_type" name="workflow_type" required>
+                                    <option value="">Select type...</option>
+                                    <option value="compliance">Compliance</option>
+                                    <option value="security">Security</option>
+                                    <option value="maintenance">Maintenance</option>
+                                    <option value="performance">Performance</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" 
+                                      placeholder="Describe what this workflow does and when it should be triggered"></textarea>
+                        </div>
+
+                        <!-- Trigger Configuration -->
+                        <h6 class="mb-3">
+                            <i class="fas fa-play-circle me-2 text-primary"></i>
+                            Trigger Configuration
+                        </h6>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="trigger_type" class="form-label">Trigger Type *</label>
+                                <select class="form-select" id="trigger_type" name="trigger_type" required>
+                                    <option value="">Select trigger...</option>
+                                    {% for trigger in trigger_types %}
+                                    <option value="{{ trigger.value }}">{{ trigger.value.replace('_', ' ').title() }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="trigger_conditions" class="form-label">Trigger Conditions (JSON)</label>
+                                <textarea class="form-control" id="trigger_conditions" name="trigger_conditions" rows="3" 
+                                          placeholder='{"risk_level": "HIGH", "framework": "HIPAA"}'>{"risk_level": "HIGH"}</textarea>
+                                <div class="form-text">JSON configuration for when this workflow should trigger</div>
+                            </div>
+                        </div>
+
+                        <!-- Actions Configuration -->
+                        <h6 class="mb-3">
+                            <i class="fas fa-tasks me-2 text-primary"></i>
+                            Actions Configuration
+                        </h6>
+
+                        <div class="mb-4">
+                            <label for="actions" class="form-label">Actions (JSON) *</label>
+                            <textarea class="form-control" id="actions" name="actions" rows="8" required 
+                                      placeholder="Define the remediation actions to execute">
+[
+  {
+    "type": "update_configuration",
+    "name": "Enable Encryption",
+    "config_params": {
+      "encryption_enabled": true,
+      "encryption_type": "AES-256"
+    },
+    "continue_on_failure": false,
+    "max_retries": 3
+  },
+  {
+    "type": "notify_stakeholders",
+    "name": "Notify Security Team",
+    "recipients": ["security@company.com"],
+    "continue_on_failure": true
+  }
+]</textarea>
+                            <div class="form-text">JSON array of actions to execute. Each action must have a 'type' and 'name'.</div>
+                        </div>
+
+                        <!-- Execution Settings -->
+                        <h6 class="mb-3">
+                            <i class="fas fa-sliders-h me-2 text-primary"></i>
+                            Execution Settings
+                        </h6>
+
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label for="timeout_minutes" class="form-label">Timeout (minutes)</label>
+                                <input type="number" class="form-control" id="timeout_minutes" name="timeout_minutes" 
+                                       value="60" min="1" max="1440">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="retry_attempts" class="form-label">Retry Attempts</label>
+                                <input type="number" class="form-control" id="retry_attempts" name="retry_attempts" 
+                                       value="3" min="0" max="10">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Execution Mode</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="parallel_execution" name="parallel_execution">
+                                    <label class="form-check-label" for="parallel_execution">
+                                        Parallel Execution
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Safety and Approval -->
+                        <h6 class="mb-3">
+                            <i class="fas fa-shield-alt me-2 text-primary"></i>
+                            Safety and Approval
+                        </h6>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="requires_approval" name="requires_approval">
+                                    <label class="form-check-label" for="requires_approval">
+                                        Requires Manual Approval
+                                    </label>
+                                    <div class="form-text">Workflow will pause for approval before executing</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="auto_rollback" name="auto_rollback" checked>
+                                    <label class="form-check-label" for="auto_rollback">
+                                        Auto Rollback on Failure
+                                    </label>
+                                    <div class="form-text">Automatically rollback changes if workflow fails</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Targeting -->
+                        <h6 class="mb-3">
+                            <i class="fas fa-crosshairs me-2 text-primary"></i>
+                            Targeting
+                        </h6>
+
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label for="target_frameworks" class="form-label">Target Frameworks</label>
+                                <select class="form-select" id="target_frameworks" name="target_frameworks" multiple>
+                                    <option value="HIPAA">HIPAA</option>
+                                    <option value="GDPR">GDPR</option>
+                                    <option value="SOC2">SOC 2</option>
+                                    <option value="FDA">FDA SaMD</option>
+                                    <option value="HITRUST">HITRUST CSF</option>
+                                </select>
+                                <div class="form-text">Hold Ctrl/Cmd to select multiple</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="target_protocols" class="form-label">Target Protocols</label>
+                                <select class="form-select" id="target_protocols" name="target_protocols" multiple>
+                                    <option value="rest_api">REST API</option>
+                                    <option value="grpc">gRPC</option>
+                                    <option value="kubernetes">Kubernetes</option>
+                                    <option value="docker">Docker</option>
+                                    <option value="websocket">WebSocket</option>
+                                    <option value="mqtt">MQTT</option>
+                                    <option value="graphql">GraphQL</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="target_risk_levels" class="form-label">Target Risk Levels</label>
+                                <select class="form-select" id="target_risk_levels" name="target_risk_levels" multiple>
+                                    <option value="LOW">Low</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="HIGH">High</option>
+                                    <option value="CRITICAL">Critical</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-secondary me-2" onclick="history.back()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Create Workflow
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Panel -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Action Types
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="actionTypesAccordion">
+                        {% set action_descriptions = {
+                            'update_configuration': 'Update system configuration settings',
+                            'apply_security_patch': 'Apply security patches and updates',
+                            'rotate_credentials': 'Rotate API keys and credentials',
+                            'enable_encryption': 'Enable or update encryption settings',
+                            'update_access_controls': 'Modify access control policies',
+                            'backup_data': 'Create data backups',
+                            'notify_stakeholders': 'Send notifications to stakeholders',
+                            'restart_service': 'Restart services or systems',
+                            'scale_resources': 'Scale system resources',
+                            'run_compliance_scan': 'Execute compliance scans',
+                            'update_monitoring': 'Update monitoring configuration',
+                            'quarantine_system': 'Quarantine compromised systems'
+                        } %}
+                        
+                        {% for action_type in action_types %}
+                        <div class="accordion-item">
+                            <h6 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse{{ loop.index }}" aria-expanded="false">
+                                    <code class="text-primary me-2">{{ action_type.value }}</code>
+                                </button>
+                            </h6>
+                            <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" 
+                                 data-bs-parent="#actionTypesAccordion">
+                                <div class="accordion-body">
+                                    <small class="text-muted">
+                                        {{ action_descriptions.get(action_type.value, 'Custom remediation action') }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Examples -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Example Workflows
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item border-0 px-0">
+                            <strong class="text-primary">HIPAA Encryption Fix</strong>
+                            <p class="mb-0 small text-muted">
+                                Automatically enable encryption when PHI exposure is detected
+                            </p>
+                        </div>
+                        <div class="list-group-item border-0 px-0">
+                            <strong class="text-primary">Security Patch Deployment</strong>
+                            <p class="mb-0 small text-muted">
+                                Apply critical security patches and restart services
+                            </p>
+                        </div>
+                        <div class="list-group-item border-0 px-0">
+                            <strong class="text-primary">Access Control Update</strong>
+                            <p class="mb-0 small text-muted">
+                                Update access controls when unauthorized access is detected
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// JSON validation for textarea fields
+document.getElementById('trigger_conditions').addEventListener('blur', function() {
+    validateJSON(this);
+});
+
+document.getElementById('actions').addEventListener('blur', function() {
+    validateJSON(this);
+});
+
+function validateJSON(element) {
+    try {
+        if (element.value.trim()) {
+            JSON.parse(element.value);
+            element.classList.remove('is-invalid');
+            element.classList.add('is-valid');
+        }
+    } catch (e) {
+        element.classList.remove('is-valid');
+        element.classList.add('is-invalid');
+    }
+}
+</script>
+{% endblock %}

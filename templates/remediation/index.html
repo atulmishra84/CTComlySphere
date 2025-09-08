@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Automated Remediation Workflows{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-magic me-2 text-primary"></i>
+                        Automated Remediation Workflows
+                    </h1>
+                    <p class="text-muted mb-0">Manage and monitor automated compliance remediation workflows</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('remediation.create_workflow') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Create Workflow
+                    </a>
+                    <a href="{{ url_for('remediation.templates') }}" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-clone me-2"></i>Templates
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ total_workflows }}</h4>
+                            <p class="mb-0 opacity-75">Total Workflows</p>
+                        </div>
+                        <i class="fas fa-cogs fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ active_workflows }}</h4>
+                            <p class="mb-0 opacity-75">Active Workflows</p>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ executions_today }}</h4>
+                            <p class="mb-0 opacity-75">Executions Today</p>
+                        </div>
+                        <i class="fas fa-play-circle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ (successful_executions / (successful_executions + failed_executions) * 100)|round(1) if (successful_executions + failed_executions) > 0 else 0 }}%</h4>
+                            <p class="mb-0 opacity-75">Success Rate</p>
+                        </div>
+                        <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workflow Engine Status -->
+    {% if not workflow_engine_available %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="alert alert-warning" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Workflow Engine Unavailable:</strong> 
+                The automated remediation workflow engine is currently not available. 
+                Some features may be limited.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Workflows List -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Recent Workflows
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if workflows %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Last Executed</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for workflow in workflows[:10] %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>{{ workflow.name }}</strong>
+                                            {% if workflow.description %}
+                                            <br><small class="text-muted">{{ workflow.description[:100] }}{% if workflow.description|length > 100 %}...{% endif %}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ workflow.workflow_type.title() }}</span>
+                                    </td>
+                                    <td>
+                                        {% if workflow.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if workflow.last_executed %}
+                                        {{ workflow.last_executed.strftime('%Y-%m-%d %H:%M') }}
+                                        {% else %}
+                                        <span class="text-muted">Never</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('remediation.view_workflow', id=workflow.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if workflow_engine_available %}
+                                        <button class="btn btn-sm btn-outline-secondary" 
+                                                onclick="toggleWorkflowStatus({{ workflow.id }})">
+                                            {% if workflow.is_active %}
+                                            <i class="fas fa-pause"></i>
+                                            {% else %}
+                                            <i class="fas fa-play"></i>
+                                            {% endif %}
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('remediation.workflows') }}" class="btn btn-outline-primary">
+                            View All Workflows
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-magic fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Workflows Created</h5>
+                        <p class="text-muted">Create your first automated remediation workflow to get started.</p>
+                        <a href="{{ url_for('remediation.create_workflow') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create First Workflow
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Executions -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Recent Executions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_executions %}
+                    <div class="list-group list-group-flush">
+                        {% for execution in recent_executions %}
+                        <div class="list-group-item border-0 px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ execution.workflow.name }}</h6>
+                                    <p class="mb-1 small text-muted">
+                                        Agent: {{ execution.agent.name }}
+                                    </p>
+                                    <small class="text-muted">
+                                        {{ execution.started_at.strftime('%m/%d %H:%M') }}
+                                    </small>
+                                </div>
+                                <div>
+                                    {% if execution.status.value == 'completed' %}
+                                    <span class="badge bg-success">Success</span>
+                                    {% elif execution.status.value == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                    {% elif execution.status.value == 'running' %}
+                                    <span class="badge bg-primary">Running</span>
+                                    {% elif execution.status.value == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ execution.status.value.title() }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('remediation.executions') }}" class="btn btn-outline-primary btn-sm">
+                            View All Executions
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-clock fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No recent executions</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('remediation.create_workflow') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create New Workflow
+                        </a>
+                        <a href="{{ url_for('remediation.templates') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-clone me-2"></i>Browse Templates
+                        </a>
+                        <a href="{{ url_for('remediation.executions') }}" class="btn btn-outline-info">
+                            <i class="fas fa-list me-2"></i>View All Executions
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleWorkflowStatus(workflowId) {
+    fetch(`/remediation/api/workflows/${workflowId}/toggle`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            workflow_id: workflowId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating workflow status');
+    });
+}
+</script>
+{% endblock %}
