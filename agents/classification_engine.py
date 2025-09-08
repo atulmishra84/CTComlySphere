@@ -485,7 +485,20 @@ class AgentClassificationEngine:
             'department_usage_analysis': {},
             'functional_purpose': '',
             'business_impact': '',
-            'integration_points': []
+            'integration_points': [],
+            # Advanced precision criteria
+            'runtime_behavior_analysis': {},
+            'model_signature_analysis': {},
+            'configuration_pattern_analysis': {},
+            'security_context_analysis': {},
+            'performance_characteristics': {},
+            'network_traffic_patterns': {},
+            'api_schema_analysis': {},
+            'operational_metrics': {},
+            'compliance_artifacts': {},
+            'behavioral_fingerprint': {},
+            'resource_utilization_patterns': {},
+            'integration_topology': {}
         }
         
         # Analyze agent characteristics
@@ -626,44 +639,66 @@ class AgentClassificationEngine:
         return ' '.join(text_parts).lower()
     
     def _calculate_classification_score(self, agent_text: str, protocol: str, rules: Dict, agent_data: Dict = None) -> float:
-        """Enhanced classification score calculation with work engine, data source, output, and department analysis"""
+        """Advanced classification score with 12 sophisticated criteria for maximum precision"""
         score = 0.0
         
-        # Basic keyword matching (reduced weight to make room for new factors)
+        # Basic keyword matching (reduced weight)
         keyword_matches = 0
         for keyword in rules['keywords']:
             if keyword.lower() in agent_text:
                 keyword_matches += 1
         
         if rules['keywords']:
-            keyword_score = (keyword_matches / len(rules['keywords'])) * 0.35  # Reduced from 0.7
+            keyword_score = (keyword_matches / len(rules['keywords'])) * 0.20  # Further reduced
             score += keyword_score
         
-        # Work engine analysis (new - 25% weight)
+        # Work engine analysis (20% weight)
         work_engine_score = self._analyze_work_engines(agent_text, agent_data, rules.get('work_engines', {}))
-        score += work_engine_score * 0.25
+        score += work_engine_score * 0.20
         
-        # Data source analysis (new - 15% weight)
+        # Data source analysis (12% weight)
         data_source_score = self._analyze_data_sources(agent_text, agent_data, rules.get('data_sources', {}))
-        score += data_source_score * 0.15
+        score += data_source_score * 0.12
         
-        # Output type analysis (new - 15% weight)
+        # Output type analysis (12% weight)
         output_score = self._analyze_output_types(agent_text, agent_data, rules.get('output_types', {}))
-        score += output_score * 0.15
+        score += output_score * 0.12
         
-        # Department usage analysis (new - 10% weight)
+        # Department usage analysis (8% weight)
         department_score = self._analyze_department_usage(agent_text, agent_data, rules.get('department_usage', {}))
-        score += department_score * 0.10
+        score += department_score * 0.08
+        
+        # NEW ADVANCED CRITERIA (28% total weight)
+        
+        # Runtime behavior analysis (8% weight)
+        runtime_score = self._analyze_runtime_behavior(agent_data, rules)
+        score += runtime_score * 0.08
+        
+        # Model signature detection (7% weight)
+        model_score = self._detect_model_signatures(agent_text, agent_data, rules)
+        score += model_score * 0.07
+        
+        # Configuration pattern analysis (6% weight)
+        config_score = self._analyze_configuration_patterns(agent_data, rules)
+        score += config_score * 0.06
+        
+        # Security context analysis (4% weight)
+        security_score = self._analyze_security_context(agent_data, rules)
+        score += security_score * 0.04
+        
+        # Performance characteristics (3% weight)
+        perf_score = self._analyze_performance_characteristics(agent_data, rules)
+        score += perf_score * 0.03
         
         # Protocol matching (reduced weight)
         if protocol in rules.get('protocols', []):
-            score += 0.05  # Reduced from 0.2
+            score += 0.03
         
-        # Data type inference (legacy - reduced weight)
+        # Data type inference (legacy - minimal weight)
         data_type_keywords = rules.get('data_types', [])
         for data_type in data_type_keywords:
             if data_type.lower() in agent_text:
-                score += 0.05  # Reduced from 0.1
+                score += 0.02
                 break
         
         return min(score, 1.0)  # Cap at 1.0
@@ -1047,6 +1082,281 @@ class AgentClassificationEngine:
                 return base_impact + ' affecting multiple teams'
         
         return base_impact
+    
+    def _analyze_runtime_behavior(self, agent_data: Dict, rules: Dict) -> float:
+        """Analyze runtime behavior patterns for AI classification"""
+        score = 0.0
+        
+        if not agent_data or 'agent_metadata' not in agent_data:
+            return score
+            
+        metadata = agent_data['agent_metadata']
+        if not isinstance(metadata, dict):
+            return score
+        
+        # GPU usage indicates ML workloads
+        resources = metadata.get('resources', {})
+        if isinstance(resources, dict):
+            gpu_usage = resources.get('requests', {}).get('nvidia.com/gpu', '0')
+            if str(gpu_usage) != '0':
+                score += 0.4  # Strong indicator of AI/ML
+                
+            # Memory patterns - AI typically needs more memory
+            memory = resources.get('requests', {}).get('memory', '')
+            if memory:
+                memory_val = self._parse_memory_value(memory)
+                if memory_val > 4:  # >4GB indicates ML workload
+                    score += 0.3
+                elif memory_val > 2:  # >2GB moderate indicator
+                    score += 0.2
+        
+        # Port patterns for AI services
+        common_ai_ports = [8501, 8080, 5000, 9000, 8888]  # TensorFlow, general ML, Jupyter
+        containers = metadata.get('containers', [])
+        if isinstance(containers, list):
+            for container in containers:
+                if isinstance(container, dict):
+                    ports = container.get('ports', [])
+                    for port_info in ports:
+                        port_num = port_info.get('containerPort')
+                        if port_num in common_ai_ports:
+                            score += 0.2
+                            break
+        
+        # Environment variables indicating AI frameworks
+        env = metadata.get('environment', {})
+        if isinstance(env, dict):
+            ai_env_indicators = ['MODEL_', 'CUDA_', 'TENSORFLOW_', 'PYTORCH_', 'HUGGINGFACE_']
+            for key in env.keys():
+                if any(indicator in key.upper() for indicator in ai_env_indicators):
+                    score += 0.1
+                    break
+        
+        return min(score, 1.0)
+    
+    def _detect_model_signatures(self, agent_text: str, agent_data: Dict, rules: Dict) -> float:
+        """Detect specific ML model signatures and frameworks"""
+        score = 0.0
+        
+        # Framework signatures in image names
+        framework_signatures = {
+            'tensorflow': ['tensorflow/serving', 'tensorflow/tensorflow', 'tf-serving'],
+            'pytorch': ['pytorch/pytorch', 'torchserve', 'pytorch/torchserve'],
+            'huggingface': ['huggingface/', 'transformers:', 'diffusers:'],
+            'scikit': ['scikit-learn', 'sklearn'],
+            'xgboost': ['xgboost/xgboost'],
+            'mlflow': ['mlflow/mlflow'],
+            'kubeflow': ['kubeflow/', 'seldon-core'],
+            'ray': ['rayproject/ray'],
+            'triton': ['nvcr.io/nvidia/tritonserver']
+        }
+        
+        if agent_data and 'agent_metadata' in agent_data:
+            metadata = agent_data['agent_metadata']
+            if isinstance(metadata, dict):
+                # Check container images
+                containers = metadata.get('containers', [])
+                if isinstance(containers, list):
+                    for container in containers:
+                        if isinstance(container, dict):
+                            image = container.get('image', '').lower()
+                            for framework, signatures in framework_signatures.items():
+                                if any(sig in image for sig in signatures):
+                                    score += 0.3
+                                    break
+                
+                # Check labels for model information
+                labels = metadata.get('labels', {})
+                if isinstance(labels, dict):
+                    model_indicators = ['ai.framework', 'ml.model', 'model.type', 'ai.model']
+                    for key in labels.keys():
+                        if any(indicator in key.lower() for indicator in model_indicators):
+                            score += 0.2
+                            break
+                
+                # Check annotations for model metadata
+                annotations = metadata.get('annotations', {})
+                if isinstance(annotations, dict):
+                    for key, value in annotations.items():
+                        if 'model' in key.lower():
+                            # Check for specific model names
+                            model_names = ['bert', 'gpt', 'llama', 'claude', 'gemini', 'resnet', 'vgg', 'yolo']
+                            if any(model in str(value).lower() for model in model_names):
+                                score += 0.4
+                                break
+        
+        # Check agent text for model signatures
+        model_patterns = ['model-', 'inference-', 'prediction-', 'classifier-', 'detector-']
+        agent_name = agent_data.get('name', '') if agent_data else ''
+        for pattern in model_patterns:
+            if pattern in agent_name.lower():
+                score += 0.1
+                break
+        
+        return min(score, 1.0)
+    
+    def _analyze_configuration_patterns(self, agent_data: Dict, rules: Dict) -> float:
+        """Analyze configuration patterns specific to AI workloads"""
+        score = 0.0
+        
+        if not agent_data or 'agent_metadata' not in agent_data:
+            return score
+            
+        metadata = agent_data['agent_metadata']
+        if not isinstance(metadata, dict):
+            return score
+        
+        # Check for AI-specific volume mounts
+        ai_volume_patterns = ['/models', '/data', '/datasets', '/checkpoints', '/weights', '/artifacts']
+        volumes = metadata.get('volumes', [])
+        if isinstance(volumes, list):
+            for volume in volumes:
+                if isinstance(volume, dict):
+                    mount_path = volume.get('mountPath', '')
+                    if any(pattern in mount_path for pattern in ai_volume_patterns):
+                        score += 0.3
+                        break
+        
+        # Check environment for configuration patterns
+        env = metadata.get('environment', {})
+        if isinstance(env, dict):
+            config_patterns = {
+                'model_config': ['MODEL_PATH', 'MODEL_CONFIG', 'CONFIG_FILE'],
+                'data_config': ['DATA_PATH', 'DATASET_PATH', 'INPUT_PATH'],
+                'serving_config': ['BATCH_SIZE', 'MAX_BATCH_SIZE', 'NUM_WORKERS'],
+                'gpu_config': ['GPU_MEMORY_FRACTION', 'CUDA_VISIBLE_DEVICES']
+            }
+            
+            for category, patterns in config_patterns.items():
+                for pattern in patterns:
+                    if pattern in env:
+                        score += 0.15
+                        break
+        
+        # Check for AI-specific service configurations
+        labels = metadata.get('labels', {})
+        if isinstance(labels, dict):
+            service_patterns = ['serving', 'inference', 'training', 'prediction']
+            for key, value in labels.items():
+                if any(pattern in str(value).lower() for pattern in service_patterns):
+                    score += 0.2
+                    break
+        
+        return min(score, 1.0)
+    
+    def _analyze_security_context(self, agent_data: Dict, rules: Dict) -> float:
+        """Analyze security context for AI-specific patterns"""
+        score = 0.0
+        
+        if not agent_data or 'agent_metadata' not in agent_data:
+            return score
+            
+        metadata = agent_data['agent_metadata']
+        if not isinstance(metadata, dict):
+            return score
+        
+        # Check for AI-specific security annotations
+        annotations = metadata.get('annotations', {})
+        if isinstance(annotations, dict):
+            security_patterns = ['phi', 'pii', 'compliance', 'encryption', 'hipaa', 'gdpr']
+            for key, value in annotations.items():
+                combined_text = f"{key} {value}".lower()
+                if any(pattern in combined_text for pattern in security_patterns):
+                    score += 0.3
+                    break
+        
+        # Check for healthcare/financial compliance indicators
+        labels = metadata.get('labels', {})
+        if isinstance(labels, dict):
+            compliance_indicators = ['healthcare', 'financial', 'medical', 'clinical']
+            for key, value in labels.items():
+                if any(indicator in str(value).lower() for indicator in compliance_indicators):
+                    score += 0.4
+                    break
+        
+        # Check security context in container spec
+        containers = metadata.get('containers', [])
+        if isinstance(containers, list):
+            for container in containers:
+                if isinstance(container, dict):
+                    security_context = container.get('securityContext', {})
+                    if security_context:
+                        # AI workloads often need specific security contexts
+                        score += 0.2
+                        break
+        
+        return min(score, 1.0)
+    
+    def _analyze_performance_characteristics(self, agent_data: Dict, rules: Dict) -> float:
+        """Analyze performance characteristics typical of AI workloads"""
+        score = 0.0
+        
+        if not agent_data or 'agent_metadata' not in agent_data:
+            return score
+            
+        metadata = agent_data['agent_metadata']
+        if not isinstance(metadata, dict):
+            return score
+        
+        # Check resource requirements typical of AI
+        resources = metadata.get('resources', {})
+        if isinstance(resources, dict):
+            requests = resources.get('requests', {})
+            limits = resources.get('limits', {})
+            
+            # High CPU requirements
+            cpu_request = self._parse_cpu_value(requests.get('cpu', '0'))
+            if cpu_request >= 4:  # >= 4 CPUs indicates compute-intensive AI
+                score += 0.3
+            elif cpu_request >= 2:  # >= 2 CPUs moderate indicator
+                score += 0.2
+            
+            # Memory requirements
+            memory_request = self._parse_memory_value(requests.get('memory', '0'))
+            if memory_request >= 8:  # >= 8GB indicates AI workload
+                score += 0.3
+            elif memory_request >= 4:  # >= 4GB moderate indicator
+                score += 0.2
+        
+        # Check for autoscaling configurations (AI services often need scaling)
+        labels = metadata.get('labels', {})
+        if isinstance(labels, dict):
+            if any('autoscal' in key.lower() for key in labels.keys()):
+                score += 0.2
+        
+        return min(score, 1.0)
+    
+    def _parse_memory_value(self, memory_str: str) -> float:
+        """Parse memory string to GB value"""
+        if not memory_str:
+            return 0.0
+        
+        memory_str = str(memory_str).upper()
+        try:
+            if 'GI' in memory_str or 'G' in memory_str:
+                return float(memory_str.replace('GI', '').replace('G', ''))
+            elif 'MI' in memory_str or 'M' in memory_str:
+                return float(memory_str.replace('MI', '').replace('M', '')) / 1024
+            elif 'KI' in memory_str or 'K' in memory_str:
+                return float(memory_str.replace('KI', '').replace('K', '')) / (1024 * 1024)
+        except ValueError:
+            pass
+        return 0.0
+    
+    def _parse_cpu_value(self, cpu_str: str) -> float:
+        """Parse CPU string to numeric value"""
+        if not cpu_str:
+            return 0.0
+        
+        cpu_str = str(cpu_str)
+        try:
+            if 'm' in cpu_str:  # millicores
+                return float(cpu_str.replace('m', '')) / 1000
+            else:
+                return float(cpu_str)
+        except ValueError:
+            pass
+        return 0.0
     
     def generate_agent_playbook(self, classification_result: Dict[str, Any]) -> Dict[str, Any]:
         """Generate automatic registration playbook based on classification"""
