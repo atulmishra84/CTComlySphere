@@ -272,6 +272,164 @@ class ModelVersion(db.Model):
     framework = db.Column(db.String(100))  # tensorflow, pytorch, sklearn, etc.
     model_type = db.Column(db.String(100))  # classification, regression, nlp, etc.
     input_schema = db.Column(JSON)
+
+
+# Remediation Workflow Models
+class RemediationWorkflowStatus(Enum):
+    """Status of remediation workflow execution"""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    PARTIALLY_COMPLETED = "partially_completed"
+
+
+class RemediationActionType(Enum):
+    """Types of remediation actions"""
+    UPDATE_CONFIGURATION = "update_configuration"
+    APPLY_SECURITY_PATCH = "apply_security_patch"
+    ROTATE_CREDENTIALS = "rotate_credentials"
+    ENABLE_ENCRYPTION = "enable_encryption"
+    UPDATE_ACCESS_CONTROLS = "update_access_controls"
+    BACKUP_DATA = "backup_data"
+    NOTIFY_STAKEHOLDERS = "notify_stakeholders"
+    RESTART_SERVICE = "restart_service"
+    SCALE_RESOURCES = "scale_resources"
+    RUN_COMPLIANCE_SCAN = "run_compliance_scan"
+    UPDATE_MONITORING = "update_monitoring"
+    QUARANTINE_SYSTEM = "quarantine_system"
+
+
+class RemediationTriggerType(Enum):
+    """What triggered the remediation workflow"""
+    COMPLIANCE_VIOLATION = "compliance_violation"
+    SECURITY_ALERT = "security_alert"
+    MANUAL_REQUEST = "manual_request"
+    SCHEDULED_MAINTENANCE = "scheduled_maintenance"
+    RISK_THRESHOLD_EXCEEDED = "risk_threshold_exceeded"
+    AUDIT_FINDING = "audit_finding"
+    POLICY_UPDATE = "policy_update"
+
+
+class RemediationWorkflow(db.Model):
+    """Automated remediation workflow definitions"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    workflow_type = db.Column(db.String(100), nullable=False)  # compliance, security, maintenance
+    trigger_conditions = db.Column(JSON)  # Conditions that trigger this workflow
+    trigger_type = db.Column(db.Enum(RemediationTriggerType), nullable=False)
+    
+    # Workflow configuration
+    actions = db.Column(JSON)  # List of remediation actions to execute
+    execution_order = db.Column(JSON)  # Order of action execution
+    parallel_execution = db.Column(db.Boolean, default=False)
+    timeout_minutes = db.Column(db.Integer, default=60)
+    retry_attempts = db.Column(db.Integer, default=3)
+    
+    # Approval and safety settings
+    requires_approval = db.Column(db.Boolean, default=False)
+    auto_rollback = db.Column(db.Boolean, default=True)
+    safety_checks = db.Column(JSON)  # Pre-execution safety validations
+    
+    # Targeting
+    target_frameworks = db.Column(JSON)  # HIPAA, GDPR, etc.
+    target_protocols = db.Column(JSON)  # REST, gRPC, etc.
+    target_risk_levels = db.Column(JSON)  # HIGH, CRITICAL
+    
+    # Metadata
+    is_active = db.Column(db.Boolean, default=True)
+    created_by = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_executed = db.Column(db.DateTime)
+    execution_count = db.Column(db.Integer, default=0)
+    
+    # Relationships
+    executions = db.relationship('RemediationExecution', backref='workflow', lazy=True)
+
+
+class RemediationExecution(db.Model):
+    """Record of workflow execution instances"""
+    id = db.Column(db.Integer, primary_key=True)
+    workflow_id = db.Column(db.Integer, db.ForeignKey('remediation_workflow.id'), nullable=False)
+    agent_id = db.Column(db.Integer, db.ForeignKey('ai_agent.id'), nullable=False)
+    
+    # Execution details
+    status = db.Column(db.Enum(RemediationWorkflowStatus), default=RemediationWorkflowStatus.PENDING)
+    trigger_data = db.Column(JSON)  # Data that triggered this execution
+    execution_context = db.Column(JSON)  # Runtime context and variables
+    
+    # Timing
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime)
+    duration_seconds = db.Column(db.Float)
+    
+    # Results
+    actions_completed = db.Column(JSON)  # List of successfully completed actions
+    actions_failed = db.Column(JSON)  # List of failed actions with error details
+    rollback_actions = db.Column(JSON)  # Actions taken during rollback
+    execution_log = db.Column(db.Text)
+    error_message = db.Column(db.Text)
+    
+    # Approval workflow
+    approval_requested = db.Column(db.Boolean, default=False)
+    approval_granted_by = db.Column(db.String(100))
+    approval_granted_at = db.Column(db.DateTime)
+    
+    # Relationships
+    agent = db.relationship('AIAgent', backref='remediation_executions')
+    action_executions = db.relationship('RemediationActionExecution', backref='execution', lazy=True)
+
+
+class RemediationActionExecution(db.Model):
+    """Individual action execution within a workflow"""
+    id = db.Column(db.Integer, primary_key=True)
+    execution_id = db.Column(db.Integer, db.ForeignKey('remediation_execution.id'), nullable=False)
+    
+    # Action details
+    action_type = db.Column(db.Enum(RemediationActionType), nullable=False)
+    action_name = db.Column(db.String(200), nullable=False)
+    action_config = db.Column(JSON)  # Configuration for this specific action
+    execution_order = db.Column(db.Integer, nullable=False)
+    
+    # Execution state
+    status = db.Column(db.Enum(RemediationWorkflowStatus), default=RemediationWorkflowStatus.PENDING)
+    started_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    duration_seconds = db.Column(db.Float)
+    retry_count = db.Column(db.Integer, default=0)
+    
+    # Results
+    success = db.Column(db.Boolean)
+    result_data = db.Column(JSON)  # Output data from action execution
+    error_message = db.Column(db.Text)
+    rollback_data = db.Column(JSON)  # Data needed for rollback
+    
+    # Before/after state for verification
+    pre_execution_state = db.Column(JSON)
+    post_execution_state = db.Column(JSON)
+
+
+class RemediationTemplate(db.Model):
+    """Pre-built remediation workflow templates"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    category = db.Column(db.String(100))  # compliance, security, performance
+    framework = db.Column(db.String(50))  # HIPAA, GDPR, etc.
+    
+    # Template configuration
+    template_config = db.Column(JSON)  # Template workflow configuration
+    required_parameters = db.Column(JSON)  # Parameters that must be provided
+    optional_parameters = db.Column(JSON)  # Optional configuration parameters
+    
+    # Usage tracking
+    usage_count = db.Column(db.Integer, default=0)
+    created_by = db.Column(db.String(100), default='system')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     output_schema = db.Column(JSON)
     model_size_mb = db.Column(db.Float)
     
