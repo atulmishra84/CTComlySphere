@@ -34,4 +34,4 @@ with app.app_context():
     db.create_all()
 
 # Import and register routes
-from routes import *
+import routes
