@@ -187,6 +187,19 @@ class AIAgentInventory(db.Model):
     added_to_inventory = db.Column(db.DateTime, default=datetime.utcnow)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Enhanced fields for automatic classification and controls
+    primary_classification = db.Column(db.String(100))
+    secondary_classifications = db.Column(JSON)  # List of secondary classifications
+    classification_confidence = db.Column(db.Float)  # 0.0 to 1.0
+    classification_reasons = db.Column(JSON)  # List of classification reasons
+    applicable_frameworks = db.Column(JSON)  # List of applicable compliance frameworks
+    required_controls = db.Column(JSON)  # List of required security controls
+    applied_controls = db.Column(JSON)  # List of successfully applied controls
+    failed_controls = db.Column(JSON)  # List of failed control implementations
+    control_status = db.Column(JSON)  # Status of each control (compliant/non-compliant/unknown)
+    last_classification_update = db.Column(db.DateTime)
+    classification_version = db.Column(db.String(50), default='1.0')
+    
     # Relationships
     agent = db.relationship('AIAgent', backref='inventory_record')
 
