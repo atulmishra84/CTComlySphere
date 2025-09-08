@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+
+{% block title %}Real-Time Integrations Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-3">
+                <i class="fas fa-network-wired me-3"></i>
+                Real-Time Integrations Dashboard
+            </h1>
+            <p class="text-muted">
+                Live monitoring and management of Kubernetes clusters and Docker environments
+            </p>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-primary" id="startMonitoringBtn">
+                <i class="fas fa-play me-2"></i>Start Live Monitoring
+            </button>
+            <button type="button" class="btn btn-outline-secondary" id="stopMonitoringBtn">
+                <i class="fas fa-stop me-2"></i>Stop Monitoring
+            </button>
+        </div>
+    </div>
+
+    <!-- Integration Status Cards -->
+    <div class="row mb-4">
+        <!-- Kubernetes Status -->
+        <div class="col-lg-6">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-dharmachakra me-2"></i>Kubernetes Integration
+                    </h5>
+                    <span class="badge {% if kubernetes_info.status == 'connected' %}bg-success{% elif kubernetes_info.status == 'error' %}bg-danger{% else %}bg-warning{% endif %}">
+                        {{ kubernetes_info.status|title }}
+                    </span>
+                </div>
+                
+                {% if kubernetes_info.status == 'connected' %}
+                    <div class="row">
+                        <div class="col-6">
+                            <h3 class="text-gradient">{{ kubernetes_info.nodes_count }}</h3>
+                            <small class="text-muted">Cluster Nodes</small>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="text-gradient">{{ kubernetes_info.namespaces_count }}</h3>
+                            <small class="text-muted">Namespaces</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Cluster Version: {{ kubernetes_info.cluster_version.git_version }}</small>
+                        <small class="text-muted">Last Ping: {{ kubernetes_info.last_heartbeat[:16] if kubernetes_info.last_heartbeat else 'Never' }}</small>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <p class="mb-0">{{ kubernetes_info.error or 'Kubernetes cluster not accessible' }}</p>
+                    </div>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('kubernetes_integration_page') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-external-link-alt me-1"></i>View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Docker Status -->
+        <div class="col-lg-6">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <i class="fab fa-docker me-2"></i>Docker Integration
+                    </h5>
+                    <span class="badge {% if docker_info.status == 'connected' %}bg-success{% elif docker_info.status == 'error' %}bg-danger{% else %}bg-warning{% endif %}">
+                        {{ docker_info.status|title }}
+                    </span>
+                </div>
+                
+                {% if docker_info.status == 'connected' %}
+                    <div class="row">
+                        <div class="col-6">
+                            <h3 class="text-gradient">{{ docker_info.containers.running }}</h3>
+                            <small class="text-muted">Running Containers</small>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="text-gradient">{{ docker_info.images }}</h3>
+                            <small class="text-muted">Images</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Docker Version: {{ docker_info.daemon_version }}</small>
+                        <small class="text-muted">Platform: {{ docker_info.platform }}</small>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <p class="mb-0">{{ docker_info.error or 'Docker daemon not accessible' }}</p>
+                    </div>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('docker_integration_page') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-external-link-alt me-1"></i>View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="metric-card text-center">
+                <h3 id="totalAIWorkloads" class="text-gradient">-</h3>
+                <p class="text-muted mb-0">Total AI Workloads</p>
+                <small class="text-success live-update">Live</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card text-center">
+                <h3 id="runningContainers" class="text-gradient">-</h3>
+                <p class="text-muted mb-0">Running AI Containers</p>
+                <small class="text-success live-update">Live</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card text-center">
+                <h3 id="k8sNamespaces" class="text-gradient">-</h3>
+                <p class="text-muted mb-0">K8s Namespaces</p>
+                <small class="text-success live-update">Live</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card text-center">
+                <h3 id="resourceUsage" class="text-gradient">-</h3>
+                <p class="text-muted mb-0">CPU Usage %</p>
+                <small class="text-success live-update">Live</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Integration Features Grid -->
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <div class="feature-card">
+                <div class="feature-icon bg-gradient-primary">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h5>AI Agent Discovery</h5>
+                <p class="text-muted">
+                    Automatically discover AI workloads across Kubernetes clusters and Docker environments
+                    with intelligent detection algorithms.
+                </p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success me-2"></i>Real-time pod monitoring</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Container lifecycle tracking</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Label-based AI detection</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="feature-card">
+                <div class="feature-icon bg-gradient-success">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <h5>Live Monitoring</h5>
+                <p class="text-muted">
+                    Monitor AI agent health, performance metrics, and security status in real-time
+                    with automated alerting.
+                </p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success me-2"></i>Resource usage tracking</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Health status monitoring</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Event stream processing</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="feature-card">
+                <div class="feature-icon bg-gradient-warning">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h5>Security Integration</h5>
+                <p class="text-muted">
+                    Seamless integration with security scanners and compliance frameworks
+                    for continuous security monitoring.
+                </p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success me-2"></i>Automated security scans</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Compliance validation</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Risk assessment</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Recent Integration Events
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="integrationEvents">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-clock fa-2x mb-2"></i>
+                            <p>Start monitoring to see real-time events</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2"></i>
+                        Integration Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="autoDiscovery" checked>
+                        <label class="form-check-label" for="autoDiscovery">
+                            Auto-discovery enabled
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="realTimeAlerts" checked>
+                        <label class="form-check-label" for="realTimeAlerts">
+                            Real-time alerts
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="securityScanning">
+                        <label class="form-check-label" for="securityScanning">
+                            Automatic security scanning
+                        </label>
+                    </div>
+                    <hr>
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="refreshIntegrationsBtn">
+                            <i class="fas fa-sync me-2"></i>Refresh Status
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Integration monitoring state
+let monitoringActive = false;
+let eventSource = null;
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    updateQuickStats();
+    setInterval(updateQuickStats, 30000); // Update every 30 seconds
+    
+    // Event listeners
+    document.getElementById('startMonitoringBtn').addEventListener('click', startMonitoring);
+    document.getElementById('stopMonitoringBtn').addEventListener('click', stopMonitoring);
+    document.getElementById('refreshIntegrationsBtn').addEventListener('click', refreshIntegrations);
+});
+
+function startMonitoring() {
+    if (monitoringActive) return;
+    
+    fetch('/integrations/start-monitoring', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            monitoringActive = true;
+            document.getElementById('startMonitoringBtn').disabled = true;
+            document.getElementById('stopMonitoringBtn').disabled = false;
+            
+            addEvent('System', 'Monitoring started', 'success');
+            
+            // Start event streaming (simulated)
+            startEventStreaming();
+        } else {
+            addEvent('System', 'Failed to start monitoring: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error starting monitoring:', error);
+        addEvent('System', 'Error starting monitoring', 'error');
+    });
+}
+
+function stopMonitoring() {
+    if (!monitoringActive) return;
+    
+    fetch('/integrations/stop-monitoring', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        monitoringActive = false;
+        document.getElementById('startMonitoringBtn').disabled = false;
+        document.getElementById('stopMonitoringBtn').disabled = true;
+        
+        addEvent('System', 'Monitoring stopped', 'warning');
+        
+        if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+        }
+    })
+    .catch(error => {
+        console.error('Error stopping monitoring:', error);
+        addEvent('System', 'Error stopping monitoring', 'error');
+    });
+}
+
+function startEventStreaming() {
+    // Simulate real-time events
+    const events = [
+        { source: 'Kubernetes', message: 'New AI pod detected in namespace ai-healthcare', type: 'info' },
+        { source: 'Docker', message: 'AI container tensorflow/serving:latest started', type: 'success' },
+        { source: 'Kubernetes', message: 'High resource usage detected in medical-imaging-ai', type: 'warning' },
+        { source: 'Docker', message: 'Container health check failed for ehr-assistant', type: 'error' },
+        { source: 'Security Scanner', message: 'PHI exposure detected in clinical-nlp-processor', type: 'error' },
+        { source: 'Kubernetes', message: 'Deployment scaled up: drug-interaction-classifier', type: 'info' }
+    ];
+    
+    let eventIndex = 0;
+    const eventInterval = setInterval(() => {
+        if (!monitoringActive) {
+            clearInterval(eventInterval);
+            return;
+        }
+        
+        const event = events[eventIndex % events.length];
+        addEvent(event.source, event.message, event.type);
+        eventIndex++;
+    }, 5000); // New event every 5 seconds
+}
+
+function addEvent(source, message, type) {
+    const eventsContainer = document.getElementById('integrationEvents');
+    
+    // Clear placeholder if it exists
+    if (eventsContainer.querySelector('.text-center')) {
+        eventsContainer.innerHTML = '';
+    }
+    
+    const eventElement = document.createElement('div');
+    eventElement.className = 'alert alert-' + type + ' alert-dismissible fade show slide-in-up';
+    eventElement.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <strong>${source}:</strong> ${message}
+                <br><small class="text-muted">${new Date().toLocaleTimeString()}</small>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    eventsContainer.insertBefore(eventElement, eventsContainer.firstChild);
+    
+    // Remove old events (keep last 10)
+    const events = eventsContainer.querySelectorAll('.alert');
+    if (events.length > 10) {
+        events[events.length - 1].remove();
+    }
+}
+
+function updateQuickStats() {
+    // Update Kubernetes metrics
+    fetch('/api/kubernetes/metrics')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.error) {
+                document.getElementById('totalAIWorkloads').textContent = data.total_workloads || 0;
+                document.getElementById('k8sNamespaces').textContent = Object.keys(data.by_namespace || {}).length;
+            }
+        })
+        .catch(error => console.error('Error fetching Kubernetes metrics:', error));
+    
+    // Update Docker metrics
+    fetch('/api/docker/metrics')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.error) {
+                document.getElementById('runningContainers').textContent = data.by_status?.running || 0;
+                
+                const cpuUsage = data.resource_usage?.total_cpu_percent || 0;
+                document.getElementById('resourceUsage').textContent = Math.round(cpuUsage);
+            }
+        })
+        .catch(error => console.error('Error fetching Docker metrics:', error));
+}
+
+function refreshIntegrations() {
+    const btn = document.getElementById('refreshIntegrationsBtn');
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Refreshing...';
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        updateQuickStats();
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        addEvent('System', 'Integration status refreshed', 'info');
+    }, 2000);
+}
+</script>
+{% endblock %}

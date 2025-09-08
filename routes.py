@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from app import app, db
 from models import AIAgent, ScanResult, ComplianceEvaluation, RiskLevel, ComplianceFramework, InventoryStatus, AIAgentInventory, RegistrationPlaybook, AgentRegistration, PlaybookExecution
 from datetime import datetime, timedelta
-from scanners.protocol_scanner import protocol_scanner
+from scanners import ProtocolScanner
 import random
 import json
 
@@ -186,13 +186,19 @@ def start_scan():
         # Start scanning based on selected protocols
         scan_results = []
         
-        for protocol in protocols:
-            if hasattr(protocol_scanner, protocol + '_scanner'):
-                scanner = getattr(protocol_scanner, protocol + '_scanner')
-                result = scanner.scan()
-                scan_results.append(result)
+        # Create protocol scanner instance
+        protocol_scanner = ProtocolScanner()
         
-        flash(f'Scan completed successfully. Found {sum(r.get("agents_found", 0) for r in scan_results)} agents.', 'success')
+        # Start comprehensive scan
+        result = protocol_scanner.start_comprehensive_scan(protocols)
+        
+        # Extract results
+        total_agents_found = 0
+        for protocol_result in result.values():
+            if isinstance(protocol_result, dict) and 'agents_found' in protocol_result:
+                total_agents_found += protocol_result['agents_found']
+        
+        flash(f'Scan completed successfully. Found {total_agents_found} agents.', 'success')
         
     except Exception as e:
         flash(f'Scan failed: {str(e)}', 'error')
@@ -589,7 +595,8 @@ def api_scan_agent(agent_id):
     agent = AIAgent.query.get_or_404(agent_id)
     
     try:
-        # Trigger scan for specific agent
+        # Create protocol scanner instance and trigger scan for specific agent
+        protocol_scanner = ProtocolScanner()
         scanner = protocol_scanner.scanners.get(agent.protocol)
         if scanner:
             # In a real implementation, this would trigger an actual scan

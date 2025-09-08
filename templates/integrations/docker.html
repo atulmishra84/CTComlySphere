@@ -1,0 +1,500 @@
+{% extends "base.html" %}
+
+{% block title %}Docker Integration{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('integrations_dashboard') }}">Integrations</a></li>
+                    <li class="breadcrumb-item active">Docker</li>
+                </ol>
+            </nav>
+            <h1 class="h2 mb-3">
+                <i class="fab fa-docker me-3"></i>
+                Docker Environment Integration
+            </h1>
+            <p class="text-muted">
+                Real-time monitoring and AI container discovery for Docker environments
+            </p>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-primary" id="discoverContainersBtn">
+                <i class="fas fa-search me-2"></i>Discover AI Containers
+            </button>
+        </div>
+    </div>
+
+    <!-- Docker Status -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-server me-2"></i>Docker Daemon Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if docker_info.status == 'connected' %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Daemon Details</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Version:</strong> {{ docker_info.daemon_version }}</li>
+                                    <li><strong>API Version:</strong> {{ docker_info.api_version }}</li>
+                                    <li><strong>Platform:</strong> {{ docker_info.platform }}</li>
+                                    <li><strong>Architecture:</strong> {{ docker_info.architecture }}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Container Status</h6>
+                                <div class="row">
+                                    <div class="col-6 text-center">
+                                        <h4 class="text-success">{{ docker_info.containers.running }}</h4>
+                                        <small class="text-muted">Running</small>
+                                    </div>
+                                    <div class="col-6 text-center">
+                                        <h4 class="text-secondary">{{ docker_info.containers.stopped }}</h4>
+                                        <small class="text-muted">Stopped</small>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-12 text-center">
+                                        <h4 class="text-primary">{{ docker_info.images }}</h4>
+                                        <small class="text-muted">Total Images</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>System Resources</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>CPUs:</strong> {{ docker_info.cpu.cpus }}</li>
+                                    <li><strong>Total Memory:</strong> {{ (docker_info.memory.total / 1024 / 1024 / 1024) | round(1) }} GB</li>
+                                    <li><strong>Storage Driver:</strong> {{ docker_info.storage.driver }}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Last Heartbeat: {{ docker_info.last_heartbeat[:19] if docker_info.last_heartbeat else 'Never' }}</small>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                            <h5>Docker Daemon Not Connected</h5>
+                            <p class="text-muted">{{ docker_info.error or 'Unable to connect to Docker daemon' }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="metric-card">
+                <h6 class="text-muted mb-3">AI Container Metrics</h6>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h3 class="text-gradient">{{ metrics.total_containers or 0 }}</h3>
+                        <small class="text-muted">AI Containers</small>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-gradient">{{ metrics.by_ai_type|length or 0 }}</h3>
+                        <small class="text-muted">AI Types</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h4 class="text-success">{{ metrics.health_summary.healthy or 0 }}</h4>
+                        <small class="text-muted">Healthy</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-warning">{{ metrics.health_summary.starting or 0 }}</h4>
+                        <small class="text-muted">Starting</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-danger">{{ metrics.health_summary.unhealthy or 0 }}</h4>
+                        <small class="text-muted">Issues</small>
+                    </div>
+                </div>
+                
+                {% if metrics.resource_usage and metrics.resource_usage.containers_with_stats > 0 %}
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ (metrics.resource_usage.total_cpu_percent / metrics.resource_usage.containers_with_stats) | round(1) }}%</h4>
+                        <small class="text-muted">Avg CPU</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-info">{{ (metrics.resource_usage.total_memory_usage / 1024 / 1024 / 1024) | round(1) }}GB</h4>
+                        <small class="text-muted">Memory Used</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Container Types Distribution -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        AI Container Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if metrics.by_ai_type %}
+                        <div class="row">
+                            {% for ai_type, count in metrics.by_ai_type.items() %}
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <div class="protocol-card text-center">
+                                    <h4 class="text-gradient">{{ count }}</h4>
+                                    <h6>{{ ai_type }}</h6>
+                                    <div class="progress" style="height: 4px;">
+                                        <div class="progress-bar bg-primary" style="width: {{ (count / metrics.total_containers * 100) | round }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-pie fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No AI container data available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Containers Table -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-robot me-2"></i>
+                        Discovered AI Containers
+                    </h5>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary active" data-filter="all">All</button>
+                        <button type="button" class="btn btn-outline-primary" data-filter="running">Running</button>
+                        <button type="button" class="btn btn-outline-primary" data-filter="exited">Stopped</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if ai_containers %}
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="containersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Image</th>
+                                        <th>AI Type</th>
+                                        <th>Status</th>
+                                        <th>Ports</th>
+                                        <th>Resources</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for container in ai_containers %}
+                                    <tr data-status="{{ container.status }}">
+                                        <td>
+                                            <strong>{{ container.name }}</strong>
+                                            <br><small class="text-muted">{{ container.short_id }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ container.image }}</span>
+                                        </td>
+                                        <td>{{ container.ai_type }}</td>
+                                        <td>
+                                            {% if container.status == 'running' %}
+                                                <span class="status-indicator status-online"></span>{{ container.status|title }}
+                                            {% elif container.status in ['exited', 'stopped'] %}
+                                                <span class="status-indicator status-offline"></span>{{ container.status|title }}
+                                            {% else %}
+                                                <span class="status-indicator status-warning"></span>{{ container.status|title }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% for port in container.ports %}
+                                                {% if port.host_bindings %}
+                                                    {% for binding in port.host_bindings %}
+                                                        <span class="badge bg-info">{{ binding.host_port }}:{{ port.container_port }}</span>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <span class="badge bg-light text-dark">{{ port.container_port }}</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            {% if container.resource_usage.status == 'running' %}
+                                                <small>
+                                                    CPU: {{ container.resource_usage.cpu_percent }}%<br>
+                                                    Mem: {{ container.resource_usage.memory_percent }}%
+                                                </small>
+                                            {% else %}
+                                                <small class="text-muted">N/A</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-primary" 
+                                                        onclick="viewContainerDetails('{{ container.id }}', '{{ container.name }}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-info" 
+                                                        onclick="viewContainerLogs('{{ container.id }}', '{{ container.name }}')">
+                                                    <i class="fas fa-file-alt"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-success" 
+                                                        onclick="scanContainer('{{ container.id }}', '{{ container.name }}')">
+                                                    <i class="fas fa-shield-alt"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fab fa-docker fa-3x text-muted mb-3"></i>
+                            <h5>No AI Containers Found</h5>
+                            <p class="text-muted">Run discovery to find AI containers in your Docker environment</p>
+                            <button type="button" class="btn btn-primary" onclick="discoverContainers()">
+                                <i class="fas fa-search me-2"></i>Discover Now
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Container Details Modal -->
+<div class="modal fade" id="containerDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Container Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="containerDetailsContent">
+                <!-- Details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Container Logs Modal -->
+<div class="modal fade" id="containerLogsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Container Logs</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="containerLogsContent" class="bg-dark text-light p-3" style="height: 400px; overflow-y: auto;">
+                    <!-- Logs will be loaded here -->
+                </pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize filters
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter buttons
+    document.querySelectorAll('[data-filter]').forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            filterContainers(filter);
+            
+            // Update active button
+            document.querySelectorAll('[data-filter]').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+});
+
+function filterContainers(status) {
+    const rows = document.querySelectorAll('#containersTable tbody tr');
+    
+    rows.forEach(row => {
+        if (status === 'all' || row.getAttribute('data-status') === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function discoverContainers() {
+    const btn = document.getElementById('discoverContainersBtn');
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Discovering...';
+    btn.disabled = true;
+    
+    fetch('/api/docker/containers')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                // Refresh the page to show new discoveries
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error discovering containers:', error);
+            alert('Error discovering containers: ' + error.message);
+        })
+        .finally(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+}
+
+function viewContainerDetails(containerId, containerName) {
+    const modal = new bootstrap.Modal(document.getElementById('containerDetailsModal'));
+    const content = document.getElementById('containerDetailsContent');
+    
+    content.innerHTML = `
+        <div class="text-center py-4">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p class="mt-2">Loading container details...</p>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Simulate loading container details
+    setTimeout(() => {
+        content.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Basic Information</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Name:</strong> ${containerName}</li>
+                        <li><strong>ID:</strong> ${containerId.substring(0, 12)}</li>
+                        <li><strong>Status:</strong> <span class="badge bg-success">Running</span></li>
+                        <li><strong>Image:</strong> tensorflow/tensorflow:latest</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Network Settings</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>IP Address:</strong> 172.17.0.2</li>
+                        <li><strong>Gateway:</strong> 172.17.0.1</li>
+                        <li><strong>Ports:</strong> 8888:8888, 6006:6006</li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Environment Variables</h6>
+                    <div class="code-block">
+                        <code>
+                            JUPYTER_ENABLE_LAB=yes<br>
+                            MODEL_TYPE=tensorflow<br>
+                            PHI_ACCESS=false
+                        </code>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Resource Usage</h6>
+                    <div class="progress mb-2">
+                        <div class="progress-bar" style="width: 23%">CPU: 23%</div>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-warning" style="width: 68%">Memory: 68%</div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-12">
+                    <h6>Mounts</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Source</th>
+                                    <th>Destination</th>
+                                    <th>Type</th>
+                                    <th>Mode</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>/data</td>
+                                    <td>/app/data</td>
+                                    <td>bind</td>
+                                    <td>rw</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+    }, 1000);
+}
+
+function viewContainerLogs(containerId, containerName) {
+    const modal = new bootstrap.Modal(document.getElementById('containerLogsModal'));
+    const content = document.getElementById('containerLogsContent');
+    
+    document.querySelector('#containerLogsModal .modal-title').textContent = `Logs - ${containerName}`;
+    content.textContent = 'Loading logs...';
+    
+    modal.show();
+    
+    fetch(`/api/docker/containers/${containerId}/logs?lines=100`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.logs) {
+                content.textContent = data.logs;
+            } else {
+                content.textContent = 'No logs available or error retrieving logs.';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching logs:', error);
+            content.textContent = 'Error loading logs: ' + error.message;
+        });
+}
+
+function scanContainer(containerId, containerName) {
+    if (confirm(`Start security scan for container ${containerName}?`)) {
+        // Simulate starting a scan
+        alert('Security scan initiated for ' + containerName);
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}Kubernetes Integration{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('integrations_dashboard') }}">Integrations</a></li>
+                    <li class="breadcrumb-item active">Kubernetes</li>
+                </ol>
+            </nav>
+            <h1 class="h2 mb-3">
+                <i class="fas fa-dharmachakra me-3"></i>
+                Kubernetes Cluster Integration
+            </h1>
+            <p class="text-muted">
+                Real-time monitoring and AI workload discovery for Kubernetes clusters
+            </p>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-primary" id="discoverWorkloadsBtn">
+                <i class="fas fa-search me-2"></i>Discover AI Workloads
+            </button>
+        </div>
+    </div>
+
+    <!-- Cluster Status -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-server me-2"></i>Cluster Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if cluster_info.status == 'connected' %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Cluster Details</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Version:</strong> {{ cluster_info.cluster_version.git_version }}</li>
+                                    <li><strong>Nodes:</strong> {{ cluster_info.nodes_count }}</li>
+                                    <li><strong>Namespaces:</strong> {{ cluster_info.namespaces_count }}</li>
+                                    <li><strong>Last Heartbeat:</strong> {{ cluster_info.last_heartbeat[:19] if cluster_info.last_heartbeat else 'Never' }}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Node Status</h6>
+                                <div class="row">
+                                    {% for node in cluster_info.nodes %}
+                                    <div class="col-12 mb-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>{{ node.name }}</span>
+                                            <span class="badge {% if node.status == 'Ready' %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ node.status }}
+                                            </span>
+                                        </div>
+                                        <small class="text-muted">{{ node.version }} • {{ node.architecture }}</small>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                            <h5>Cluster Not Connected</h5>
+                            <p class="text-muted">{{ cluster_info.error or 'Unable to connect to Kubernetes cluster' }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="metric-card">
+                <h6 class="text-muted mb-3">AI Workload Metrics</h6>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h3 class="text-gradient">{{ metrics.total_workloads or 0 }}</h3>
+                        <small class="text-muted">Total AI Workloads</small>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-gradient">{{ metrics.by_namespace|length or 0 }}</h3>
+                        <small class="text-muted">Active Namespaces</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h4 class="text-success">{{ metrics.status_summary.running or 0 }}</h4>
+                        <small class="text-muted">Running</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-warning">{{ metrics.status_summary.pending or 0 }}</h4>
+                        <small class="text-muted">Pending</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-danger">{{ metrics.status_summary.failed or 0 }}</h4>
+                        <small class="text-muted">Failed</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Namespace Summary -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-layer-group me-2"></i>
+                        AI Workloads by Namespace
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if namespace_summary %}
+                        <div class="row">
+                            {% for ns in namespace_summary %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="border rounded p-3">
+                                    <h6 class="mb-2">{{ ns.namespace }}</h6>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Total Workloads:</span>
+                                        <strong>{{ ns.total_workloads }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Pods:</span>
+                                        <span>{{ ns.pods }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Deployments:</span>
+                                        <span>{{ ns.deployments }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Services:</span>
+                                        <span>{{ ns.services }}</span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-success">{{ ns.status.running }} Running</small>
+                                        <small class="text-warning">{{ ns.status.pending }} Pending</small>
+                                        <small class="text-danger">{{ ns.status.failed }} Failed</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-search fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No AI workloads discovered yet</p>
+                            <button type="button" class="btn btn-primary" onclick="discoverWorkloads()">
+                                <i class="fas fa-search me-2"></i>Start Discovery
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Workloads Table -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-robot me-2"></i>
+                        Discovered AI Workloads
+                    </h5>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary" data-filter="all">All</button>
+                        <button type="button" class="btn btn-outline-primary" data-filter="Pod">Pods</button>
+                        <button type="button" class="btn btn-outline-primary" data-filter="Deployment">Deployments</button>
+                        <button type="button" class="btn btn-outline-primary" data-filter="Service">Services</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if ai_workloads %}
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="workloadsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>AI Type</th>
+                                        <th>Namespace</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for workload in ai_workloads %}
+                                    <tr data-type="{{ workload.type }}">
+                                        <td>
+                                            <strong>{{ workload.name }}</strong>
+                                            {% if workload.type == 'Pod' and workload.node_name %}
+                                                <br><small class="text-muted">Node: {{ workload.node_name }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ workload.type }}</span>
+                                        </td>
+                                        <td>{{ workload.ai_type }}</td>
+                                        <td>{{ workload.namespace }}</td>
+                                        <td>
+                                            {% if workload.status == 'Running' %}
+                                                <span class="status-indicator status-online"></span>{{ workload.status }}
+                                            {% elif workload.status == 'Pending' %}
+                                                <span class="status-indicator status-warning"></span>{{ workload.status }}
+                                            {% else %}
+                                                <span class="status-indicator status-offline"></span>{{ workload.status }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small>{{ workload.created[:10] }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-primary" 
+                                                        onclick="viewWorkloadDetails('{{ workload.name }}', '{{ workload.namespace }}', '{{ workload.type }}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-success" 
+                                                        onclick="scanWorkload('{{ workload.name }}', '{{ workload.namespace }}')">
+                                                    <i class="fas fa-shield-alt"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-robot fa-3x text-muted mb-3"></i>
+                            <h5>No AI Workloads Found</h5>
+                            <p class="text-muted">Run discovery to find AI workloads in your cluster</p>
+                            <button type="button" class="btn btn-primary" onclick="discoverWorkloads()">
+                                <i class="fas fa-search me-2"></i>Discover Now
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Workload Details Modal -->
+<div class="modal fade" id="workloadDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Workload Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="workloadDetailsContent">
+                <!-- Details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize filters
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter buttons
+    document.querySelectorAll('[data-filter]').forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            filterWorkloads(filter);
+            
+            // Update active button
+            document.querySelectorAll('[data-filter]').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+    
+    // Set 'All' as active by default
+    document.querySelector('[data-filter="all"]').classList.add('active');
+});
+
+function filterWorkloads(type) {
+    const rows = document.querySelectorAll('#workloadsTable tbody tr');
+    
+    rows.forEach(row => {
+        if (type === 'all' || row.getAttribute('data-type') === type) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function discoverWorkloads() {
+    const btn = document.getElementById('discoverWorkloadsBtn');
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Discovering...';
+    btn.disabled = true;
+    
+    fetch('/api/kubernetes/workloads')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                // Refresh the page to show new discoveries
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error discovering workloads:', error);
+            alert('Error discovering workloads: ' + error.message);
+        })
+        .finally(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+}
+
+function viewWorkloadDetails(name, namespace, type) {
+    const modal = new bootstrap.Modal(document.getElementById('workloadDetailsModal'));
+    const content = document.getElementById('workloadDetailsContent');
+    
+    content.innerHTML = `
+        <div class="text-center py-4">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p class="mt-2">Loading workload details...</p>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Simulate loading workload details
+    setTimeout(() => {
+        content.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Basic Information</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Name:</strong> ${name}</li>
+                        <li><strong>Namespace:</strong> ${namespace}</li>
+                        <li><strong>Type:</strong> ${type}</li>
+                        <li><strong>Status:</strong> <span class="badge bg-success">Running</span></li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Labels & Annotations</h6>
+                    <div class="code-block">
+                        <code>
+                            ai.framework: tensorflow<br>
+                            ai.model-type: medical-imaging<br>
+                            healthcare.phi-processing: true
+                        </code>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Containers</h6>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item">
+                            <strong>inference-server</strong><br>
+                            <small class="text-muted">tensorflow/serving:2.13.0-gpu</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Resource Usage</h6>
+                    <div class="progress mb-2">
+                        <div class="progress-bar" style="width: 45%">CPU: 45%</div>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-warning" style="width: 72%">Memory: 72%</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }, 1000);
+}
+
+function scanWorkload(name, namespace) {
+    if (confirm(`Start security scan for ${name} in namespace ${namespace}?`)) {
+        // Simulate starting a scan
+        alert('Security scan initiated for ' + name);
+    }
+}
+</script>
+{% endblock %}
