@@ -8,6 +8,7 @@ Discovers and monitors AI agents across infrastructure using multiple discovery 
 - A2A Communication Scanner: Application-to-Application AI integrations
 - MCP Protocol Scanner: Model Context Protocol enabled agents
 - API Endpoint Scanner: API endpoints for AI services
+- API Gateway Scanner: Kong, Istio, Ambassador, NGINX gateway analysis
 - Model Registry Scanner: Model registries and ML platforms
 - Process Scanner: AI processes running on systems
 """
@@ -32,6 +33,7 @@ class ScannerType(Enum):
     A2A_COMMUNICATION = "a2a_communication"
     MCP_PROTOCOL = "mcp_protocol"
     API_ENDPOINT = "api_endpoint"
+    API_GATEWAY = "api_gateway"
     MODEL_REGISTRY = "model_registry"
     PROCESS = "process"
 
@@ -112,7 +114,7 @@ class EnvironmentScanner:
         self.cache_ttl = timedelta(hours=1)
         
         self._initialize_scanners()
-        self.logger.info("Environment Scanner initialized with 8 discovery methods")
+        self.logger.info("Environment Scanner initialized with 9 discovery methods")
     
     def _initialize_scanners(self):
         """Initialize all scanner instances"""
@@ -124,6 +126,7 @@ class EnvironmentScanner:
             from scanners.a2a_communication_scanner import A2ACommunicationScanner
             from scanners.mcp_protocol_scanner import MCPProtocolScanner
             from scanners.api_endpoint_scanner import APIEndpointScanner
+            from scanners.api_gateway_scanner import APIGatewayScanner
             from scanners.model_registry_scanner import ModelRegistryScanner
             from scanners.process_scanner import ProcessScanner
             
@@ -134,6 +137,7 @@ class EnvironmentScanner:
                 ScannerType.A2A_COMMUNICATION: A2ACommunicationScanner(),
                 ScannerType.MCP_PROTOCOL: MCPProtocolScanner(),
                 ScannerType.API_ENDPOINT: APIEndpointScanner(),
+                ScannerType.API_GATEWAY: APIGatewayScanner(),
                 ScannerType.MODEL_REGISTRY: ModelRegistryScanner(),
                 ScannerType.PROCESS: ProcessScanner()
             }
