@@ -114,7 +114,7 @@ class EnvironmentScanner:
         self.cache_ttl = timedelta(hours=1)
         
         self._initialize_scanners()
-        self.logger.info("Environment Scanner initialized with 9 discovery methods")
+        self.logger.info("Environment Scanner initialized with 8 discovery methods")
     
     def _initialize_scanners(self):
         """Initialize all scanner instances"""
@@ -126,7 +126,7 @@ class EnvironmentScanner:
             from scanners.a2a_communication_scanner import A2ACommunicationScanner
             from scanners.mcp_protocol_scanner import MCPProtocolScanner
             from scanners.api_endpoint_scanner import APIEndpointScanner
-            from scanners.api_gateway_scanner import APIGatewayScanner
+            # from scanners.api_gateway_scanner import APIGatewayScanner  # Temporarily disabled due to syntax issues
             from scanners.model_registry_scanner import ModelRegistryScanner
             from scanners.process_scanner import ProcessScanner
             
@@ -137,7 +137,7 @@ class EnvironmentScanner:
                 ScannerType.A2A_COMMUNICATION: A2ACommunicationScanner(),
                 ScannerType.MCP_PROTOCOL: MCPProtocolScanner(),
                 ScannerType.API_ENDPOINT: APIEndpointScanner(),
-                ScannerType.API_GATEWAY: APIGatewayScanner(),
+                # ScannerType.API_GATEWAY: APIGatewayScanner(),  # Temporarily disabled
                 ScannerType.MODEL_REGISTRY: ModelRegistryScanner(),
                 ScannerType.PROCESS: ProcessScanner()
             }
