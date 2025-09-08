@@ -426,7 +426,7 @@
                             </tr>
                             <tr>
                                 <td><strong>Scan Duration:</strong></td>
-                                <td>{{ "%.2f"|format(scan.scan_duration) }}s</td>
+                                <td>{{ "%.2f"|format(scan.scan_duration or 0) }}s</td>
                             </tr>
                             <tr>
                                 <td><strong>Scan Date:</strong></td>

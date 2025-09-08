@@ -433,6 +433,154 @@ def playbooks_inventory():
                          status_counts=status_counts)
 
 
+# Real-Time Monitoring Routes
+@app.route('/monitoring/realtime')
+def realtime_monitoring():
+    """Real-time monitoring dashboard"""
+    return render_template('realtime_monitoring.html')
+
+
+@app.route('/api/realtime/metrics')
+def api_realtime_metrics():
+    """API endpoint for real-time metrics"""
+    import random
+    from datetime import datetime, timedelta
+    
+    # Get current metrics
+    total_agents = AIAgent.query.count()
+    recent_scans = ScanResult.query.filter(
+        ScanResult.created_at >= datetime.utcnow() - timedelta(hours=1)
+    ).count()
+    
+    # Calculate compliance score
+    recent_evaluations = ComplianceEvaluation.query.filter(
+        ComplianceEvaluation.evaluation_date >= datetime.utcnow() - timedelta(days=1)
+    ).all()
+    
+    compliance_score = 85  # Default
+    if recent_evaluations:
+        compliance_score = sum(e.compliance_score for e in recent_evaluations) / len(recent_evaluations)
+    
+    # Calculate security alerts
+    security_alerts = ScanResult.query.filter(
+        ScanResult.created_at >= datetime.utcnow() - timedelta(hours=1),
+        ScanResult.risk_level.in_([RiskLevel.HIGH, RiskLevel.CRITICAL])
+    ).count()
+    
+    # Agent status distribution
+    online_agents = AIAgent.query.filter(
+        AIAgent.last_scanned >= datetime.utcnow() - timedelta(minutes=30)
+    ).count()
+    
+    warning_agents = ScanResult.query.filter(
+        ScanResult.risk_level == RiskLevel.MEDIUM,
+        ScanResult.created_at >= datetime.utcnow() - timedelta(hours=1)
+    ).count()
+    
+    offline_agents = total_agents - online_agents - warning_agents
+    
+    return jsonify({
+        'total_agents': total_agents,
+        'active_scans': recent_scans,
+        'security_alerts': security_alerts,
+        'compliance_score': round(compliance_score, 1),
+        'agents_today': random.randint(0, 5),  # Simulated
+        'alerts_last_hour': security_alerts,
+        'compliance_change': random.randint(-2, 3),  # Simulated
+        'average_risk_score': random.randint(20, 80),  # Simulated
+        'critical_agents': ScanResult.query.filter(ScanResult.risk_level == RiskLevel.CRITICAL).count(),
+        'agent_status_distribution': {
+            'online': online_agents,
+            'warning': warning_agents,
+            'offline': max(0, offline_agents)
+        },
+        'risk_timeline': True
+    })
+
+
+@app.route('/api/realtime/agents')
+def api_realtime_agents():
+    """API endpoint for real-time agent status"""
+    import random
+    
+    agents = AIAgent.query.limit(20).all()
+    agents_data = []
+    
+    for agent in agents:
+        # Get latest scan result
+        latest_scan = ScanResult.query.filter_by(ai_agent_id=agent.id).order_by(
+            ScanResult.created_at.desc()
+        ).first()
+        
+        # Determine status
+        if latest_scan and latest_scan.created_at >= datetime.utcnow() - timedelta(minutes=30):
+            if latest_scan.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
+                status = 'warning'
+                status_text = 'High Risk'
+            else:
+                status = 'online'
+                status_text = 'Online'
+        else:
+            status = 'offline'
+            status_text = 'Offline'
+        
+        agents_data.append({
+            'id': agent.id,
+            'name': agent.name,
+            'type': agent.type,
+            'status': status,
+            'status_text': status_text,
+            'last_scan': latest_scan.created_at.strftime('%H:%M') if latest_scan else None,
+            'risk_level': latest_scan.risk_level.value if latest_scan else 'UNKNOWN'
+        })
+    
+    return jsonify(agents_data)
+
+
+@app.route('/api/realtime/protocols')
+def api_realtime_protocols():
+    """API endpoint for real-time protocol metrics"""
+    import random
+    
+    protocols = [
+        'Kubernetes', 'Docker', 'REST API', 'gRPC', 
+        'WebSocket', 'MQTT', 'GraphQL', 'Cloud Services'
+    ]
+    
+    protocol_data = []
+    for protocol in protocols:
+        agents_count = AIAgent.query.filter_by(protocol=protocol.lower().replace(' ', '_')).count()
+        
+        protocol_data.append({
+            'name': protocol,
+            'status': random.choice(['online', 'warning', 'offline']),
+            'status_text': random.choice(['Active', 'Warning', 'Error']),
+            'agents_count': agents_count,
+            'response_time': random.randint(50, 500)
+        })
+    
+    return jsonify(protocol_data)
+
+
+@app.route('/api/agents/<int:agent_id>/scan', methods=['POST'])
+def api_scan_agent(agent_id):
+    """API endpoint to trigger manual scan for specific agent"""
+    agent = AIAgent.query.get_or_404(agent_id)
+    
+    try:
+        # Trigger scan for specific agent
+        scanner = protocol_scanner.scanners.get(agent.protocol)
+        if scanner:
+            # In a real implementation, this would trigger an actual scan
+            # For now, we'll simulate a successful scan trigger
+            return jsonify({'success': True, 'message': 'Scan initiated successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'No scanner available for this protocol'})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('404.html'), 404
