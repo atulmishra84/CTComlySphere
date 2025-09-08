@@ -7,13 +7,15 @@ from analytics.risk_scoring import RiskScorer
 from analytics.predictive import PredictiveAnalytics
 from webhooks.continuous_scanner import ContinuousScanner
 from cloud.multi_cloud import MultiCloudManager
-from routes.playbook_routes import playbook_bp
-from playbooks.playbook_manager import PlaybookManager
+# Import will be done after app creation to avoid circular imports
 import json
 from datetime import datetime, timedelta
 
-# Register playbook blueprint
-app.register_blueprint(playbook_bp)
+# Import playbook manager for auto-onboarding integration
+try:
+    from playbooks.playbook_manager import PlaybookManager
+except ImportError:
+    PlaybookManager = None
 
 @app.route('/')
 def dashboard():
@@ -315,6 +317,121 @@ def api_risk_trends():
         })
     
     return jsonify(trend_data)
+
+
+# ===== PLAYBOOK ROUTES =====
+
+@app.route('/playbooks')
+def playbooks_index():
+    """Playbook management dashboard"""
+    playbooks = RegistrationPlaybook.query.order_by(RegistrationPlaybook.created_at.desc()).all()
+    total_registrations = AgentRegistration.query.count()
+    active_playbooks = RegistrationPlaybook.query.filter_by(is_active=True).count()
+    auto_onboarding_count = RegistrationPlaybook.query.filter_by(auto_onboarding_enabled=True).count()
+    
+    return render_template('playbooks/index.html', 
+                         playbooks=playbooks,
+                         total_registrations=total_registrations,
+                         active_playbooks=active_playbooks,
+                         auto_onboarding_count=auto_onboarding_count)
+
+
+@app.route('/playbooks/create', methods=['GET', 'POST'])
+def create_playbook():
+    """Create new registration playbook"""
+    if request.method == 'POST':
+        try:
+            name = request.form.get('name')
+            description = request.form.get('description')
+            plain_english_config = request.form.get('plain_english_config')
+            
+            if not all([name, description, plain_english_config]):
+                flash('All fields are required', 'error')
+                return render_template('playbooks/create.html', examples={})
+            
+            # Create playbook with auto-generated backend code
+            if PlaybookManager:
+                playbook_manager = PlaybookManager()
+                playbook = playbook_manager.create_playbook_from_english(
+                    name=name,
+                    description=description,
+                    plain_english_config=plain_english_config,
+                    created_by='web_user'
+                )
+                
+                flash(f'Playbook "{name}" created successfully with auto-generated backend code!', 'success')
+                return redirect(url_for('view_playbook', id=playbook.id))
+            else:
+                flash('Playbook manager not available', 'error')
+            
+        except Exception as e:
+            flash(f'Error creating playbook: {str(e)}', 'error')
+            db.session.rollback()
+    
+    # Provide examples for user guidance
+    examples = {
+        'healthcare_ai': '''Automatically register all AI agents discovered in healthcare environments.
+When discovered through Kubernetes or Docker protocols, validate that they have proper encryption.
+Check HIPAA and FDA compliance for all medical AI systems.
+Add to inventory with high criticality level.
+Notify security team via email when PHI exposure is detected.
+Require authentication for all healthcare AI endpoints.''',
+        
+        'cloud_ai': '''Auto onboard AI agents from AWS, Azure, and GCP cloud providers.
+When discovered through REST API or gRPC protocols, perform security scan.
+Validate that cloud AI services have proper IAM roles.
+Add to inventory with medium criticality level.
+Check SOX compliance for financial AI models.
+Notify admin team when high risk agents are discovered.'''
+    }
+    
+    return render_template('playbooks/create.html', examples=examples)
+
+
+@app.route('/playbooks/<int:id>')
+def view_playbook(id):
+    """View playbook details and generated code"""
+    playbook = RegistrationPlaybook.query.get_or_404(id)
+    registrations = AgentRegistration.query.filter_by(playbook_id=id).order_by(
+        AgentRegistration.started_at.desc()
+    ).limit(10).all()
+    executions = PlaybookExecution.query.filter_by(playbook_id=id).order_by(
+        PlaybookExecution.started_at.desc()
+    ).limit(10).all()
+    
+    return render_template('playbooks/view.html', 
+                         playbook=playbook,
+                         registrations=registrations,
+                         executions=executions)
+
+
+@app.route('/playbooks/inventory')
+def playbooks_inventory():
+    """AI Agent Inventory dashboard"""
+    if PlaybookManager:
+        playbook_manager = PlaybookManager()
+        summary = playbook_manager.get_inventory_summary()
+    else:
+        summary = {'total_discovered': 0, 'total_registered': 0, 'registration_rate': 0, 'by_protocol': {}, 'by_cloud_provider': {}}
+    
+    # Get recent registrations
+    recent_registrations = db.session.query(
+        AIAgentInventory, AIAgent
+    ).join(AIAgent).order_by(
+        AIAgentInventory.added_to_inventory.desc()
+    ).limit(20).all()
+    
+    # Get agents by status
+    status_counts = {}
+    for status in InventoryStatus:
+        count = AIAgentInventory.query.filter_by(inventory_status=status).count()
+        status_counts[status.value] = count
+    
+    return render_template('playbooks/inventory.html',
+                         summary=summary,
+                         recent_registrations=recent_registrations,
+                         status_counts=status_counts)
+
 
 @app.errorhandler(404)
 def not_found_error(error):
