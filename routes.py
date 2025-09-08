@@ -58,6 +58,15 @@ except ImportError as e:
     AUDIT_ONBOARDING_AVAILABLE = False
     print(f"Warning: Audit and onboarding features not available: {e}")
 
+# Import agent routes
+try:
+    from routes_pkg.agent_routes import agent_bp
+    app.register_blueprint(agent_bp)
+    AGENT_AVAILABLE = True
+except ImportError as e:
+    AGENT_AVAILABLE = False
+    print(f"Warning: Healthcare Compliance Agent features not available: {e}")
+
 
 @app.route('/')
 def dashboard():

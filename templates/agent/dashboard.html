@@ -1,0 +1,612 @@
+{% extends "base.html" %}
+
+{% block title %}Healthcare Compliance AI Agent - Dashboard{% endblock %}
+
+{% block content %}
+<!-- Agent Header -->
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-gradient-primary-to-secondary text-white">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-lg-8">
+                            <h1 class="display-6 mb-2 fw-bold">
+                                <i class="fas fa-robot me-3"></i>Healthcare Compliance AI Agent
+                            </h1>
+                            <p class="mb-3 opacity-90">
+                                Autonomous AI agent for intelligent healthcare compliance management across your organization
+                            </p>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-{{ 'success' if agent_status.running else 'warning' }} fs-6 me-3">
+                                    <i class="fas fa-circle pulse me-1"></i>
+                                    {{ 'Active & Monitoring' if agent_status.running else 'Standby Mode' }}
+                                </span>
+                                <small class="opacity-75">
+                                    {{ agent_status.completed_tasks }} tasks completed • {{ agent_status.decisions_made }} decisions made
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 text-end">
+                            <div class="agent-controls">
+                                {% if agent_status.running %}
+                                    <button id="stopAgent" class="btn btn-outline-light btn-lg me-2">
+                                        <i class="fas fa-pause me-2"></i>Pause Agent
+                                    </button>
+                                {% else %}
+                                    <button id="startAgent" class="btn btn-light btn-lg me-2">
+                                        <i class="fas fa-play me-2"></i>Start Agent
+                                    </button>
+                                {% endif %}
+                                <button id="refreshStatus" class="btn btn-outline-light">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Status Cards -->
+    <div class="row mb-4 g-3">
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1 fw-semibold small">Queue Tasks</h6>
+                            <h4 class="text-primary mb-1 fw-bold">{{ agent_status.task_queue_size }}</h4>
+                            <small class="text-success">
+                                <i class="fas fa-check me-1"></i>{{ agent_status.completed_tasks }} completed
+                            </small>
+                        </div>
+                        <div class="feature-icon-sm bg-gradient-primary">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1 fw-semibold small">AI Systems</h6>
+                            <h4 class="text-info mb-1 fw-bold">{{ context_data.total_agents }}</h4>
+                            <small class="text-info">
+                                <i class="fas fa-robot me-1"></i>Under monitoring
+                            </small>
+                        </div>
+                        <div class="feature-icon-sm bg-gradient-info">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1 fw-semibold small">Decisions Made</h6>
+                            <h4 class="text-success mb-1 fw-bold">{{ agent_status.decisions_made }}</h4>
+                            <small class="text-success">
+                                <i class="fas fa-brain me-1"></i>Autonomous actions
+                            </small>
+                        </div>
+                        <div class="feature-icon-sm bg-gradient-success">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1 fw-semibold small">Knowledge Base</h6>
+                            <h4 class="text-warning mb-1 fw-bold">{{ agent_status.knowledge_base_size }}</h4>
+                            <small class="text-warning">
+                                <i class="fas fa-database me-1"></i>Rules & patterns
+                            </small>
+                        </div>
+                        <div class="feature-icon-sm bg-gradient-warning">
+                            <i class="fas fa-database"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Interface Row -->
+    <div class="row">
+        <!-- Chat Interface -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="fas fa-comments text-primary me-2"></i>
+                        Chat with Compliance Agent
+                    </h5>
+                    <small class="text-muted">Ask questions in natural language about your compliance status</small>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Chat Messages -->
+                    <div id="chatMessages" class="chat-container p-4" style="height: 400px; overflow-y: auto;">
+                        <div class="agent-message mb-3">
+                            <div class="d-flex">
+                                <div class="agent-avatar me-3">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="message-content">
+                                    <div class="message-bubble agent-bubble">
+                                        Hello! I'm your Healthcare Compliance AI Agent. I can help you discover AI systems, assess compliance, generate reports, and automatically fix issues. What would you like me to do?
+                                    </div>
+                                    <small class="text-muted">Just now</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Suggestions -->
+                    <div class="suggestions-container p-3 border-top bg-light">
+                        <small class="text-muted mb-2 d-block">Quick suggestions:</small>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for suggestion in suggestions %}
+                            <button class="btn btn-outline-primary btn-sm suggestion-btn" data-suggestion="{{ suggestion }}">
+                                {{ suggestion }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Input -->
+                    <div class="chat-input-container p-3 border-top">
+                        <div class="input-group">
+                            <input type="text" id="chatInput" class="form-control" 
+                                   placeholder="Ask me anything about compliance..." 
+                                   autocomplete="off">
+                            <button id="sendMessage" class="btn btn-primary" type="button">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions & Status -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="fas fa-bolt text-warning me-2"></i>Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body p-3">
+                    <div id="quickActions" class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm text-start quick-action-btn" 
+                                data-action="discover_systems">
+                            <i class="fas fa-search me-2"></i>Discover AI Systems
+                        </button>
+                        <button class="btn btn-outline-success btn-sm text-start quick-action-btn" 
+                                data-action="check_compliance">
+                            <i class="fas fa-shield-alt me-2"></i>Check Compliance
+                        </button>
+                        <button class="btn btn-outline-info btn-sm text-start quick-action-btn" 
+                                data-action="generate_report">
+                            <i class="fas fa-file-alt me-2"></i>Generate Report
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm text-start quick-action-btn" 
+                                data-action="fix_issues">
+                            <i class="fas fa-wrench me-2"></i>Fix Critical Issues
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm text-start quick-action-btn" 
+                                data-action="monitor_systems">
+                            <i class="fas fa-chart-line me-2"></i>Monitor Systems
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agent Activity -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="fas fa-history text-info me-2"></i>Recent Activity
+                    </h6>
+                </div>
+                <div class="card-body p-3">
+                    <div id="recentActivity">
+                        {% if recent_tasks %}
+                            {% for task in recent_tasks %}
+                            <div class="activity-item mb-2 pb-2 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <small class="fw-semibold text-primary">{{ task.action.value.replace('_', ' ').title() }}</small>
+                                        <br>
+                                        <small class="text-muted">{{ task.created_at.strftime('%H:%M') }}</small>
+                                    </div>
+                                    <span class="badge bg-{{ 'success' if task.completed else 'warning' }} badge-sm">
+                                        {{ 'Done' if task.completed else 'Pending' }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-history fa-2x opacity-50 mb-2"></i>
+                                <p class="mb-0">No recent activity</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+.chat-container {
+    background: #f8f9fa;
+}
+
+.agent-message {
+    animation: fadeInUp 0.3s ease;
+}
+
+.user-message {
+    animation: fadeInUp 0.3s ease;
+}
+
+.agent-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+}
+
+.user-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #28a745, #20c997);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+}
+
+.message-bubble {
+    background: white;
+    border-radius: 15px;
+    padding: 12px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-width: 500px;
+    word-wrap: break-word;
+}
+
+.agent-bubble {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 1px solid #e9ecef;
+}
+
+.user-bubble {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+}
+
+.suggestion-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.quick-action-btn {
+    transition: all 0.2s ease;
+}
+
+.quick-action-btn:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.activity-item {
+    transition: all 0.2s ease;
+}
+
+.activity-item:hover {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 8px;
+    margin: 0 -8px;
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.feature-icon-sm {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+}
+
+.bg-gradient-primary-to-secondary {
+    background: linear-gradient(135deg, #007bff, #6610f2);
+}
+</style>
+
+<!-- Scripts -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatInput = document.getElementById('chatInput');
+    const sendMessage = document.getElementById('sendMessage');
+    const chatMessages = document.getElementById('chatMessages');
+    const suggestionBtns = document.querySelectorAll('.suggestion-btn');
+    const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+    const startAgentBtn = document.getElementById('startAgent');
+    const stopAgentBtn = document.getElementById('stopAgent');
+    const refreshStatusBtn = document.getElementById('refreshStatus');
+
+    // Chat functionality
+    function sendChatMessage(message) {
+        if (!message.trim()) return;
+
+        // Add user message
+        addMessageToChat(message, 'user');
+        
+        // Clear input
+        chatInput.value = '';
+        
+        // Show typing indicator
+        showTypingIndicator();
+
+        // Send to agent
+        fetch('/agent/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query: message })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideTypingIndicator();
+            
+            if (data.success) {
+                addMessageToChat(data.result.message || 'Task completed successfully', 'agent');
+                
+                // Update suggestions if provided
+                if (data.suggestions) {
+                    updateSuggestions(data.suggestions);
+                }
+            } else {
+                addMessageToChat(data.message || 'Sorry, I encountered an error processing your request.', 'agent', true);
+            }
+        })
+        .catch(error => {
+            hideTypingIndicator();
+            addMessageToChat('Sorry, I\'m having trouble connecting right now. Please try again.', 'agent', true);
+            console.error('Chat error:', error);
+        });
+    }
+
+    function addMessageToChat(message, sender, isError = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `${sender}-message mb-3`;
+        
+        const avatar = sender === 'agent' ? 
+            '<div class="agent-avatar me-3"><i class="fas fa-robot"></i></div>' :
+            '<div class="user-avatar me-3"><i class="fas fa-user"></i></div>';
+        
+        const alignmentClass = sender === 'user' ? 'justify-content-end' : '';
+        const bubbleClass = sender === 'agent' ? 'agent-bubble' : 'user-bubble';
+        const errorClass = isError ? 'border-danger' : '';
+        
+        messageDiv.innerHTML = `
+            <div class="d-flex ${alignmentClass}">
+                ${sender === 'agent' ? avatar : ''}
+                <div class="message-content">
+                    <div class="message-bubble ${bubbleClass} ${errorClass}">
+                        ${message}
+                    </div>
+                    <small class="text-muted">Just now</small>
+                </div>
+                ${sender === 'user' ? avatar : ''}
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'typingIndicator';
+        typingDiv.className = 'agent-message mb-3';
+        typingDiv.innerHTML = `
+            <div class="d-flex">
+                <div class="agent-avatar me-3"><i class="fas fa-robot"></i></div>
+                <div class="message-content">
+                    <div class="message-bubble agent-bubble">
+                        <div class="typing-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+        const typingIndicator = document.getElementById('typingIndicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+
+    // Event listeners
+    sendMessage.addEventListener('click', () => {
+        sendChatMessage(chatInput.value);
+    });
+
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendChatMessage(chatInput.value);
+        }
+    });
+
+    // Suggestion buttons
+    suggestionBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            sendChatMessage(btn.dataset.suggestion);
+        });
+    });
+
+    // Quick action buttons
+    quickActionBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const action = btn.dataset.action;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+            btn.disabled = true;
+            
+            fetch('/agent/execute-action', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action_id: action })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addMessageToChat(data.result.message || 'Action completed successfully', 'agent');
+                } else {
+                    addMessageToChat(data.message || 'Action failed', 'agent', true);
+                }
+            })
+            .catch(error => {
+                addMessageToChat('Failed to execute action', 'agent', true);
+                console.error('Action error:', error);
+            })
+            .finally(() => {
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = btn.innerHTML.replace('<i class="fas fa-spinner fa-spin me-2"></i>Processing...', btn.getAttribute('data-original-text') || btn.textContent);
+            });
+        });
+    });
+
+    // Agent control buttons
+    if (startAgentBtn) {
+        startAgentBtn.addEventListener('click', () => {
+            fetch('/agent/start', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload(); // Refresh to update status
+                } else {
+                    alert('Failed to start agent: ' + data.message);
+                }
+            });
+        });
+    }
+
+    if (stopAgentBtn) {
+        stopAgentBtn.addEventListener('click', () => {
+            fetch('/agent/stop', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload(); // Refresh to update status
+                } else {
+                    alert('Failed to stop agent: ' + data.message);
+                }
+            });
+        });
+    }
+
+    if (refreshStatusBtn) {
+        refreshStatusBtn.addEventListener('click', () => {
+            location.reload();
+        });
+    }
+});
+</script>
+
+<!-- Typing dots animation -->
+<style>
+.typing-dots {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+}
+
+.typing-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #007bff;
+    margin: 0 1px;
+    animation: typing 1.4s infinite ease-in-out both;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing {
+    0%, 80%, 100% { 
+        transform: scale(0);
+        opacity: 0.5;
+    } 
+    40% { 
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+</style>
+
+{% endblock %}
