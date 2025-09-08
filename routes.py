@@ -375,7 +375,9 @@ def webhooks():
             'is_active': True,
             'scan_frequency': 3600,
             'protocols': ['kubernetes', 'docker', 'fhir', 'hl7'],
-            'last_triggered': datetime.utcnow() - timedelta(hours=2)
+            'last_triggered': datetime.utcnow() - timedelta(hours=2),
+            'created_at': datetime.utcnow() - timedelta(days=7),
+            'updated_at': datetime.utcnow() - timedelta(hours=2)
         },
         {
             'id': 2,
@@ -386,7 +388,9 @@ def webhooks():
             'is_active': True,
             'scan_frequency': 86400,
             'protocols': ['rest_api', 'grpc', 'dicom', 'webrtc', 'amqp'],
-            'last_triggered': datetime.utcnow() - timedelta(days=1)
+            'last_triggered': datetime.utcnow() - timedelta(days=1),
+            'created_at': datetime.utcnow() - timedelta(days=14),
+            'updated_at': datetime.utcnow() - timedelta(days=1)
         }
     ]
     
@@ -405,6 +409,30 @@ def create_webhook():
     
     # In a real implementation, this would create a webhook in the database
     flash('Webhook created successfully!', 'success')
+    return redirect(url_for('webhooks'))
+
+
+@app.route('/webhooks/trigger/<int:webhook_id>', methods=['POST'])
+def trigger_webhook(webhook_id):
+    """Trigger a webhook manually"""
+    # In a real implementation, this would trigger the webhook
+    flash(f'Webhook {webhook_id} triggered successfully!', 'success')
+    return redirect(url_for('webhooks'))
+
+
+@app.route('/webhooks/delete/<int:webhook_id>', methods=['POST'])
+def delete_webhook(webhook_id):
+    """Delete a webhook"""
+    # In a real implementation, this would delete the webhook from database
+    flash(f'Webhook {webhook_id} deleted successfully!', 'warning')
+    return redirect(url_for('webhooks'))
+
+
+@app.route('/webhooks/toggle/<int:webhook_id>', methods=['POST'])
+def toggle_webhook(webhook_id):
+    """Toggle webhook active status"""
+    # In a real implementation, this would toggle the webhook status
+    flash(f'Webhook {webhook_id} status updated!', 'info')
     return redirect(url_for('webhooks'))
 
 

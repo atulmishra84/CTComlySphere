@@ -1,0 +1,130 @@
+Agent Registration Playbooks
+Configure automated agent registration based on discovery patterns
+
+
+Auto-Registration Enabled
+Add Playbook
+Auto-Registration Status
+Current status and configuration of automatic agent registration
+Auto-Registration is Active
+New AI agents will be automatically registered based on active playbooks
+Active Playbooks: 9 / 9
+Registration Playbooks
+Sorted by priority (highest first)
+Healthcare AI Registration
+Critical
+Priority: 100
+Auto-register AI agents handling healthcare data with HIPAA compliance
+
+Conditions
+type contains "healthcare"
+handlesPersonalData equals true
+Actions
+register: HIPAA, HITRUST
+set_risk_level: Configure action
+trigger_scan: Configure action
+
+
+Financial AI Registration
+Critical
+Priority: 95
+Auto-register AI agents in financial services with appropriate compliance
+
+Conditions
+type contains "financial"
+name matches {}
+Actions
+register: NIST AI RMF, CSA AICM
+set_risk_level: Configure action
+
+
+
+Critical System AI Registration
+Critical
+Priority: 90
+Auto-register critical system AI agents with comprehensive frameworks
+
+Conditions
+criticalSystem equals true
+Actions
+register: NIST AI RMF, CSA AICM, OWASP AI Security, MITRE ATLAS
+set_risk_level: Configure action
+trigger_scan: Configure action
+
+
+
+High Risk AI Registration
+High
+Priority: 85
+Auto-register high-risk AI agents with security-focused frameworks
+
+Conditions
+isHighRisk equals true
+Actions
+register: OWASP AI Security, Lumenalta AI Security, MITRE ATLAS
+set_risk_level: Configure action
+
+
+
+Cloud AI Service Registration
+High
+Priority: 80
+Auto-register cloud-deployed AI services with enterprise frameworks
+
+Conditions
+cloudDeployment equals true
+Actions
+register: CSA AICM, Google SAIF, Databricks DASF
+
+
+
+ML Pipeline Registration
+High
+Priority: 75
+Auto-register ML pipeline components with model governance frameworks
+
+Conditions
+usesMLPipeline equals true
+Actions
+register: Databricks DASF, Tillion AI Security
+
+
+
+Personal Data AI Registration
+High
+Priority: 70
+Auto-register AI agents handling personal data with privacy frameworks
+
+Conditions
+handlesPersonalData equals true
+Actions
+register: OWASP AI Security, Lumenalta AI Security
+set_risk_level: Configure action
+
+
+
+Multi-Agent System Registration
+Medium
+Priority: 65
+Auto-register multi-agent systems with coordination and security frameworks
+
+Conditions
+type contains "multi-agent"
+name matches {}
+Actions
+register: NIST AI RMF, MITRE ATLAS, Tillion AI Security
+
+
+
+Default AI Registration
+Low
+Priority: 10
+Default registration for unclassified AI agents
+
+Conditions
+type exists true
+Actions
+register: NIST AI RMF, CSA AICM
+
+
+
