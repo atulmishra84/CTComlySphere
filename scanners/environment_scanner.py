@@ -384,11 +384,16 @@ class EnvironmentScanner:
             
             for attempt in range(max_retries):
                 try:
-                    # Execute scanner with timeout
-                    agents = await asyncio.wait_for(
-                        scanner.discover_agents(target), 
-                        timeout=300  # 5 minute timeout
-                    )
+                    # Execute scanner with timeout - handle both sync and async methods
+                    discover_method = scanner.discover_agents(target)
+                    if asyncio.iscoroutine(discover_method):
+                        agents = await asyncio.wait_for(
+                            discover_method, 
+                            timeout=300  # 5 minute timeout
+                        )
+                    else:
+                        # Sync method, run directly
+                        agents = discover_method
                     
                     # Calculate enhanced statistics
                     scan_duration = (datetime.utcnow() - start_time).total_seconds()

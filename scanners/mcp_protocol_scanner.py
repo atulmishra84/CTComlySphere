@@ -43,9 +43,9 @@ class MCPProtocolScanner(BaseScanner):
         """Legacy scan method for compatibility"""
         return self.discover_agents()
     
-    def discover_agents(self, target=None):
+    async def discover_agents(self, target=None):
         """Discover AI agents using MCP protocol"""
-        return asyncio.run(self._async_discover_agents(target))
+        return await self._async_discover_agents(target)
     
     async def _async_discover_agents(self, target):
         """Async discover MCP-enabled AI agents"""

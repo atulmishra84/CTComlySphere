@@ -41,9 +41,9 @@ class A2ACommunicationScanner(BaseScanner):
         """Legacy scan method for compatibility"""
         return self.discover_agents()
     
-    def discover_agents(self, target=None):
+    async def discover_agents(self, target=None):
         """Discover AI agents via A2A communications"""
-        return asyncio.run(self._async_discover_agents(target))
+        return await self._async_discover_agents(target)
     
     async def _async_discover_agents(self, target):
         """Async discover AI agents via A2A communications"""
