@@ -42,24 +42,44 @@ class SchedulerIntegration:
     def _start_default_scanning(self):
         """Start continuous scanning with default configuration"""
         try:
-            # Check if scanning should be enabled by default
+            # Enable automatic scanning by default for healthcare compliance monitoring
             default_config = ScanConfiguration(
-                enabled=False,  # Disabled by default - user can enable via UI
-                scan_interval_minutes=30,
+                enabled=True,  # Auto-enabled for continuous compliance monitoring
+                scan_interval_minutes=15,  # More frequent scanning for better coverage
                 scan_mode=ScanMode.DISCOVERY,
-                target_protocols=['kubernetes', 'docker', 'a2a_communication', 'api_endpoint'],
-                target_environments=['development'],
+                target_protocols=['kubernetes', 'docker', 'a2a_communication', 'api_endpoint', 'mcp_protocol'],
+                target_environments=['development', 'staging', 'production'],
                 auto_register=True,
-                notification_enabled=False
+                notification_enabled=True
             )
             
-            # Update configuration but don't start yet
-            continuous_scanner.update_configuration(default_config)
+            # Start automatic scanning immediately
+            success = continuous_scanner.start_scanning(default_config)
             
-            self.logger.info("Default scanning configuration applied")
+            if success:
+                self.logger.info("✅ Automatic continuous scanning started successfully")
+                self.logger.info(f"📊 Scanning every {default_config.scan_interval_minutes} minutes for AI agent discovery")
+                self.logger.info(f"🎯 Monitoring protocols: {', '.join(default_config.target_protocols)}")
+                self.logger.info(f"🏥 Healthcare compliance monitoring is now ACTIVE")
+            else:
+                self.logger.warning("⚠️  Failed to start automatic scanning - will retry")
+                # Retry after a short delay
+                import threading
+                import time
+                def retry_start():
+                    time.sleep(5)
+                    retry_success = continuous_scanner.start_scanning(default_config)
+                    if retry_success:
+                        self.logger.info("✅ Automatic scanning started on retry")
+                    else:
+                        self.logger.error("❌ Failed to start automatic scanning after retry")
+                
+                retry_thread = threading.Thread(target=retry_start, daemon=True)
+                retry_thread.start()
             
         except Exception as e:
-            self.logger.error(f"Failed to apply default scanning configuration: {str(e)}")
+            self.logger.error(f"❌ Failed to start automatic scanning: {str(e)}")
+            # Log the error but don't crash the application
     
     def start_automatic_scanning(self, config: Optional[ScanConfiguration] = None):
         """Start automatic scanning (can be called from routes)"""
