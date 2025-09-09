@@ -1,0 +1,114 @@
+{
+  "kubernetes": {
+    "enabled": true,
+    "cluster_endpoints": [
+      "default"
+    ],
+    "namespaces_to_monitor": [
+      "default",
+      "kube-system"
+    ],
+    "exclude_namespaces": [
+      "kube-public"
+    ],
+    "authentication_method": "in_cluster",
+    "kubeconfig_path": "~/.kube/config",
+    "service_account_token": "",
+    "monitoring_level": "standard",
+    "scan_interval_minutes": 15,
+    "ai_labels": [
+      "ai.framework",
+      "ml.model",
+      "ai.type"
+    ],
+    "ai_annotations": [
+      "healthcare.compliance",
+      "model.version"
+    ],
+    "resource_monitoring": true,
+    "event_monitoring": true,
+    "custom_selectors": {}
+  },
+  "docker": {
+    "enabled": true,
+    "daemon_endpoints": [
+      "unix:///var/run/docker.sock"
+    ],
+    "registries_to_monitor": [
+      "docker.io",
+      "ghcr.io"
+    ],
+    "container_filters": {
+      "ai_images": [
+        "tensorflow",
+        "pytorch",
+        "scikit-learn",
+        "huggingface"
+      ],
+      "exclude_images": [
+        "nginx",
+        "redis",
+        "postgres"
+      ]
+    },
+    "monitoring_level": "standard",
+    "scan_interval_minutes": 10,
+    "ai_labels": [
+      "ai.type",
+      "ml.framework",
+      "healthcare.phi"
+    ],
+    "log_monitoring": true,
+    "stats_monitoring": true,
+    "security_scanning": true,
+    "max_log_lines": 1000,
+    "custom_image_patterns": []
+  },
+  "mcp": {
+    "enabled": true,
+    "server_endpoints": [
+      "http://clinical-ai-assistant:11434/mcp/v1",
+      "http://radiology-multiagent:8080/api/mcp",
+      "http://research-coordinator:3000/context/protocol"
+    ],
+    "protocol_versions": [
+      "1.0",
+      "1.1"
+    ],
+    "authentication_methods": [
+      "bearer_token",
+      "api_key"
+    ],
+    "monitoring_level": "comprehensive",
+    "scan_interval_minutes": 5,
+    "context_flow_monitoring": true,
+    "context_window_threshold": 50000,
+    "phi_monitoring": true,
+    "multiagent_discovery": true,
+    "compression_monitoring": true,
+    "response_time_threshold_ms": 200,
+    "custom_capabilities": []
+  },
+  "general": {
+    "auto_discovery": true,
+    "real_time_alerts": true,
+    "security_scanning": true,
+    "compliance_validation": true,
+    "data_retention_days": 30,
+    "alert_thresholds": {
+      "high_cpu_percent": 80,
+      "high_memory_percent": 85,
+      "response_time_ms": 1000,
+      "error_rate_percent": 5
+    },
+    "notification_channels": [
+      "email",
+      "webhook"
+    ],
+    "timezone": "UTC",
+    "log_level": "INFO"
+  },
+  "created_at": "2025-09-09T06:59:12.538267",
+  "updated_at": "2025-09-09T06:59:12.538277",
+  "version": "1.0"
+}

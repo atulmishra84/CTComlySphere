@@ -25,15 +25,41 @@ class KubernetesIntegration:
         self.apps_v1 = None
         self.is_connected = False
         self.last_heartbeat = None
+        self.config = None
         
+        # Load configuration
+        self._load_config()
+        
+        # Initialize if enabled
+        if self.config and self.config.enabled:
+            self._initialize_connection()
+        else:
+            logger.info("Kubernetes integration is disabled")
+    
+    def _load_config(self):
+        """Load Kubernetes configuration from config manager"""
         try:
-            # Try in-cluster config first, then local config
-            try:
+            from integrations.config_manager import config_manager
+            full_config = config_manager.get_configuration()
+            self.config = full_config.kubernetes
+        except ImportError:
+            logger.warning("Configuration manager not available, using defaults")
+            from integrations.config_manager import KubernetesConfig
+            self.config = KubernetesConfig()
+    
+    def _initialize_connection(self):
+        """Initialize Kubernetes connection based on configuration"""
+        try:
+            if self.config.authentication_method == "kubeconfig":
+                config.load_kube_config(config_file=self.config.kubeconfig_path)
+                logger.info(f"Loaded kubeconfig from {self.config.kubeconfig_path}")
+            elif self.config.authentication_method == "in_cluster":
                 config.load_incluster_config()
                 logger.info("Loaded in-cluster Kubernetes configuration")
-            except config.ConfigException:
-                config.load_kube_config()
-                logger.info("Loaded local Kubernetes configuration")
+            elif self.config.authentication_method == "service_account":
+                # Handle service account token authentication
+                config.load_incluster_config()
+                logger.info("Loaded service account configuration")
             
             self.v1 = client.CoreV1Api()
             self.apps_v1 = client.AppsV1Api()

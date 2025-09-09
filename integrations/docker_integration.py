@@ -24,10 +24,41 @@ class DockerIntegration:
         self.client = None
         self.is_connected = False
         self.last_heartbeat = None
+        self.config = None
         
+        # Load configuration
+        self._load_config()
+        
+        # Initialize if enabled
+        if self.config and self.config.enabled:
+            self._initialize_connection()
+        else:
+            logger.info("Docker integration is disabled")
+    
+    def _load_config(self):
+        """Load Docker configuration from config manager"""
         try:
-            self.client = docker.from_env()
+            from integrations.config_manager import config_manager
+            full_config = config_manager.get_configuration()
+            self.config = full_config.docker
+        except ImportError:
+            logger.warning("Configuration manager not available, using defaults")
+            from integrations.config_manager import DockerConfig
+            self.config = DockerConfig()
+    
+    def _initialize_connection(self):
+        """Initialize Docker connection based on configuration"""
+        try:
+            # Use first daemon endpoint or default
+            daemon_endpoint = self.config.daemon_endpoints[0] if self.config.daemon_endpoints else None
+            
+            if daemon_endpoint and daemon_endpoint != "unix:///var/run/docker.sock":
+                self.client = docker.DockerClient(base_url=daemon_endpoint)
+            else:
+                self.client = docker.from_env()
+            
             self.is_connected = self._test_connection()
+            
         except Exception as e:
             logger.error(f"Failed to initialize Docker client: {e}")
             self.is_connected = False

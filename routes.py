@@ -933,6 +933,133 @@ def api_mcp_servers():
     return jsonify(servers)
 
 
+@app.route('/integrations/configuration')
+def integration_configuration_page():
+    """Integration configuration page"""
+    try:
+        from integrations.config_manager import config_manager
+        config = config_manager.get_configuration()
+        return render_template('integrations/configuration.html', config=config)
+    except ImportError:
+        flash('Configuration management is not available', 'error')
+        return redirect(url_for('integrations_dashboard'))
+
+
+@app.route('/integrations/configuration/save', methods=['POST'])
+def save_integration_config():
+    """Save integration configuration"""
+    try:
+        from integrations.config_manager import config_manager, IntegrationConfiguration, KubernetesConfig, DockerConfig, MCPConfig, GeneralConfig
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No configuration data provided'})
+        
+        # Create configuration objects
+        config = IntegrationConfiguration(
+            kubernetes=KubernetesConfig(**data.get('kubernetes', {})),
+            docker=DockerConfig(**data.get('docker', {})),
+            mcp=MCPConfig(**data.get('mcp', {})),
+            general=GeneralConfig(**data.get('general', {}))
+        )
+        
+        # Validate configuration
+        errors = config_manager.validate_configuration(config)
+        if errors:
+            return jsonify({'success': False, 'message': 'Configuration validation failed', 'errors': errors})
+        
+        # Save configuration
+        success = config_manager.save_configuration(config)
+        if success:
+            flash('Configuration saved successfully', 'success')
+            return jsonify({'success': True, 'message': 'Configuration saved successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'Failed to save configuration'})
+            
+    except Exception as e:
+        logger.error(f"Failed to save configuration: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/integrations/export-config')
+def api_export_integration_config():
+    """Export integration configuration"""
+    try:
+        from integrations.config_manager import config_manager
+        config_dict = config_manager.export_configuration()
+        return jsonify(config_dict)
+    except Exception as e:
+        logger.error(f"Failed to export configuration: {e}")
+        return jsonify({'error': str(e)})
+
+
+@app.route('/api/integrations/import-config', methods=['POST'])
+def api_import_integration_config():
+    """Import integration configuration"""
+    try:
+        from integrations.config_manager import config_manager
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No configuration data provided'})
+        
+        success = config_manager.import_configuration(data)
+        if success:
+            return jsonify({'success': True, 'message': 'Configuration imported successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'Failed to import configuration'})
+            
+    except Exception as e:
+        logger.error(f"Failed to import configuration: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/integrations/reset-config', methods=['POST'])
+def api_reset_integration_config():
+    """Reset integration configuration to defaults"""
+    try:
+        from integrations.config_manager import config_manager
+        
+        integration_type = request.get_json().get('integration_type') if request.get_json() else None
+        success = config_manager.reset_to_defaults(integration_type)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Configuration reset to defaults'})
+        else:
+            return jsonify({'success': False, 'message': 'Failed to reset configuration'})
+            
+    except Exception as e:
+        logger.error(f"Failed to reset configuration: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/integrations/validate-config', methods=['POST'])
+def api_validate_integration_config():
+    """Validate integration configuration"""
+    try:
+        from integrations.config_manager import config_manager, IntegrationConfiguration, KubernetesConfig, DockerConfig, MCPConfig, GeneralConfig
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'valid': False, 'errors': {'general': ['No configuration data provided']}})
+        
+        # Create configuration objects
+        config = IntegrationConfiguration(
+            kubernetes=KubernetesConfig(**data.get('kubernetes', {})),
+            docker=DockerConfig(**data.get('docker', {})),
+            mcp=MCPConfig(**data.get('mcp', {})),
+            general=GeneralConfig(**data.get('general', {}))
+        )
+        
+        # Validate configuration
+        errors = config_manager.validate_configuration(config)
+        return jsonify({'valid': not bool(errors), 'errors': errors})
+        
+    except Exception as e:
+        logger.error(f"Failed to validate configuration: {e}")
+        return jsonify({'valid': False, 'errors': {'general': [str(e)]}})
+
+
 @app.route('/integrations/start-monitoring', methods=['POST'])
 def start_integration_monitoring():
     """Start real-time monitoring for integrations"""

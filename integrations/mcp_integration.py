@@ -31,18 +31,27 @@ class MCPIntegration:
         self.last_heartbeat = None
         self.monitoring_thread = None
         self.is_monitoring = False
+        self.config = None
         
-        # Default MCP endpoints to monitor
-        self.mcp_endpoints = [
-            'http://clinical-ai-assistant:11434/mcp/v1',
-            'http://radiology-multiagent:8080/api/mcp',
-            'http://research-coordinator:3000/context/protocol',
-            'http://clinical-advisor:8080/api/v1/context',
-            'http://patient-monitor:9000/api/context'
-        ]
+        # Load configuration
+        self._load_config()
         
-        # Initialize MCP connections
-        self._initialize_connections()
+        # Initialize if enabled
+        if self.config and self.config.enabled:
+            self._initialize_connections()
+        else:
+            logger.info("MCP integration is disabled")
+    
+    def _load_config(self):
+        """Load MCP configuration from config manager"""
+        try:
+            from integrations.config_manager import config_manager
+            full_config = config_manager.get_configuration()
+            self.config = full_config.mcp
+        except ImportError:
+            logger.warning("Configuration manager not available, using defaults")
+            from integrations.config_manager import MCPConfig
+            self.config = MCPConfig()
     
     def _initialize_connections(self):
         """Initialize MCP server connections"""
@@ -65,7 +74,7 @@ class MCPIntegration:
         try:
             connected_servers = 0
             
-            for endpoint in self.mcp_endpoints:
+            for endpoint in self.config.server_endpoints:
                 try:
                     # Simulate connection test - in real implementation would use actual MCP protocol
                     server_name = self._extract_server_name(endpoint)

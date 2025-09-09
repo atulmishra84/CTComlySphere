@@ -295,7 +295,10 @@
                         </label>
                     </div>
                     <hr>
-                    <div class="d-grid">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('integration_configuration_page') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-cogs me-2"></i>Configure
+                        </a>
                         <button type="button" class="btn btn-outline-primary btn-sm" id="refreshIntegrationsBtn">
                             <i class="fas fa-sync me-2"></i>Refresh Status
                         </button>
