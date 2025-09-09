@@ -586,77 +586,138 @@ def playbooks_inventory():
                          status_counts=status_counts)
 
 
-
-
-        AIAgent.last_scanned >= datetime.utcnow() - timedelta(minutes=30)
-    ).count()
-    
-    warning_agents = ScanResult.query.filter(
-        ScanResult.risk_level == RiskLevel.MEDIUM,
-        ScanResult.created_at >= datetime.utcnow() - timedelta(hours=1)
-    ).count()
-    
-    offline_agents = total_agents - online_agents - warning_agents
-    
-    return jsonify({
-        'total_agents': total_agents,
-        'active_scans': recent_scans,
-        'security_alerts': security_alerts,
-        'compliance_score': round(compliance_score, 1),
-        'agents_today': random.randint(0, 5),  # Simulated
-        'alerts_last_hour': security_alerts,
-        'compliance_change': random.randint(-2, 3),  # Simulated
-        'average_risk_score': random.randint(20, 80),  # Simulated
-        'critical_agents': ScanResult.query.filter(ScanResult.risk_level == RiskLevel.CRITICAL).count(),
-        'agent_status_distribution': {
-            'online': online_agents,
-            'warning': warning_agents,
-            'offline': max(0, offline_agents)
-        },
-        'risk_timeline': True
-    })
-
-
-@app.route('/api/realtime/agents')
-def api_realtime_agents():
-    """API endpoint for real-time agent status"""
-    import random
-    
-    agents = AIAgent.query.limit(20).all()
-    agents_data = []
-    
-    for agent in agents:
-        # Get latest scan result
-        latest_scan = ScanResult.query.filter_by(ai_agent_id=agent.id).order_by(
-            ScanResult.created_at.desc()
-        ).first()
+# Continuous Scanning Routes
+@app.route('/continuous_scanning')
+def continuous_scanning():
+    """Continuous scanning management dashboard"""
+    try:
+        from services.continuous_scanner import continuous_scanner
+        status = continuous_scanner.get_status()
+        scan_history = continuous_scanner.get_scan_history()
         
-        # Determine status
-        if latest_scan and latest_scan.created_at >= datetime.utcnow() - timedelta(minutes=30):
-            if latest_scan.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
-                status = 'warning'
-                status_text = 'High Risk'
-            else:
-                status = 'online'
-                status_text = 'Online'
-        else:
-            status = 'offline'
-            status_text = 'Offline'
+        return render_template('continuous_scanning.html',
+                             status=status,
+                             scan_history=scan_history)
+    except ImportError:
+        flash('Continuous scanning service not available', 'error')
+        return redirect(url_for('dashboard'))
+
+
+@app.route('/api/continuous_scanning/start', methods=['POST'])
+def api_start_continuous_scanning():
+    """Start continuous scanning with configuration"""
+    try:
+        from services.continuous_scanner import continuous_scanner, ScanConfiguration, ScanMode
         
-        agents_data.append({
-            'id': agent.id,
-            'name': agent.name,
-            'type': agent.type,
-            'status': status,
-            'status_text': status_text,
-            'last_scan': latest_scan.created_at.strftime('%H:%M') if latest_scan else None,
-            'risk_level': latest_scan.risk_level.value if latest_scan else 'UNKNOWN'
+        data = request.get_json() or {}
+        
+        # Create configuration from request data
+        config = ScanConfiguration(
+            enabled=True,
+            scan_interval_minutes=data.get('interval_minutes', 30),
+            scan_mode=ScanMode(data.get('scan_mode', 'discovery')),
+            target_protocols=data.get('target_protocols', ['kubernetes', 'docker', 'rest_api']),
+            target_environments=data.get('target_environments', ['development']),
+            auto_register=data.get('auto_register', True),
+            notification_enabled=data.get('notifications', True)
+        )
+        
+        success = continuous_scanner.start_scanning(config)
+        
+        return jsonify({
+            'success': success,
+            'message': 'Continuous scanning started' if success else 'Failed to start scanning',
+            'status': continuous_scanner.get_status()
         })
-    
-    return jsonify(agents_data)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 
-@app.route('/api/realtime/protocols')
+@app.route('/api/continuous_scanning/stop', methods=['POST'])
+def api_stop_continuous_scanning():
+    """Stop continuous scanning"""
+    try:
+        from services.continuous_scanner import continuous_scanner
+        
+        success = continuous_scanner.stop_scanning()
+        
+        return jsonify({
+            'success': success,
+            'message': 'Continuous scanning stopped' if success else 'Failed to stop scanning',
+            'status': continuous_scanner.get_status()
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/continuous_scanning/trigger', methods=['POST'])
+def api_trigger_immediate_scan():
+    """Trigger an immediate scan"""
+    try:
+        from services.continuous_scanner import continuous_scanner
+        
+        scan_id = continuous_scanner.trigger_immediate_scan()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Immediate scan triggered: {scan_id}',
+            'scan_id': scan_id
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/continuous_scanning/status')
+def api_continuous_scanning_status():
+    """Get continuous scanning status"""
+    try:
+        from services.continuous_scanner import continuous_scanner
+        
+        status = continuous_scanner.get_status()
+        scan_history = continuous_scanner.get_scan_history()
+        
+        return jsonify({
+            'success': True,
+            'status': status,
+            'scan_history': scan_history
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/continuous_scanning/configure', methods=['POST'])
+def api_configure_continuous_scanning():
+    """Update continuous scanning configuration"""
+    try:
+        from services.continuous_scanner import continuous_scanner, ScanConfiguration, ScanMode
+        
+        data = request.get_json() or {}
+        
+        # Create new configuration
+        config = ScanConfiguration(
+            enabled=data.get('enabled', False),
+            scan_interval_minutes=data.get('interval_minutes', 30),
+            scan_mode=ScanMode(data.get('scan_mode', 'discovery')),
+            target_protocols=data.get('target_protocols', []),
+            target_environments=data.get('target_environments', []),
+            auto_register=data.get('auto_register', True),
+            notification_enabled=data.get('notifications', True)
+        )
+        
+        continuous_scanner.update_configuration(config)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Configuration updated',
+            'status': continuous_scanner.get_status()
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 def api_realtime_protocols():
     """API endpoint for real-time protocol metrics"""
     import random
