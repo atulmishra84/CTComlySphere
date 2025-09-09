@@ -12,7 +12,7 @@
                 Real-Time Integrations Dashboard
             </h1>
             <p class="text-muted">
-                Live monitoring and management of Kubernetes clusters and Docker environments
+                Live monitoring and management of Kubernetes clusters, Docker environments, and MCP ecosystems
             </p>
         </div>
         <div class="col-auto">
@@ -28,7 +28,7 @@
     <!-- Integration Status Cards -->
     <div class="row mb-4">
         <!-- Kubernetes Status -->
-        <div class="col-lg-6">
+        <div class="col-lg-4">
             <div class="metric-card">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0">
@@ -71,7 +71,7 @@
         </div>
 
         <!-- Docker Status -->
-        <div class="col-lg-6">
+        <div class="col-lg-4">
             <div class="metric-card">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0">
@@ -107,6 +107,49 @@
                 
                 <div class="mt-3">
                     <a href="{{ url_for('docker_integration_page') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-external-link-alt me-1"></i>View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- MCP Status -->
+        <div class="col-lg-4">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-network-wired me-2"></i>MCP Integration
+                    </h5>
+                    <span class="badge {% if mcp_info.status == 'connected' %}bg-success{% elif mcp_info.status == 'error' %}bg-danger{% else %}bg-warning{% endif %}">
+                        {{ mcp_info.status|title }}
+                    </span>
+                </div>
+                
+                {% if mcp_info.status == 'connected' %}
+                    <div class="row">
+                        <div class="col-6">
+                            <h3 class="text-gradient">{{ mcp_info.ecosystem_health.connected_servers }}</h3>
+                            <small class="text-muted">Connected Servers</small>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="text-gradient">{{ mcp_info.capabilities_summary.total_agents }}</h3>
+                            <small class="text-muted">MCP Agents</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Context Window: {{ "{:,}".format(mcp_info.capabilities_summary.total_context_window) }} tokens</small>
+                        <small class="text-muted">Health: {{ "%.0f"|format(mcp_info.ecosystem_health.health_percentage) }}%</small>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <p class="mb-0">{{ mcp_info.error or 'MCP ecosystem not accessible' }}</p>
+                    </div>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('mcp_integration_page') }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-external-link-alt me-1"></i>View Details
                     </a>
                 </div>
@@ -155,13 +198,13 @@
                 </div>
                 <h5>AI Agent Discovery</h5>
                 <p class="text-muted">
-                    Automatically discover AI workloads across Kubernetes clusters and Docker environments
+                    Automatically discover AI workloads across Kubernetes clusters, Docker environments, and MCP ecosystems
                     with intelligent detection algorithms.
                 </p>
                 <ul class="list-unstyled">
                     <li><i class="fas fa-check text-success me-2"></i>Real-time pod monitoring</li>
                     <li><i class="fas fa-check text-success me-2"></i>Container lifecycle tracking</li>
-                    <li><i class="fas fa-check text-success me-2"></i>Label-based AI detection</li>
+                    <li><i class="fas fa-check text-success me-2"></i>MCP context flow detection</li>
                 </ul>
             </div>
         </div>
