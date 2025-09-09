@@ -23,9 +23,6 @@ class DockerIntegration:
     def __init__(self):
         self.client = None
         self.is_connected = False
-        self.event_stream = None
-        self.monitoring_thread = None
-        self.event_handlers = []
         self.last_heartbeat = None
         
         try:
@@ -377,134 +374,10 @@ class DockerIntegration:
             logger.error(f"Failed to get container health: {e}")
             return {'status': 'unknown'}
     
-    def start_real_time_monitoring(self):
-        """Start real-time monitoring of Docker events"""
-        if not self.is_connected:
-            logger.error("Cannot start monitoring: not connected to Docker daemon")
-            return False
-        
-        try:
-            def monitor_events():
-                try:
-                    # Get events stream
-                    for event in self.client.events(decode=True):
-                        self._handle_docker_event(event)
-                except Exception as e:
-                    logger.error(f"Docker event monitoring error: {e}")
-                    time.sleep(5)  # Wait before reconnecting
-            
-            self.monitoring_thread = threading.Thread(target=monitor_events, daemon=True)
-            self.monitoring_thread.start()
-            
-            logger.info("Started real-time Docker monitoring")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Failed to start real-time monitoring: {e}")
-            return False
     
-    def _handle_docker_event(self, event: Dict[str, Any]):
-        """Handle Docker daemon events"""
-        event_type = event.get('Type')
-        action = event.get('Action')
-        
-        # Only process container events for now
-        if event_type != 'container':
-            return
-        
-        container_id = event.get('id')
-        
-        try:
-            # Get container info
-            container = self.client.containers.get(container_id)
-            
-            # Check if it's an AI container
-            if self._is_ai_container(container):
-                logger.info(f"AI container {action}: {container.name} ({container_id[:12]})")
-                
-                # Trigger event handlers
-                for handler in self.event_handlers:
-                    try:
-                        handler('container', action, container, event)
-                    except Exception as e:
-                        logger.error(f"Error in Docker event handler: {e}")
-        
-        except docker.errors.NotFound:
-            # Container was removed
-            if action in ['destroy', 'die']:
-                logger.info(f"AI container removed: {container_id[:12]}")
-        except Exception as e:
-            logger.error(f"Error handling Docker event: {e}")
     
-    def add_event_handler(self, handler):
-        """Add an event handler for Docker events"""
-        self.event_handlers.append(handler)
     
-    def stop_monitoring(self):
-        """Stop real-time monitoring"""
-        if self.monitoring_thread and self.monitoring_thread.is_alive():
-            logger.info("Stopping Docker monitoring")
-        
-        self.event_handlers.clear()
     
-    def get_ai_container_metrics(self) -> Dict[str, Any]:
-        """Get real-time metrics for AI containers"""
-        if not self.is_connected:
-            return {}
-        
-        try:
-            ai_containers = self.discover_ai_containers()
-            
-            # Aggregate metrics
-            metrics = {
-                'total_containers': len(ai_containers),
-                'by_status': {},
-                'by_ai_type': {},
-                'by_image': {},
-                'resource_usage': {
-                    'total_cpu_percent': 0,
-                    'total_memory_usage': 0,
-                    'total_memory_limit': 0,
-                    'containers_with_stats': 0
-                },
-                'health_summary': {
-                    'healthy': 0,
-                    'unhealthy': 0,
-                    'starting': 0,
-                    'none': 0
-                }
-            }
-            
-            for container in ai_containers:
-                # Count by status
-                status = container['status']
-                metrics['by_status'][status] = metrics['by_status'].get(status, 0) + 1
-                
-                # Count by AI type
-                ai_type = container['ai_type']
-                metrics['by_ai_type'][ai_type] = metrics['by_ai_type'].get(ai_type, 0) + 1
-                
-                # Count by image
-                image = container['image'].split(':')[0]  # Remove tag
-                metrics['by_image'][image] = metrics['by_image'].get(image, 0) + 1
-                
-                # Aggregate resource usage
-                resource_usage = container.get('resource_usage', {})
-                if resource_usage.get('status') == 'running':
-                    metrics['resource_usage']['total_cpu_percent'] += resource_usage.get('cpu_percent', 0)
-                    metrics['resource_usage']['total_memory_usage'] += resource_usage.get('memory_usage_bytes', 0)
-                    metrics['resource_usage']['total_memory_limit'] += resource_usage.get('memory_limit_bytes', 0)
-                    metrics['resource_usage']['containers_with_stats'] += 1
-                
-                # Health summary
-                health_status = container.get('health', {}).get('status', 'none')
-                metrics['health_summary'][health_status] = metrics['health_summary'].get(health_status, 0) + 1
-            
-            return metrics
-            
-        except Exception as e:
-            logger.error(f"Failed to get AI container metrics: {e}")
-            return {}
     
     def get_container_logs(self, container_id: str, lines: int = 100) -> str:
         """Get container logs"""
