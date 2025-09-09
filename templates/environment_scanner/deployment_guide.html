@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+
+{% block title %}Scanner Deployment Guide{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('enhanced_dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('environment_scanner_bp.scanner_dashboard') }}">Environment Scanner</a></li>
+                    <li class="breadcrumb-item active">Deployment Guide</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex align-items-center mb-3">
+                <i class="fas fa-rocket me-3 text-primary" style="font-size: 2rem;"></i>
+                <div>
+                    <h1 class="h3 mb-0">Scanner Deployment Guide</h1>
+                    <p class="text-muted mb-0">Deploy scanning agents across your healthcare infrastructure</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Start -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-play me-2"></i>Quick Start Deployment
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">🏥 Healthcare Organizations</h6>
+                            <p class="text-muted">Deploy across your medical infrastructure for complete AI compliance monitoring.</p>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>HIPAA-compliant data handling</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Multi-site deployment support</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Real-time compliance monitoring</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">🔧 IT Administrators</h6>
+                            <p class="text-muted">Simple deployment across Kubernetes, Docker, and cloud environments.</p>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>One-command installation</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Automated agent discovery</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Zero-downtime monitoring</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Current Status:</strong> You're running in demo mode. Deploy scanning agents to monitor real healthcare AI systems.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deployment Methods -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2"></i>Deployment Methods
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        
+                        <!-- Kubernetes Deployment -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-header bg-primary bg-opacity-10">
+                                    <h6 class="card-title mb-0 text-primary">
+                                        <i class="fas fa-dharmachakra me-2"></i>Kubernetes Deployment
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Deploy across K8s clusters for comprehensive container monitoring.</p>
+                                    
+                                    <h6 class="mt-3">Prerequisites:</h6>
+                                    <ul class="small">
+                                        <li>Kubernetes 1.19+ cluster</li>
+                                        <li>kubectl access with admin privileges</li>
+                                        <li>Network access to platform API</li>
+                                    </ul>
+                                    
+                                    <h6 class="mt-3">Installation:</h6>
+                                    <div class="bg-dark p-3 rounded">
+                                        <code class="text-light">
+kubectl apply -f https://platform.healthcare-ai.com/deploy/k8s/<br>
+kubectl create secret generic scanner-config \<br>
+  --from-literal=platform-url="https://your-platform.com" \<br>
+  --from-literal=api-key="your-api-key"
+                                        </code>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-primary btn-sm" onclick="copyToClipboard('k8s-commands')">
+                                        <i class="fas fa-copy me-1"></i>Copy Commands
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-sm ms-2">
+                                        <i class="fas fa-download me-1"></i>Download YAML
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Docker Deployment -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100 border-info">
+                                <div class="card-header bg-info bg-opacity-10">
+                                    <h6 class="card-title mb-0 text-info">
+                                        <i class="fab fa-docker me-2"></i>Docker Deployment
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Single-host Docker deployment for development and small environments.</p>
+                                    
+                                    <h6 class="mt-3">Prerequisites:</h6>
+                                    <ul class="small">
+                                        <li>Docker Engine 20.10+</li>
+                                        <li>Docker Compose (optional)</li>
+                                        <li>Access to Docker daemon socket</li>
+                                    </ul>
+                                    
+                                    <h6 class="mt-3">Installation:</h6>
+                                    <div class="bg-dark p-3 rounded">
+                                        <code class="text-light">
+docker run -d \<br>
+  --name healthcare-ai-scanner \<br>
+  -v /var/run/docker.sock:/var/run/docker.sock \<br>
+  -e PLATFORM_URL="https://your-platform.com" \<br>
+  -e API_KEY="your-api-key" \<br>
+  healthcare-ai/scanner:latest
+                                        </code>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-info btn-sm" onclick="copyToClipboard('docker-commands')">
+                                        <i class="fas fa-copy me-1"></i>Copy Commands
+                                    </button>
+                                    <button class="btn btn-outline-info btn-sm ms-2">
+                                        <i class="fas fa-file-code me-1"></i>Docker Compose
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cloud Deployment -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-header bg-success bg-opacity-10">
+                                    <h6 class="card-title mb-0 text-success">
+                                        <i class="fas fa-cloud me-2"></i>Cloud Deployment
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Deploy across AWS, Azure, and GCP for multi-cloud monitoring.</p>
+                                    
+                                    <h6 class="mt-3">Supported Platforms:</h6>
+                                    <div class="d-flex gap-2 mb-3">
+                                        <span class="badge bg-warning text-dark">AWS</span>
+                                        <span class="badge bg-info">Azure</span>
+                                        <span class="badge bg-danger">GCP</span>
+                                    </div>
+                                    
+                                    <h6 class="mt-3">Terraform Deployment:</h6>
+                                    <div class="bg-dark p-3 rounded">
+                                        <code class="text-light">
+terraform init<br>
+terraform plan -var="platform_url=https://your-platform.com"<br>
+terraform apply
+                                        </code>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-download me-1"></i>Terraform Modules
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm ms-2">
+                                        <i class="fas fa-book me-1"></i>Cloud Guide
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Agent-Based Deployment -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100 border-warning">
+                                <div class="card-header bg-warning bg-opacity-10">
+                                    <h6 class="card-title mb-0 text-warning">
+                                        <i class="fas fa-server me-2"></i>Agent-Based Deployment
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Install lightweight agents on individual servers and workstations.</p>
+                                    
+                                    <h6 class="mt-3">Supported OS:</h6>
+                                    <div class="d-flex gap-2 mb-3">
+                                        <span class="badge bg-dark">Linux</span>
+                                        <span class="badge bg-primary">Windows</span>
+                                        <span class="badge bg-secondary">macOS</span>
+                                    </div>
+                                    
+                                    <h6 class="mt-3">Installation:</h6>
+                                    <div class="bg-dark p-3 rounded">
+                                        <code class="text-light">
+curl -sSL https://platform.healthcare-ai.com/install.sh | bash<br>
+sudo systemctl enable healthcare-ai-agent<br>
+sudo systemctl start healthcare-ai-agent
+                                        </code>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-warning btn-sm">
+                                        <i class="fas fa-download me-1"></i>Download Agent
+                                    </button>
+                                    <button class="btn btn-outline-warning btn-sm ms-2">
+                                        <i class="fas fa-cog me-1"></i>Configuration
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-sliders-h me-2"></i>Configuration & Security
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Required Configuration</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Variable</th>
+                                            <th>Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code>PLATFORM_URL</code></td>
+                                            <td>Healthcare AI Platform endpoint</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>API_KEY</code></td>
+                                            <td>Authentication API key</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>ORG_ID</code></td>
+                                            <td>Your organization identifier</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>SCAN_INTERVAL</code></td>
+                                            <td>Scan frequency (default: 15m)</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Security Considerations</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-shield-alt text-success me-2"></i>
+                                    <strong>Network Security:</strong> All communication uses TLS 1.3
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-key text-success me-2"></i>
+                                    <strong>Authentication:</strong> API keys with role-based access
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-user-shield text-success me-2"></i>
+                                    <strong>HIPAA Compliance:</strong> No PHI data transmitted
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-lock text-success me-2"></i>
+                                    <strong>Data Privacy:</strong> Metadata-only scanning
+                                </li>
+                            </ul>
+                            
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Important:</strong> Store API keys securely using your organization's secret management system.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monitoring & Troubleshooting -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-heartbeat me-2"></i>Monitoring & Troubleshooting
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Health Monitoring</h6>
+                            <p class="text-muted">Monitor scanner agent health and performance:</p>
+                            <div class="bg-dark p-3 rounded mb-3">
+                                <code class="text-light">
+# Check agent status<br>
+curl -H "Authorization: Bearer $API_KEY" \<br>
+  https://your-platform.com/api/agents/status<br><br>
+# View agent logs<br>
+kubectl logs -l app=healthcare-ai-scanner
+                                </code>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Common Issues</h6>
+                            <div class="accordion" id="troubleshootingAccordion">
+                                <div class="accordion-item">
+                                    <h6 class="accordion-header">
+                                        <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#collapse1">
+                                            Agent Not Connecting
+                                        </button>
+                                    </h6>
+                                    <div id="collapse1" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
+                                        <div class="accordion-body">
+                                            <ul class="small">
+                                                <li>Verify PLATFORM_URL is correct</li>
+                                                <li>Check API_KEY validity</li>
+                                                <li>Ensure network connectivity to platform</li>
+                                                <li>Check firewall rules for outbound HTTPS</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <h6 class="accordion-header">
+                                        <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#collapse2">
+                                            No Agents Discovered
+                                        </button>
+                                    </h6>
+                                    <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
+                                        <div class="accordion-body">
+                                            <ul class="small">
+                                                <li>Verify scanner has access to target systems</li>
+                                                <li>Check service account permissions</li>
+                                                <li>Review scanner configuration filters</li>
+                                                <li>Ensure AI workloads have proper labels</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-primary bg-opacity-10 border-primary">
+                <div class="card-body text-center">
+                    <h5 class="text-primary mb-3">
+                        <i class="fas fa-life-ring me-2"></i>Need Help?
+                    </h5>
+                    <p class="text-muted mb-3">Our support team is ready to assist with your deployment</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-headset me-2"></i>Contact Support
+                        </button>
+                        <button class="btn btn-outline-primary">
+                            <i class="fas fa-book me-2"></i>Documentation
+                        </button>
+                        <button class="btn btn-outline-primary">
+                            <i class="fas fa-video me-2"></i>Video Tutorials
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    // Implement copy to clipboard functionality
+    const commands = {
+        'k8s-commands': `kubectl apply -f https://platform.healthcare-ai.com/deploy/k8s/
+kubectl create secret generic scanner-config \\
+  --from-literal=platform-url="https://your-platform.com" \\
+  --from-literal=api-key="your-api-key"`,
+        'docker-commands': `docker run -d \\
+  --name healthcare-ai-scanner \\
+  -v /var/run/docker.sock:/var/run/docker.sock \\
+  -e PLATFORM_URL="https://your-platform.com" \\
+  -e API_KEY="your-api-key" \\
+  healthcare-ai/scanner:latest`
+    };
+    
+    navigator.clipboard.writeText(commands[elementId]).then(function() {
+        // Show success feedback
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+        }, 2000);
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}Scanner Details - {{ scanner_type|title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('enhanced_dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('environment_scanner_bp.scanner_dashboard') }}">Environment Scanner</a></li>
+                    <li class="breadcrumb-item active">{{ scanner_type|title }} Scanner</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex align-items-center mb-3">
+                {% set scanner_icons = {
+                    'kubernetes': 'fas fa-dharmachakra',
+                    'docker': 'fab fa-docker', 
+                    'mcp_protocol': 'fas fa-network-wired',
+                    'api_endpoint': 'fas fa-globe',
+                    'cloud_service': 'fas fa-cloud',
+                    'a2a_communication': 'fas fa-exchange-alt'
+                } %}
+                <i class="{{ scanner_icons.get(scanner_type, 'fas fa-search') }} me-3 text-primary" style="font-size: 2rem;"></i>
+                <div>
+                    <h1 class="h3 mb-0">{{ scanner_info.name if scanner_info else scanner_type|title }} Scanner</h1>
+                    <p class="text-muted mb-0">{{ scanner_info.description if scanner_info else 'Detailed scanner information and configuration' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner Status -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Scanner Overview
+                        </h5>
+                        {% if scanner_info and scanner_info.available %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-warning">Unavailable</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if scanner_info %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Discovery Capabilities</h6>
+                            <ul class="list-unstyled">
+                                {% for target in scanner_info.discovery_targets %}
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>{{ target }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Features</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for capability in scanner_info.capabilities %}
+                                <span class="badge bg-info">{{ capability }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Scanner information not available. This scanner may not be properly configured.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Performance Metrics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="h4 mb-1 text-primary">{{ stats.agents_discovered if stats else 0 }}</div>
+                            <div class="small text-muted">Agents Found</div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="h4 mb-1 text-success">{{ stats.successful_scans if stats else 0 }}</div>
+                            <div class="small text-muted">Successful Scans</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="h4 mb-1 text-info">{{ stats.total_scans if stats else 0 }}</div>
+                            <div class="small text-muted">Total Scans</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="h4 mb-1 text-warning">{{ stats.errors if stats else 0 }}</div>
+                            <div class="small text-muted">Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner-Specific Configuration -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2"></i>Configuration Guide
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if scanner_type == 'kubernetes' %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Kubernetes Configuration</h6>
+                            <p class="text-muted">Configure the scanner to monitor Kubernetes clusters for AI workloads.</p>
+                            <ul class="small">
+                                <li>Cluster API endpoints</li>
+                                <li>Service account permissions</li>
+                                <li>Namespace filtering</li>
+                                <li>Label and annotation selectors</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Required Permissions</h6>
+                            <div class="bg-dark p-3 rounded">
+                                <code class="text-light">
+apiVersion: rbac.authorization.k8s.io/v1<br>
+kind: ClusterRole<br>
+metadata:<br>
+&nbsp;&nbsp;name: healthcare-ai-scanner<br>
+rules:<br>
+- apiGroups: [""]<br>
+&nbsp;&nbsp;resources: ["pods", "services"]<br>
+&nbsp;&nbsp;verbs: ["get", "list"]<br>
+- apiGroups: ["apps"]<br>
+&nbsp;&nbsp;resources: ["deployments"]<br>
+&nbsp;&nbsp;verbs: ["get", "list"]
+                                </code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% elif scanner_type == 'docker' %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Docker Configuration</h6>
+                            <p class="text-muted">Monitor Docker containers and registries for AI/ML workloads.</p>
+                            <ul class="small">
+                                <li>Docker daemon access</li>
+                                <li>Registry scanning</li>
+                                <li>Container filtering by image patterns</li>
+                                <li>Runtime metrics collection</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Example Configuration</h6>
+                            <div class="bg-dark p-3 rounded">
+                                <code class="text-light">
+{<br>
+&nbsp;&nbsp;"daemon_endpoints": [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"unix:///var/run/docker.sock"<br>
+&nbsp;&nbsp;],<br>
+&nbsp;&nbsp;"ai_image_patterns": [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"tensorflow/*",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"pytorch/*",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"*healthcare*"<br>
+&nbsp;&nbsp;],<br>
+&nbsp;&nbsp;"scan_interval": "15m"<br>
+}
+                                </code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% elif scanner_type == 'mcp_protocol' %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">MCP Protocol Scanner</h6>
+                            <p class="text-muted">Monitor Model Context Protocol enabled AI systems and multi-agent communications.</p>
+                            <ul class="small">
+                                <li>MCP server endpoints</li>
+                                <li>Context flow monitoring</li>
+                                <li>Multi-agent system mapping</li>
+                                <li>Protocol compliance validation</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Monitored Endpoints</h6>
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item">
+                                    <i class="fas fa-hospital me-2 text-success"></i>
+                                    clinical-ai-assistant:11434/mcp/v1
+                                </div>
+                                <div class="list-group-item">
+                                    <i class="fas fa-x-ray me-2 text-info"></i>
+                                    radiology-multiagent:8080/api/mcp
+                                </div>
+                                <div class="list-group-item">
+                                    <i class="fas fa-flask me-2 text-warning"></i>
+                                    research-coordinator:3000/context/protocol
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-cog fa-3x text-muted mb-3"></i>
+                        <h5>Scanner Configuration</h5>
+                        <p class="text-muted">Detailed configuration options for {{ scanner_type|title }} scanner.</p>
+                        <button class="btn btn-primary">
+                            <i class="fas fa-book me-2"></i>View Documentation
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Discoveries -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history me-2"></i>Recent Discoveries
+                        </h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshDiscoveries()">
+                            <i class="fas fa-sync me-1"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if recent_agents %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Agent Name</th>
+                                    <th>Type</th>
+                                    <th>Risk Level</th>
+                                    <th>Discovered</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for agent in recent_agents %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ agent.name }}</strong>
+                                        {% if agent.metadata.get('namespace') %}
+                                        <br><small class="text-muted">{{ agent.metadata.namespace }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ agent.type }}</span>
+                                    </td>
+                                    <td>
+                                        {% set risk_colors = {
+                                            'CRITICAL': 'danger',
+                                            'HIGH': 'warning', 
+                                            'MEDIUM': 'info',
+                                            'LOW': 'success'
+                                        } %}
+                                        <span class="badge bg-{{ risk_colors.get(agent.risk_level, 'secondary') }}">
+                                            {{ agent.risk_level }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>{{ agent.discovery_timestamp }}</small>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="viewAgentDetails('{{ agent.id }}')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5>No Recent Discoveries</h5>
+                        <p class="text-muted">No agents have been discovered by this scanner recently.</p>
+                        <button class="btn btn-primary" onclick="runTargetedScan()">
+                            <i class="fas fa-play me-2"></i>Run Scan
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-primary bg-opacity-10 border-primary">
+                <div class="card-body text-center">
+                    <h5 class="text-primary mb-3">
+                        <i class="fas fa-tools me-2"></i>Scanner Actions
+                    </h5>
+                    <div class="d-flex justify-content-center gap-3">
+                        <button class="btn btn-primary" onclick="runTargetedScan()">
+                            <i class="fas fa-play me-2"></i>Run Targeted Scan
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="configureScanner()">
+                            <i class="fas fa-cog me-2"></i>Configure Scanner
+                        </button>
+                        <button class="btn btn-outline-primary">
+                            <i class="fas fa-download me-2"></i>Export Results
+                        </button>
+                        <a href="{{ url_for('environment_scanner_bp.scanner_dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Scanner
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function refreshDiscoveries() {
+    // Implement refresh functionality
+    location.reload();
+}
+
+function viewAgentDetails(agentId) {
+    // Implement agent details view
+    alert(`Viewing details for agent: ${agentId}`);
+}
+
+function runTargetedScan() {
+    // Redirect to scanner dashboard with this scanner pre-selected
+    window.location.href = '{{ url_for("environment_scanner_bp.scanner_dashboard") }}';
+}
+
+function configureScanner() {
+    // Redirect to configuration page
+    window.location.href = '/integrations/configuration#{{ scanner_type }}-tab';
+}
+</script>
+{% endblock %}
