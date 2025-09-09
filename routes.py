@@ -26,11 +26,13 @@ except ImportError as e:
 try:
     from integrations.kubernetes_integration import kubernetes_integration
     from integrations.docker_integration import docker_integration
+    from integrations.mcp_integration import mcp_integration
     INTEGRATIONS_AVAILABLE = True
 except ImportError:
     INTEGRATIONS_AVAILABLE = False
     kubernetes_integration = None
     docker_integration = None
+    mcp_integration = None
 
 # Import playbook manager if available
 try:
@@ -776,10 +778,12 @@ def integrations_dashboard():
     # Get integration status
     k8s_info = kubernetes_integration.get_cluster_info() if kubernetes_integration else {'status': 'unavailable'}
     docker_info = docker_integration.get_docker_info() if docker_integration else {'status': 'unavailable'}
+    mcp_info = mcp_integration.get_mcp_ecosystem_info() if mcp_integration else {'status': 'unavailable'}
     
     return render_template('integrations/dashboard.html',
                          kubernetes_info=k8s_info,
-                         docker_info=docker_info)
+                         docker_info=docker_info,
+                         mcp_info=mcp_info)
 
 
 @app.route('/integrations/kubernetes')
@@ -866,6 +870,67 @@ def api_docker_container_logs(container_id):
     lines = request.args.get('lines', 100, type=int)
     logs = docker_integration.get_container_logs(container_id, lines)
     return jsonify({'logs': logs})
+
+
+@app.route('/integrations/mcp')
+def mcp_integration_page():
+    """MCP integration page"""
+    if not INTEGRATIONS_AVAILABLE or not mcp_integration:
+        flash('MCP integration is not available', 'error')
+        return redirect(url_for('integrations_dashboard'))
+    
+    ecosystem_info = mcp_integration.get_mcp_ecosystem_info()
+    mcp_agents = mcp_integration.discover_mcp_agents()
+    context_flows = mcp_integration.get_context_flow_metrics()
+    server_details = mcp_integration.get_server_details()
+    performance_metrics = mcp_integration.get_performance_metrics()
+    
+    return render_template('integrations/mcp.html',
+                         ecosystem_info=ecosystem_info,
+                         mcp_agents=mcp_agents,
+                         context_flows=context_flows,
+                         server_details=server_details,
+                         performance_metrics=performance_metrics)
+
+
+@app.route('/api/mcp/agents')
+def api_mcp_agents():
+    """API endpoint for MCP agents"""
+    if not INTEGRATIONS_AVAILABLE or not mcp_integration:
+        return jsonify({'error': 'MCP integration not available'})
+    
+    agents = mcp_integration.discover_mcp_agents()
+    return jsonify(agents)
+
+
+@app.route('/api/mcp/ecosystem')
+def api_mcp_ecosystem():
+    """API endpoint for MCP ecosystem status"""
+    if not INTEGRATIONS_AVAILABLE or not mcp_integration:
+        return jsonify({'error': 'MCP integration not available'})
+    
+    ecosystem_info = mcp_integration.get_mcp_ecosystem_info()
+    return jsonify(ecosystem_info)
+
+
+@app.route('/api/mcp/context-flows')
+def api_mcp_context_flows():
+    """API endpoint for MCP context flows"""
+    if not INTEGRATIONS_AVAILABLE or not mcp_integration:
+        return jsonify({'error': 'MCP integration not available'})
+    
+    context_flows = mcp_integration.get_context_flow_metrics()
+    return jsonify(context_flows)
+
+
+@app.route('/api/mcp/servers')
+def api_mcp_servers():
+    """API endpoint for MCP server details"""
+    if not INTEGRATIONS_AVAILABLE or not mcp_integration:
+        return jsonify({'error': 'MCP integration not available'})
+    
+    servers = mcp_integration.get_server_details()
+    return jsonify(servers)
 
 
 @app.route('/integrations/start-monitoring', methods=['POST'])

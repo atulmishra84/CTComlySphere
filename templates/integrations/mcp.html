@@ -1,0 +1,419 @@
+{% extends "base.html" %}
+
+{% block title %}MCP Integration{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('enhanced_dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('integrations_dashboard') }}">Integrations</a></li>
+                        <li class="breadcrumb-item active">MCP Protocol</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="d-flex align-items-center mb-3">
+                <i class="fas fa-network-wired me-3 text-primary" style="font-size: 2rem;"></i>
+                <div>
+                    <h1 class="h3 mb-0">Model Context Protocol Integration</h1>
+                    <p class="text-muted mb-0">Real-time monitoring and AI agent discovery for MCP ecosystems</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Alert -->
+    {% if ecosystem_info.status != 'connected' %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>MCP Integration Status:</strong>
+                {% if ecosystem_info.status == 'disconnected' %}
+                    No MCP servers are currently reachable. Please check your MCP server configurations.
+                {% elif ecosystem_info.status == 'error' %}
+                    {{ ecosystem_info.error or 'Unable to connect to MCP ecosystem' }}
+                {% else %}
+                    {{ ecosystem_info.status }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- MCP Ecosystem Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>MCP Ecosystem Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if ecosystem_info.status == 'connected' %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled mb-0">
+                                    <li><strong>Status:</strong> <span class="badge bg-success">Connected</span></li>
+                                    <li><strong>Connected Servers:</strong> {{ ecosystem_info.ecosystem_health.connected_servers }}</li>
+                                    <li><strong>Total Servers:</strong> {{ ecosystem_info.ecosystem_health.total_servers }}</li>
+                                    <li><strong>Ecosystem Health:</strong> {{ "%.1f"|format(ecosystem_info.ecosystem_health.health_percentage) }}%</li>
+                                    <li><strong>Last Heartbeat:</strong> {{ ecosystem_info.last_heartbeat or 'Never' }}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="border rounded p-3">
+                                            <h4 class="text-primary">{{ ecosystem_info.capabilities_summary.total_agents }}</h4>
+                                            <small class="text-muted">Total Agents</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="border rounded p-3">
+                                            <h4 class="text-info">{{ ecosystem_info.capabilities_summary.multiagent_systems }}</h4>
+                                            <small class="text-muted">Multi-Agent Systems</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Capabilities Summary -->
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <h6 class="text-muted mb-2">Context Capabilities</h6>
+                                <ul class="list-unstyled small">
+                                    <li><strong>Total Context Window:</strong> {{ "{:,}".format(ecosystem_info.capabilities_summary.total_context_window) }} tokens</li>
+                                    <li><strong>Context Utilization:</strong> {{ "%.1f"|format(ecosystem_info.capabilities_summary.context_utilization_percent) }}%</li>
+                                    <li><strong>Healthcare Compliant:</strong> {{ ecosystem_info.capabilities_summary.healthcare_compliant }} servers</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="text-muted mb-2">Protocol Support</h6>
+                                <ul class="list-unstyled small">
+                                    {% for protocol, count in ecosystem_info.protocol_distribution.items() %}
+                                    <li><strong>{{ protocol.upper() }}:</strong> {{ count }} servers</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="text-muted mb-2">Authentication Methods</h6>
+                                <ul class="list-unstyled small">
+                                    {% for method, count in ecosystem_info.authentication_methods.items() %}
+                                    <li><strong>{{ method.replace('_', ' ').title() }}:</strong> {{ count }} servers</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-exclamation-circle text-warning" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">{{ ecosystem_info.error or 'Unable to connect to MCP ecosystem' }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    {% if ecosystem_info.status == 'connected' %}
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <!-- Context Flow Metrics -->
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exchange-alt me-2"></i>Active Context Flows
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if context_flows.active_flows > 0 %}
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-primary">{{ context_flows.active_flows }}</h4>
+                                    <small class="text-muted">Active Flows</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-success">{{ context_flows.total_transfer_rate }}</h4>
+                                    <small class="text-muted">Transfer Rate</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-warning">{{ context_flows.phi_flows }}</h4>
+                                    <small class="text-muted">PHI Flows</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-info">{{ "%.0f"|format(context_flows.average_compression * 100) }}%</h4>
+                                    <small class="text-muted">Avg Compression</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Flow</th>
+                                        <th>Route</th>
+                                        <th>Context Type</th>
+                                        <th>Rate</th>
+                                        <th>PHI</th>
+                                        <th>Last Transfer</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for flow in context_flows.flows %}
+                                    <tr>
+                                        <td><code>{{ flow.flow_id }}</code></td>
+                                        <td><small>{{ flow.source_target }}</small></td>
+                                        <td><span class="badge bg-secondary">{{ flow.context_type }}</span></td>
+                                        <td>{{ flow.transfer_rate }}</td>
+                                        <td>
+                                            {% if flow.phi_content %}
+                                                <i class="fas fa-shield-alt text-warning" title="Contains PHI"></i>
+                                            {% else %}
+                                                <i class="fas fa-check text-success" title="No PHI"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ flow.last_transfer }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-stream text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">No active context flows detected</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <!-- Performance Overview -->
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tachometer-alt me-2"></i>Performance Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <label class="form-label small text-muted">Ecosystem Uptime</label>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ performance_metrics.uptime_percentage }}%"
+                                 aria-valuenow="{{ performance_metrics.uptime_percentage }}" 
+                                 aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <small class="text-muted">{{ "%.1f"|format(performance_metrics.uptime_percentage) }}% ({{ performance_metrics.healthy_servers }}/{{ performance_metrics.total_servers }} servers)</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Average Response Time</label>
+                        <p class="h5 mb-1">{{ performance_metrics.average_response_time }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Fastest Server</label>
+                        <p class="mb-1"><small>{{ performance_metrics.fastest_server }}</small></p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Slowest Server</label>
+                        <p class="mb-1"><small>{{ performance_metrics.slowest_server }}</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MCP Servers -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-server me-2"></i>MCP Servers
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if server_details %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Server</th>
+                                        <th>Status</th>
+                                        <th>Endpoint</th>
+                                        <th>Version</th>
+                                        <th>Response Time</th>
+                                        <th>Capabilities</th>
+                                        <th>Compliance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for server in server_details %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ server.name }}</strong>
+                                            {% if server.capabilities.multi_agent %}
+                                                <small class="text-muted d-block">{{ server.capabilities.agent_count }} agents</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if server.status == 'connected' %}
+                                                <span class="badge bg-success">Connected</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Disconnected</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><code class="small">{{ server.endpoint }}</code></td>
+                                        <td>{{ server.protocol_version }}</td>
+                                        <td>{{ server.response_time }}</td>
+                                        <td>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                {% if server.capabilities.context_sharing %}
+                                                    <span class="badge bg-primary">Context</span>
+                                                {% endif %}
+                                                {% if server.capabilities.multi_agent %}
+                                                    <span class="badge bg-info">Multi-Agent</span>
+                                                {% endif %}
+                                                {% if server.capabilities.phi_handling %}
+                                                    <span class="badge bg-warning">PHI</span>
+                                                {% endif %}
+                                            </div>
+                                            <small class="text-muted d-block">{{ "{:,}".format(server.capabilities.context_window) }} tokens</small>
+                                        </td>
+                                        <td>
+                                            {% for framework in server.compliance %}
+                                                <span class="badge bg-secondary">{{ framework.upper() }}</span>
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-server text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">No MCP servers found</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discovered MCP Agents -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-robot me-2"></i>Discovered MCP Agents
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if mcp_agents %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Agent Name</th>
+                                        <th>Type</th>
+                                        <th>Endpoint</th>
+                                        <th>Context Window</th>
+                                        <th>PHI Handling</th>
+                                        <th>Compliance</th>
+                                        <th>Discovery Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for agent in mcp_agents %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ agent.name }}</strong>
+                                            {% if agent.metadata.get('parent_system') %}
+                                                <small class="text-muted d-block">Part of {{ agent.metadata.parent_system }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ agent.type }}</span>
+                                            {% if agent.metadata.get('agent_role') %}
+                                                <small class="text-muted d-block">{{ agent.metadata.agent_role }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td><code class="small">{{ agent.endpoint }}</code></td>
+                                        <td>
+                                            {% if agent.metadata.get('context_window_size') %}
+                                                {{ "{:,}".format(agent.metadata.context_window_size) }} tokens
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if agent.metadata.get('phi_handling') %}
+                                                <i class="fas fa-shield-alt text-warning" title="PHI Capable"></i>
+                                            {% else %}
+                                                <i class="fas fa-times text-muted" title="No PHI"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% for framework in agent.metadata.get('healthcare_compliance', []) %}
+                                                <span class="badge bg-secondary">{{ framework.upper() }}</span>
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            <small>{{ agent.metadata.get('discovery_timestamp', 'Unknown')[:16] }}</small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-robot text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">No MCP agents discovered</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Auto-refresh every 30 seconds
+setTimeout(function() {
+    location.reload();
+}, 30000);
+
+// Refresh context flows every 10 seconds
+setInterval(function() {
+    fetch('/api/mcp/context-flows')
+        .then(response => response.json())
+        .then(data => {
+            // Update context flow metrics if needed
+            console.log('Context flows updated:', data);
+        })
+        .catch(error => console.error('Error updating context flows:', error));
+}, 10000);
+</script>
+{% endblock %}
