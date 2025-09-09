@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 @enhanced_dashboard_bp.route('/')
 def enhanced_dashboard():
-    """Enhanced dashboard with real-time analytics and visualizations"""
+    """Enhanced dashboard with analytics and visualizations"""
     try:
         # Get dashboard summary data
         dashboard_data = get_dashboard_summary()
@@ -39,36 +39,6 @@ def enhanced_dashboard():
                              avg_risk_score=0)
 
 
-@enhanced_dashboard_bp.route('/api/metrics')
-def api_metrics():
-    """Real-time metrics API endpoint"""
-    try:
-        metrics = {
-            'total_agents': AIAgent.query.count(),
-            'total_scans': ScanResult.query.count(),
-            'compliance_evaluations': ComplianceEvaluation.query.count(),
-            'high_risk_agents': AIAgent.query.filter_by(risk_level=RiskLevel.HIGH).count(),
-            'critical_risk_agents': AIAgent.query.filter_by(risk_level=RiskLevel.CRITICAL).count(),
-            'compliant_agents': ComplianceEvaluation.query.filter_by(is_compliant=True).count(),
-            'last_updated': datetime.utcnow().isoformat()
-        }
-        
-        # Calculate overall compliance score
-        total_evaluations = ComplianceEvaluation.query.count()
-        if total_evaluations > 0:
-            avg_compliance = db.session.query(db.func.avg(ComplianceEvaluation.compliance_score)).scalar()
-            metrics['overall_compliance_score'] = round(avg_compliance, 1) if avg_compliance else 0
-        else:
-            metrics['overall_compliance_score'] = 0
-        
-        # Get external threat intelligence
-        metrics['active_threats'] = len(external_service_integrator.cache.get('threats', []))
-        
-        return jsonify(metrics)
-        
-    except Exception as e:
-        logger.error(f"Metrics API error: {str(e)}")
-        return jsonify({'error': 'Failed to fetch metrics'}), 500
 
 
 @enhanced_dashboard_bp.route('/api/compliance-trends')
