@@ -8,23 +8,23 @@
     <div class="container hero-content py-3">
         <div class="row align-items-center">
             <div class="col-lg-7">
-                <h1 class="display-5 mb-2 text-white fw-bold">Healthcare AI Compliance Platform</h1>
-                <p class="text-white mb-3 fw-semibold">
+                <h1 class="display-4 mb-3 text-white fw-bold">Healthcare AI Compliance Platform</h1>
+                <p class="lead text-white mb-4">
                     Comprehensive AI agent discovery across <span class="text-warning fw-bold">15+</span> protocols including 
                     <span class="text-info">FHIR</span>, <span class="text-info">HL7</span>, <span class="text-info">DICOM</span>, and <span class="text-info">WebRTC</span>.
                 </p>
                 <div class="d-flex gap-2 mb-2 flex-wrap">
-                    <a href="/scan/results" class="btn btn-light btn-sm shadow">
-                        <i class="fas fa-search me-1"></i>Security Scans
+                    <a href="/scan/results" class="btn btn-light shadow">
+                        <i class="fas fa-search icon-sm me-2"></i>Security Scans
                     </a>
-                    <a href="/environment-scanner/" class="btn btn-primary btn-sm shadow">
-                        <i class="fas fa-radar me-1"></i>Environment Scanner
+                    <a href="/environment-scanner/" class="btn btn-primary shadow">
+                        <i class="fas fa-radar icon-sm me-2"></i>Environment Scanner
                     </a>
-                    <a href="/realtime-monitoring" class="btn btn-primary btn-sm shadow">
-                        <i class="fas fa-chart-line me-1"></i>Monitoring
+                    <a href="/realtime-monitoring" class="btn btn-outline-light shadow">
+                        <i class="fas fa-chart-line icon-sm me-2"></i>Monitoring
                     </a>
-                    <a href="/compliance-report" class="btn btn-primary btn-sm shadow">
-                        <i class="fas fa-shield-alt me-1"></i>Compliance
+                    <a href="/compliance-report" class="btn btn-outline-light shadow">
+                        <i class="fas fa-shield-alt icon-sm me-2"></i>Compliance
                     </a>
                 </div>
             </div>
@@ -33,12 +33,12 @@
                     <div class="col-6">
                         <div class="stat-item bg-white shadow-sm p-3">
                             <div class="d-flex align-items-center">
-                                <div class="stat-icon-sm bg-gradient-primary me-2">
-                                    <i class="fas fa-robot"></i>
+                                <div class="stat-icon-sm bg-gradient-primary me-3">
+                                    <i class="fas fa-robot icon-md"></i>
                                 </div>
                                 <div>
-                                    <span class="stat-number-sm text-primary">{{ total_agents or 0 }}</span>
-                                    <span class="stat-label-sm">AI Agents</span>
+                                    <div class="metric-value text-primary fs-3 fw-bold">{{ total_agents or 0 }}</div>
+                                    <div class="metric-label text-muted small">AI Agents</div>
                                 </div>
                             </div>
                         </div>
@@ -96,8 +96,8 @@
             <div class="metric-card border-0 shadow-sm">
                 <div class="d-flex justify-content-between align-items-center p-3">
                     <div>
-                        <h6 class="text-muted mb-1 fw-semibold small">AI Agents Discovered</h6>
-                        <h4 class="text-primary mb-1 fw-bold">{{ total_agents or 0 }}</h4>
+                        <div class="metric-label text-muted mb-1">AI Agents Discovered</div>
+                        <div class="metric-value text-primary mb-1">{{ total_agents or 0 }}</div>
                         <small class="text-success d-flex align-items-center">
                             <i class="fas fa-arrow-up me-1"></i>
                             +{{ (total_agents or 0) // 10 }} this week
@@ -114,8 +114,8 @@
             <div class="metric-card border-0 shadow-sm">
                 <div class="d-flex justify-content-between align-items-center p-3">
                     <div>
-                        <h6 class="text-muted mb-1 fw-semibold small">HIPAA Compliance</h6>
-                        <h4 class="text-success mb-1 fw-bold">{{ compliance_summary.get('HIPAA', {}).get('compliant_percentage', 92) }}%</h4>
+                        <div class="metric-label text-muted mb-1">HIPAA Compliance</div>
+                        <div class="metric-value text-success mb-1">{{ compliance_summary.get('HIPAA', {}).get('compliant_percentage', 92) }}%</div>
                         <small class="text-success d-flex align-items-center">
                             <i class="fas fa-arrow-up me-1"></i>
                             +3% this month

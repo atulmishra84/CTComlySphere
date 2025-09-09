@@ -11,10 +11,10 @@
                 <div class="card-body p-4">
                     <div class="row align-items-center">
                         <div class="col-lg-8">
-                            <h1 class="display-6 mb-2 fw-bold">
-                                <i class="fas fa-robot me-3"></i>Healthcare Compliance AI Agent
+                            <h1 class="display-5 mb-3 fw-bold">
+                                <i class="fas fa-robot icon-lg me-3"></i>Healthcare Compliance AI Agent
                             </h1>
-                            <p class="mb-3 opacity-90">
+                            <p class="lead mb-3 opacity-90">
                                 Autonomous AI agent for intelligent healthcare compliance management across your organization
                             </p>
                             <div class="d-flex align-items-center">
@@ -56,14 +56,14 @@
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-1 fw-semibold small">Queue Tasks</h6>
-                            <h4 class="text-primary mb-1 fw-bold">{{ agent_status.task_queue_size }}</h4>
+                            <div class="metric-label text-muted mb-1">Queue Tasks</div>
+                            <div class="metric-value text-primary mb-1">{{ agent_status.task_queue_size }}</div>
                             <small class="text-success">
                                 <i class="fas fa-check me-1"></i>{{ agent_status.completed_tasks }} completed
                             </small>
                         </div>
                         <div class="feature-icon-sm bg-gradient-primary">
-                            <i class="fas fa-tasks"></i>
+                            <i class="fas fa-tasks icon-md"></i>
                         </div>
                     </div>
                 </div>
@@ -75,8 +75,8 @@
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-1 fw-semibold small">AI Systems</h6>
-                            <h4 class="text-info mb-1 fw-bold">{{ context_data.total_agents }}</h4>
+                            <div class="metric-label text-muted mb-1">AI Systems</div>
+                            <div class="metric-value text-info mb-1">{{ context_data.total_agents }}</div>
                             <small class="text-info">
                                 <i class="fas fa-robot me-1"></i>Under monitoring
                             </small>
@@ -94,8 +94,8 @@
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-1 fw-semibold small">Decisions Made</h6>
-                            <h4 class="text-success mb-1 fw-bold">{{ agent_status.decisions_made }}</h4>
+                            <div class="metric-label text-muted mb-1">Decisions Made</div>
+                            <div class="metric-value text-success mb-1">{{ agent_status.decisions_made }}</div>
                             <small class="text-success">
                                 <i class="fas fa-brain me-1"></i>Autonomous actions
                             </small>
@@ -113,8 +113,8 @@
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-1 fw-semibold small">Knowledge Base</h6>
-                            <h4 class="text-warning mb-1 fw-bold">{{ agent_status.knowledge_base_size }}</h4>
+                            <div class="metric-label text-muted mb-1">Knowledge Base</div>
+                            <div class="metric-value text-warning mb-1">{{ agent_status.knowledge_base_size }}</div>
                             <small class="text-warning">
                                 <i class="fas fa-database me-1"></i>Rules & patterns
                             </small>
