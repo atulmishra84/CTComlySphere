@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from enum import Enum
 import json
 
-from app import db
+from app import db, app
 from models import AIAgent, ScanResult, RiskLevel
 
 
@@ -387,13 +387,34 @@ class EnvironmentScanner:
                     # Execute scanner with timeout - handle both sync and async methods
                     discover_method = scanner.discover_agents(target)
                     if asyncio.iscoroutine(discover_method):
-                        agents = await asyncio.wait_for(
+                        raw_agents = await asyncio.wait_for(
                             discover_method, 
                             timeout=300  # 5 minute timeout
                         )
                     else:
                         # Sync method, run directly
-                        agents = discover_method
+                        raw_agents = discover_method
+                    
+                    # Ensure all agents are DiscoveredAgent objects (convert dicts if needed)
+                    agents = []
+                    for agent_data in raw_agents:
+                        if isinstance(agent_data, dict):
+                            # Convert dictionary to DiscoveredAgent object
+                            discovered_agent = DiscoveredAgent(
+                                id=agent_data.get('id', f"{agent_data.get('name', 'unknown')}_{scanner_type.value}"),
+                                name=agent_data.get('name', 'Unknown Agent'),
+                                type=agent_data.get('type', 'Unknown'),
+                                protocol=agent_data.get('protocol', scanner_type.value),
+                                discovered_by=scanner_type,
+                                metadata=agent_data.get('metadata', {}),
+                                risk_level=RiskLevel.MEDIUM,  # Default risk level
+                                compliance_frameworks=[],
+                                discovery_timestamp=datetime.utcnow()
+                            )
+                            agents.append(discovered_agent)
+                        else:
+                            # Already a DiscoveredAgent object
+                            agents.append(agent_data)
                     
                     # Calculate enhanced statistics
                     scan_duration = (datetime.utcnow() - start_time).total_seconds()
@@ -443,39 +464,40 @@ class EnvironmentScanner:
     
     async def _store_discovered_agents(self, agents: List[DiscoveredAgent]):
         """Store discovered agents in database"""
-        for agent in agents:
-            try:
-                # Check if agent already exists
-                existing_agent = AIAgent.query.filter_by(
-                    name=agent.name,
-                    protocol=agent.protocol
-                ).first()
-                
-                if existing_agent:
-                    # Update existing agent
-                    existing_agent.last_discovered = agent.discovery_timestamp
-                    existing_agent.discovery_metadata = agent.metadata
-                    existing_agent.risk_level = agent.risk_level
-                else:
-                    # Create new agent
-                    new_agent = AIAgent(
+        with app.app_context():
+            for agent in agents:
+                try:
+                    # Check if agent already exists
+                    existing_agent = AIAgent.query.filter_by(
                         name=agent.name,
-                        ai_type=agent.type,
-                        protocol=agent.protocol,
-                        discovered_at=agent.discovery_timestamp,
-                        last_discovered=agent.discovery_timestamp,
-                        discovery_method=agent.discovered_by.value,
-                        discovery_metadata=agent.metadata,
-                        risk_level=agent.risk_level,
-                        healthcare_related=True  # Assume healthcare context
-                    )
-                    db.session.add(new_agent)
-                
-                db.session.commit()
-                
-            except Exception as e:
-                self.logger.error(f"Failed to store agent {agent.name}: {str(e)}")
-                db.session.rollback()
+                        protocol=agent.protocol
+                    ).first()
+                    
+                    if existing_agent:
+                        # Update existing agent
+                        existing_agent.last_discovered = agent.discovery_timestamp
+                        existing_agent.discovery_metadata = agent.metadata
+                        existing_agent.risk_level = agent.risk_level
+                    else:
+                        # Create new agent
+                        new_agent = AIAgent(
+                            name=agent.name,
+                            ai_type=agent.type,
+                            protocol=agent.protocol,
+                            discovered_at=agent.discovery_timestamp,
+                            last_discovered=agent.discovery_timestamp,
+                            discovery_method=agent.discovered_by.value,
+                            discovery_metadata=agent.metadata,
+                            risk_level=agent.risk_level,
+                            healthcare_related=True  # Assume healthcare context
+                        )
+                        db.session.add(new_agent)
+                    
+                    db.session.commit()
+                    
+                except Exception as e:
+                    self.logger.error(f"Failed to store agent {agent.name}: {str(e)}")
+                    db.session.rollback()
     
     def _update_discovery_cache(self, agents: List[DiscoveredAgent]):
         """Update discovery cache with new agents"""
