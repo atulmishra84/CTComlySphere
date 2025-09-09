@@ -370,79 +370,6 @@ def start_scan():
     return redirect(url_for('dashboard'))
 
 
-@app.route('/webhooks')
-def webhooks():
-    """Webhook management interface"""
-    # Mock webhook data
-    webhooks = [
-        {
-            'id': 1,
-            'name': 'Security Alert Webhook',
-            'url': 'https://alerts.company.com/security',
-            'events': ['high_risk_detected', 'phi_exposure'],
-            'status': 'active',
-            'is_active': True,
-            'scan_frequency': 3600,
-            'protocols': ['kubernetes', 'docker', 'fhir', 'hl7'],
-            'last_triggered': datetime.utcnow() - timedelta(hours=2),
-            'created_at': datetime.utcnow() - timedelta(days=7),
-            'updated_at': datetime.utcnow() - timedelta(hours=2)
-        },
-        {
-            'id': 2,
-            'name': 'Compliance Report Webhook',
-            'url': 'https://compliance.company.com/reports',
-            'events': ['compliance_evaluation_complete'],
-            'status': 'active',
-            'is_active': True,
-            'scan_frequency': 86400,
-            'protocols': ['rest_api', 'grpc', 'dicom', 'webrtc', 'amqp'],
-            'last_triggered': datetime.utcnow() - timedelta(days=1),
-            'created_at': datetime.utcnow() - timedelta(days=14),
-            'updated_at': datetime.utcnow() - timedelta(days=1)
-        }
-    ]
-    
-    return render_template('webhooks.html', webhooks=webhooks)
-
-
-@app.route('/webhooks/create', methods=['POST'])
-def create_webhook():
-    """Create a new webhook"""
-    webhook_data = {
-        'name': request.form.get('name'),
-        'url': request.form.get('url'),
-        'events': request.form.getlist('events'),
-        'secret': request.form.get('secret')
-    }
-    
-    # In a real implementation, this would create a webhook in the database
-    flash('Webhook created successfully!', 'success')
-    return redirect(url_for('webhooks'))
-
-
-@app.route('/webhooks/trigger/<int:webhook_id>', methods=['POST'])
-def trigger_webhook(webhook_id):
-    """Trigger a webhook manually"""
-    # In a real implementation, this would trigger the webhook
-    flash(f'Webhook {webhook_id} triggered successfully!', 'success')
-    return redirect(url_for('webhooks'))
-
-
-@app.route('/webhooks/delete/<int:webhook_id>', methods=['POST'])
-def delete_webhook(webhook_id):
-    """Delete a webhook"""
-    # In a real implementation, this would delete the webhook from database
-    flash(f'Webhook {webhook_id} deleted successfully!', 'warning')
-    return redirect(url_for('webhooks'))
-
-
-@app.route('/webhooks/toggle/<int:webhook_id>', methods=['POST'])
-def toggle_webhook(webhook_id):
-    """Toggle webhook active status"""
-    # In a real implementation, this would toggle the webhook status
-    flash(f'Webhook {webhook_id} status updated!', 'info')
-    return redirect(url_for('webhooks'))
 
 
 @app.route('/multi-cloud')
@@ -837,7 +764,7 @@ def kubernetes_integration_page():
     
     cluster_info = kubernetes_integration.get_cluster_info()
     ai_workloads = kubernetes_integration.discover_ai_workloads()
-    metrics = kubernetes_integration.get_ai_workload_metrics()
+    metrics = {}  # Real-time metrics removed
     namespace_summary = kubernetes_integration.get_namespace_ai_summary()
     
     return render_template('integrations/kubernetes.html',
@@ -856,7 +783,7 @@ def docker_integration_page():
     
     docker_info = docker_integration.get_docker_info()
     ai_containers = docker_integration.discover_ai_containers()
-    metrics = docker_integration.get_ai_container_metrics()
+    metrics = {}  # Real-time metrics removed
     
     return render_template('integrations/docker.html',
                          docker_info=docker_info,
@@ -881,8 +808,7 @@ def api_kubernetes_metrics():
     if not INTEGRATIONS_AVAILABLE or not kubernetes_integration:
         return jsonify({'error': 'Kubernetes integration not available'})
     
-    metrics = kubernetes_integration.get_ai_workload_metrics()
-    return jsonify(metrics)
+    return jsonify({'error': 'Real-time metrics feature removed'})
 
 
 @app.route('/api/docker/containers')
@@ -901,8 +827,7 @@ def api_docker_metrics():
     if not INTEGRATIONS_AVAILABLE or not docker_integration:
         return jsonify({'error': 'Docker integration not available'})
     
-    metrics = docker_integration.get_ai_container_metrics()
-    return jsonify(metrics)
+    return jsonify({'error': 'Real-time metrics feature removed'})
 
 
 @app.route('/api/docker/containers/<container_id>/logs')
@@ -926,11 +851,9 @@ def start_integration_monitoring():
         k8s_started = False
         docker_started = False
         
-        if kubernetes_integration and kubernetes_integration.is_connected:
-            k8s_started = kubernetes_integration.start_real_time_monitoring()
-        
-        if docker_integration and docker_integration.is_connected:
-            docker_started = docker_integration.start_real_time_monitoring()
+        # Real-time monitoring feature removed
+        k8s_started = False
+        docker_started = False
         
         return jsonify({
             'success': True,
