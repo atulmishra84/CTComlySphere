@@ -35,3 +35,13 @@ with app.app_context():
 
 # Import and register routes
 import routes
+
+# Initialize continuous scanning scheduler
+try:
+    from services.scheduler_integration import init_scheduler_with_app
+    init_scheduler_with_app(app)
+    logging.info("Continuous scanning scheduler initialized")
+except ImportError as e:
+    logging.warning(f"Continuous scanning scheduler not available: {e}")
+except Exception as e:
+    logging.error(f"Failed to initialize continuous scanning scheduler: {e}")
