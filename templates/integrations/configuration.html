@@ -1,0 +1,632 @@
+{% extends "base.html" %}
+
+{% block title %}Integration Configuration{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('enhanced_dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('integrations_dashboard') }}">Integrations</a></li>
+                        <li class="breadcrumb-item active">Configuration</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="d-flex align-items-center mb-3">
+                <i class="fas fa-cogs me-3 text-primary" style="font-size: 2rem;"></i>
+                <div>
+                    <h1 class="h3 mb-0">Integration Configuration</h1>
+                    <p class="text-muted mb-0">Customize integration methods based on your specific requirements</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Configuration Tabs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <ul class="nav nav-tabs card-header-tabs" id="configTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">
+                                <i class="fas fa-sliders-h me-2"></i>General Settings
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="kubernetes-tab" data-bs-toggle="tab" data-bs-target="#kubernetes" type="button" role="tab">
+                                <i class="fas fa-dharmachakra me-2"></i>Kubernetes
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="docker-tab" data-bs-toggle="tab" data-bs-target="#docker" type="button" role="tab">
+                                <i class="fab fa-docker me-2"></i>Docker
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="mcp-tab" data-bs-toggle="tab" data-bs-target="#mcp" type="button" role="tab">
+                                <i class="fas fa-network-wired me-2"></i>MCP Protocol
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <form id="configurationForm" method="POST" action="{{ url_for('save_integration_config') }}">
+                        <div class="tab-content" id="configTabsContent">
+                            
+                            <!-- General Settings Tab -->
+                            <div class="tab-pane fade show active" id="general" role="tabpanel">
+                                <h5 class="mb-3">General Integration Settings</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="autoDiscovery" name="general.auto_discovery" {% if config.general.auto_discovery %}checked{% endif %}>
+                                                <label class="form-check-label" for="autoDiscovery">
+                                                    <strong>Auto Discovery</strong><br>
+                                                    <small class="text-muted">Automatically discover new AI agents</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="realTimeAlerts" name="general.real_time_alerts" {% if config.general.real_time_alerts %}checked{% endif %}>
+                                                <label class="form-check-label" for="realTimeAlerts">
+                                                    <strong>Real-time Alerts</strong><br>
+                                                    <small class="text-muted">Enable instant notifications for issues</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="securityScanning" name="general.security_scanning" {% if config.general.security_scanning %}checked{% endif %}>
+                                                <label class="form-check-label" for="securityScanning">
+                                                    <strong>Security Scanning</strong><br>
+                                                    <small class="text-muted">Automatic vulnerability assessment</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="complianceValidation" name="general.compliance_validation" {% if config.general.compliance_validation %}checked{% endif %}>
+                                                <label class="form-check-label" for="complianceValidation">
+                                                    <strong>Compliance Validation</strong><br>
+                                                    <small class="text-muted">Validate against healthcare frameworks</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="dataRetention" class="form-label">Data Retention (days)</label>
+                                            <input type="number" class="form-control" id="dataRetention" name="general.data_retention_days" value="{{ config.general.data_retention_days }}" min="1" max="365">
+                                            <div class="form-text">How long to keep scan and monitoring data</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="timezone" class="form-label">Timezone</label>
+                                            <select class="form-select" id="timezone" name="general.timezone">
+                                                <option value="UTC" {% if config.general.timezone == 'UTC' %}selected{% endif %}>UTC</option>
+                                                <option value="America/New_York" {% if config.general.timezone == 'America/New_York' %}selected{% endif %}>Eastern Time</option>
+                                                <option value="America/Chicago" {% if config.general.timezone == 'America/Chicago' %}selected{% endif %}>Central Time</option>
+                                                <option value="America/Los_Angeles" {% if config.general.timezone == 'America/Los_Angeles' %}selected{% endif %}>Pacific Time</option>
+                                                <option value="Europe/London" {% if config.general.timezone == 'Europe/London' %}selected{% endif %}>London</option>
+                                                <option value="Europe/Berlin" {% if config.general.timezone == 'Europe/Berlin' %}selected{% endif %}>Berlin</option>
+                                                <option value="Asia/Tokyo" {% if config.general.timezone == 'Asia/Tokyo' %}selected{% endif %}>Tokyo</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="logLevel" class="form-label">Log Level</label>
+                                            <select class="form-select" id="logLevel" name="general.log_level">
+                                                <option value="DEBUG" {% if config.general.log_level == 'DEBUG' %}selected{% endif %}>Debug</option>
+                                                <option value="INFO" {% if config.general.log_level == 'INFO' %}selected{% endif %}>Info</option>
+                                                <option value="WARNING" {% if config.general.log_level == 'WARNING' %}selected{% endif %}>Warning</option>
+                                                <option value="ERROR" {% if config.general.log_level == 'ERROR' %}selected{% endif %}>Error</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h6 class="mt-4 mb-3">Alert Thresholds</h6>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="cpuThreshold" class="form-label">High CPU (%)</label>
+                                            <input type="number" class="form-control" id="cpuThreshold" name="general.alert_thresholds.high_cpu_percent" value="{{ config.general.alert_thresholds.high_cpu_percent }}" min="1" max="100">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="memoryThreshold" class="form-label">High Memory (%)</label>
+                                            <input type="number" class="form-control" id="memoryThreshold" name="general.alert_thresholds.high_memory_percent" value="{{ config.general.alert_thresholds.high_memory_percent }}" min="1" max="100">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="responseThreshold" class="form-label">Response Time (ms)</label>
+                                            <input type="number" class="form-control" id="responseThreshold" name="general.alert_thresholds.response_time_ms" value="{{ config.general.alert_thresholds.response_time_ms }}" min="1">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="errorThreshold" class="form-label">Error Rate (%)</label>
+                                            <input type="number" class="form-control" id="errorThreshold" name="general.alert_thresholds.error_rate_percent" value="{{ config.general.alert_thresholds.error_rate_percent }}" min="0" max="100">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Kubernetes Configuration Tab -->
+                            <div class="tab-pane fade" id="kubernetes" role="tabpanel">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0">Kubernetes Integration Settings</h5>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="kubernetesEnabled" name="kubernetes.enabled" {% if config.kubernetes.enabled %}checked{% endif %}>
+                                        <label class="form-check-label" for="kubernetesEnabled">Enable Integration</label>
+                                    </div>
+                                </div>
+
+                                <div id="kubernetesConfig" {% if not config.kubernetes.enabled %}style="display: none;"{% endif %}>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="k8sEndpoints" class="form-label">Cluster Endpoints</label>
+                                                <textarea class="form-control" id="k8sEndpoints" name="kubernetes.cluster_endpoints" rows="3" placeholder="One endpoint per line">{{ '\n'.join(config.kubernetes.cluster_endpoints) }}</textarea>
+                                                <div class="form-text">Kubernetes API server endpoints to monitor</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="k8sNamespaces" class="form-label">Namespaces to Monitor</label>
+                                                <textarea class="form-control" id="k8sNamespaces" name="kubernetes.namespaces_to_monitor" rows="3" placeholder="One namespace per line">{{ '\n'.join(config.kubernetes.namespaces_to_monitor) }}</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="k8sExcludeNamespaces" class="form-label">Exclude Namespaces</label>
+                                                <textarea class="form-control" id="k8sExcludeNamespaces" name="kubernetes.exclude_namespaces" rows="2" placeholder="One namespace per line">{{ '\n'.join(config.kubernetes.exclude_namespaces) }}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="k8sAuthMethod" class="form-label">Authentication Method</label>
+                                                <select class="form-select" id="k8sAuthMethod" name="kubernetes.authentication_method">
+                                                    <option value="in_cluster" {% if config.kubernetes.authentication_method == 'in_cluster' %}selected{% endif %}>In-Cluster</option>
+                                                    <option value="kubeconfig" {% if config.kubernetes.authentication_method == 'kubeconfig' %}selected{% endif %}>Kubeconfig</option>
+                                                    <option value="service_account" {% if config.kubernetes.authentication_method == 'service_account' %}selected{% endif %}>Service Account</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="k8sKubeconfigPath" class="form-label">Kubeconfig Path</label>
+                                                <input type="text" class="form-control" id="k8sKubeconfigPath" name="kubernetes.kubeconfig_path" value="{{ config.kubernetes.kubeconfig_path }}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="k8sMonitoringLevel" class="form-label">Monitoring Level</label>
+                                                <select class="form-select" id="k8sMonitoringLevel" name="kubernetes.monitoring_level">
+                                                    <option value="basic" {% if config.kubernetes.monitoring_level == 'basic' %}selected{% endif %}>Basic</option>
+                                                    <option value="standard" {% if config.kubernetes.monitoring_level == 'standard' %}selected{% endif %}>Standard</option>
+                                                    <option value="comprehensive" {% if config.kubernetes.monitoring_level == 'comprehensive' %}selected{% endif %}>Comprehensive</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="k8sScanInterval" class="form-label">Scan Interval (minutes)</label>
+                                                <input type="number" class="form-control" id="k8sScanInterval" name="kubernetes.scan_interval_minutes" value="{{ config.kubernetes.scan_interval_minutes }}" min="1" max="1440">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <h6 class="mt-4 mb-3">AI Detection Settings</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="k8sAiLabels" class="form-label">AI Labels</label>
+                                                <textarea class="form-control" id="k8sAiLabels" name="kubernetes.ai_labels" rows="3" placeholder="One label per line">{{ '\n'.join(config.kubernetes.ai_labels) }}</textarea>
+                                                <div class="form-text">Labels that identify AI workloads</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="k8sAiAnnotations" class="form-label">AI Annotations</label>
+                                                <textarea class="form-control" id="k8sAiAnnotations" name="kubernetes.ai_annotations" rows="3" placeholder="One annotation per line">{{ '\n'.join(config.kubernetes.ai_annotations) }}</textarea>
+                                                <div class="form-text">Annotations that identify AI workloads</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="k8sResourceMonitoring" name="kubernetes.resource_monitoring" {% if config.kubernetes.resource_monitoring %}checked{% endif %}>
+                                                <label class="form-check-label" for="k8sResourceMonitoring">Resource Monitoring</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="k8sEventMonitoring" name="kubernetes.event_monitoring" {% if config.kubernetes.event_monitoring %}checked{% endif %}>
+                                                <label class="form-check-label" for="k8sEventMonitoring">Event Monitoring</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Docker Configuration Tab -->
+                            <div class="tab-pane fade" id="docker" role="tabpanel">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0">Docker Integration Settings</h5>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="dockerEnabled" name="docker.enabled" {% if config.docker.enabled %}checked{% endif %}>
+                                        <label class="form-check-label" for="dockerEnabled">Enable Integration</label>
+                                    </div>
+                                </div>
+
+                                <div id="dockerConfig" {% if not config.docker.enabled %}style="display: none;"{% endif %}>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="dockerEndpoints" class="form-label">Daemon Endpoints</label>
+                                                <textarea class="form-control" id="dockerEndpoints" name="docker.daemon_endpoints" rows="3" placeholder="One endpoint per line">{{ '\n'.join(config.docker.daemon_endpoints) }}</textarea>
+                                                <div class="form-text">Docker daemon endpoints to monitor</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="dockerRegistries" class="form-label">Registries to Monitor</label>
+                                                <textarea class="form-control" id="dockerRegistries" name="docker.registries_to_monitor" rows="3" placeholder="One registry per line">{{ '\n'.join(config.docker.registries_to_monitor) }}</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="dockerAiImages" class="form-label">AI Image Patterns</label>
+                                                <textarea class="form-control" id="dockerAiImages" name="docker.container_filters.ai_images" rows="3" placeholder="One pattern per line">{{ '\n'.join(config.docker.container_filters.ai_images) }}</textarea>
+                                                <div class="form-text">Image patterns that identify AI containers</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="dockerMonitoringLevel" class="form-label">Monitoring Level</label>
+                                                <select class="form-select" id="dockerMonitoringLevel" name="docker.monitoring_level">
+                                                    <option value="basic" {% if config.docker.monitoring_level == 'basic' %}selected{% endif %}>Basic</option>
+                                                    <option value="standard" {% if config.docker.monitoring_level == 'standard' %}selected{% endif %}>Standard</option>
+                                                    <option value="comprehensive" {% if config.docker.monitoring_level == 'comprehensive' %}selected{% endif %}>Comprehensive</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="dockerScanInterval" class="form-label">Scan Interval (minutes)</label>
+                                                <input type="number" class="form-control" id="dockerScanInterval" name="docker.scan_interval_minutes" value="{{ config.docker.scan_interval_minutes }}" min="1" max="1440">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="dockerMaxLogLines" class="form-label">Max Log Lines</label>
+                                                <input type="number" class="form-control" id="dockerMaxLogLines" name="docker.max_log_lines" value="{{ config.docker.max_log_lines }}" min="10" max="10000">
+                                                <div class="form-text">Maximum log lines to retrieve per container</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <h6 class="mt-4 mb-3">Monitoring Features</h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="dockerLogMonitoring" name="docker.log_monitoring" {% if config.docker.log_monitoring %}checked{% endif %}>
+                                                <label class="form-check-label" for="dockerLogMonitoring">Log Monitoring</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="dockerStatsMonitoring" name="docker.stats_monitoring" {% if config.docker.stats_monitoring %}checked{% endif %}>
+                                                <label class="form-check-label" for="dockerStatsMonitoring">Stats Monitoring</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="dockerSecurityScanning" name="docker.security_scanning" {% if config.docker.security_scanning %}checked{% endif %}>
+                                                <label class="form-check-label" for="dockerSecurityScanning">Security Scanning</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- MCP Configuration Tab -->
+                            <div class="tab-pane fade" id="mcp" role="tabpanel">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0">MCP Protocol Settings</h5>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="mcpEnabled" name="mcp.enabled" {% if config.mcp.enabled %}checked{% endif %}>
+                                        <label class="form-check-label" for="mcpEnabled">Enable Integration</label>
+                                    </div>
+                                </div>
+
+                                <div id="mcpConfig" {% if not config.mcp.enabled %}style="display: none;"{% endif %}>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="mcpEndpoints" class="form-label">MCP Server Endpoints</label>
+                                                <textarea class="form-control" id="mcpEndpoints" name="mcp.server_endpoints" rows="4" placeholder="One endpoint per line">{{ '\n'.join(config.mcp.server_endpoints) }}</textarea>
+                                                <div class="form-text">MCP server endpoints to monitor</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="mcpProtocolVersions" class="form-label">Protocol Versions</label>
+                                                <textarea class="form-control" id="mcpProtocolVersions" name="mcp.protocol_versions" rows="2" placeholder="One version per line">{{ '\n'.join(config.mcp.protocol_versions) }}</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="mcpAuthMethods" class="form-label">Authentication Methods</label>
+                                                <textarea class="form-control" id="mcpAuthMethods" name="mcp.authentication_methods" rows="2" placeholder="One method per line">{{ '\n'.join(config.mcp.authentication_methods) }}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="mcpMonitoringLevel" class="form-label">Monitoring Level</label>
+                                                <select class="form-select" id="mcpMonitoringLevel" name="mcp.monitoring_level">
+                                                    <option value="basic" {% if config.mcp.monitoring_level == 'basic' %}selected{% endif %}>Basic</option>
+                                                    <option value="standard" {% if config.mcp.monitoring_level == 'standard' %}selected{% endif %}>Standard</option>
+                                                    <option value="comprehensive" {% if config.mcp.monitoring_level == 'comprehensive' %}selected{% endif %}>Comprehensive</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="mcpScanInterval" class="form-label">Scan Interval (minutes)</label>
+                                                <input type="number" class="form-control" id="mcpScanInterval" name="mcp.scan_interval_minutes" value="{{ config.mcp.scan_interval_minutes }}" min="1" max="1440">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="mcpContextThreshold" class="form-label">Context Window Threshold</label>
+                                                <input type="number" class="form-control" id="mcpContextThreshold" name="mcp.context_window_threshold" value="{{ config.mcp.context_window_threshold }}" min="1000">
+                                                <div class="form-text">Alert when context usage exceeds this limit</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="mcpResponseThreshold" class="form-label">Response Time Threshold (ms)</label>
+                                                <input type="number" class="form-control" id="mcpResponseThreshold" name="mcp.response_time_threshold_ms" value="{{ config.mcp.response_time_threshold_ms }}" min="10">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <h6 class="mt-4 mb-3">MCP Features</h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="mcpContextFlowMonitoring" name="mcp.context_flow_monitoring" {% if config.mcp.context_flow_monitoring %}checked{% endif %}>
+                                                <label class="form-check-label" for="mcpContextFlowMonitoring">Context Flow Monitoring</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="mcpPhiMonitoring" name="mcp.phi_monitoring" {% if config.mcp.phi_monitoring %}checked{% endif %}>
+                                                <label class="form-check-label" for="mcpPhiMonitoring">PHI Monitoring</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="mcpMultiagentDiscovery" name="mcp.multiagent_discovery" {% if config.mcp.multiagent_discovery %}checked{% endif %}>
+                                                <label class="form-check-label" for="mcpMultiagentDiscovery">Multi-agent Discovery</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" id="mcpCompressionMonitoring" name="mcp.compression_monitoring" {% if config.mcp.compression_monitoring %}checked{% endif %}>
+                                                <label class="form-check-label" for="mcpCompressionMonitoring">Compression Monitoring</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="border-top pt-3 mt-4">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <button type="button" class="btn btn-outline-secondary me-2" id="resetToDefaults">
+                                        <i class="fas fa-undo me-2"></i>Reset to Defaults
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info me-2" id="exportConfig">
+                                        <i class="fas fa-download me-2"></i>Export Config
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning" id="importConfig">
+                                        <i class="fas fa-upload me-2"></i>Import Config
+                                    </button>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-outline-secondary me-2" onclick="window.location.href='{{ url_for('integrations_dashboard') }}'">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Save Configuration
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Config Modal -->
+<div class="modal fade" id="importConfigModal" tabindex="-1" aria-labelledby="importConfigModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importConfigModalLabel">Import Configuration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="configFile" class="form-label">Configuration File</label>
+                        <input type="file" class="form-control" id="configFile" accept=".json">
+                        <div class="form-text">Select a JSON configuration file to import</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="importButton">Import</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Enable/disable config sections based on integration toggle
+document.addEventListener('DOMContentLoaded', function() {
+    const toggles = ['kubernetes', 'docker', 'mcp'];
+    
+    toggles.forEach(integration => {
+        const toggle = document.getElementById(integration + 'Enabled');
+        const config = document.getElementById(integration + 'Config');
+        
+        if (toggle && config) {
+            toggle.addEventListener('change', function() {
+                config.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+    });
+
+    // Reset to defaults
+    document.getElementById('resetToDefaults').addEventListener('click', function() {
+        if (confirm('Are you sure you want to reset all settings to defaults? This will override all current configurations.')) {
+            fetch('/api/integrations/reset-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to reset configuration: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to reset configuration');
+            });
+        }
+    });
+
+    // Export configuration
+    document.getElementById('exportConfig').addEventListener('click', function() {
+        fetch('/api/integrations/export-config')
+        .then(response => response.json())
+        .then(data => {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'integration-config-' + new Date().toISOString().split('T')[0] + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to export configuration');
+        });
+    });
+
+    // Import configuration
+    document.getElementById('importConfig').addEventListener('click', function() {
+        document.getElementById('importConfigModal').querySelector('.modal').style.display = 'block';
+        new bootstrap.Modal(document.getElementById('importConfigModal')).show();
+    });
+
+    document.getElementById('importButton').addEventListener('click', function() {
+        const fileInput = document.getElementById('configFile');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            alert('Please select a configuration file');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const config = JSON.parse(e.target.result);
+                
+                fetch('/api/integrations/import-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to import configuration: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to import configuration');
+                });
+            } catch (error) {
+                alert('Invalid JSON file');
+            }
+        };
+        reader.readAsText(file);
+    });
+});
+
+// Form validation
+document.getElementById('configurationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const config = {};
+    
+    // Convert FormData to nested object
+    for (const [key, value] of formData.entries()) {
+        const keys = key.split('.');
+        let obj = config;
+        
+        for (let i = 0; i < keys.length - 1; i++) {
+            if (!obj[keys[i]]) obj[keys[i]] = {};
+            obj = obj[keys[i]];
+        }
+        
+        // Handle different input types
+        const input = document.querySelector(`[name="${key}"]`);
+        if (input) {
+            if (input.type === 'checkbox') {
+                obj[keys[keys.length - 1]] = input.checked;
+            } else if (input.type === 'number') {
+                obj[keys[keys.length - 1]] = parseInt(value);
+            } else if (input.tagName === 'TEXTAREA' && key.includes('endpoints') || key.includes('namespaces') || key.includes('labels') || key.includes('annotations') || key.includes('ai_images') || key.includes('protocol_versions') || key.includes('authentication_methods')) {
+                obj[keys[keys.length - 1]] = value.split('\n').filter(line => line.trim());
+            } else {
+                obj[keys[keys.length - 1]] = value;
+            }
+        }
+    }
+    
+    // Submit configuration
+    fetch(this.action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Configuration saved successfully!');
+            window.location.href = '{{ url_for("integrations_dashboard") }}';
+        } else {
+            alert('Failed to save configuration: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to save configuration');
+    });
+});
+</script>
+{% endblock %}
