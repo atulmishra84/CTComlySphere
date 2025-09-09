@@ -586,42 +586,8 @@ def playbooks_inventory():
                          status_counts=status_counts)
 
 
-# Real-Time Monitoring Routes
-@app.route('/monitoring/realtime')
-def realtime_monitoring():
-    """Real-time monitoring dashboard"""
-    return render_template('realtime_monitoring.html')
 
 
-@app.route('/api/realtime/metrics')
-def api_realtime_metrics():
-    """API endpoint for real-time metrics"""
-    import random
-    from datetime import datetime, timedelta
-    
-    # Get current metrics
-    total_agents = AIAgent.query.count()
-    recent_scans = ScanResult.query.filter(
-        ScanResult.created_at >= datetime.utcnow() - timedelta(hours=1)
-    ).count()
-    
-    # Calculate compliance score
-    recent_evaluations = ComplianceEvaluation.query.filter(
-        ComplianceEvaluation.evaluated_at >= datetime.utcnow() - timedelta(days=1)
-    ).all()
-    
-    compliance_score = 85  # Default
-    if recent_evaluations:
-        compliance_score = sum(e.compliance_score for e in recent_evaluations) / len(recent_evaluations)
-    
-    # Calculate security alerts
-    security_alerts = ScanResult.query.filter(
-        ScanResult.created_at >= datetime.utcnow() - timedelta(hours=1),
-        ScanResult.risk_level.in_([RiskLevel.HIGH, RiskLevel.CRITICAL])
-    ).count()
-    
-    # Agent status distribution
-    online_agents = AIAgent.query.filter(
         AIAgent.last_scanned >= datetime.utcnow() - timedelta(minutes=30)
     ).count()
     
