@@ -207,8 +207,7 @@ class ContinuousScanner:
         return ScanTarget(
             environment=self.configuration.target_environments[0] if self.configuration.target_environments else 'development',
             scan_types=scanner_types,
-            include_compliance_check=True,
-            include_risk_assessment=True
+            customer_filter=None
         )
     
     async def _wait_for_scan_completion(self, scan_id: str, timeout_minutes: int = 10):
@@ -216,10 +215,10 @@ class ContinuousScanner:
         timeout_time = datetime.utcnow() + timedelta(minutes=timeout_minutes)
         
         while datetime.utcnow() < timeout_time:
-            scan_result = environment_scanner.get_scan_result(scan_id)
-            if scan_result and scan_result.status in [ScanStatus.COMPLETED, ScanStatus.FAILED]:
-                if scan_result.status == ScanStatus.FAILED:
-                    raise Exception(f"Scan {scan_id} failed: {scan_result.errors}")
+            scan_status = environment_scanner.get_scan_status(scan_id)
+            if scan_status and scan_status['status'] in ['completed', 'failed']:
+                if scan_status['status'] == 'failed':
+                    raise Exception(f"Scan {scan_id} failed: {scan_status.get('errors', [])}")
                 return
             
             await asyncio.sleep(2)
@@ -228,41 +227,50 @@ class ContinuousScanner:
     
     async def _process_discovered_agents(self, scan_id: str):
         """Process discovered agents and add new ones to database"""
-        scan_result = environment_scanner.get_scan_result(scan_id)
-        if not scan_result or not scan_result.discovered_agents:
-            return
-        
-        new_agents_count = 0
-        
-        for agent_data in scan_result.discovered_agents:
-            try:
-                # Check if agent already exists
-                existing_agent = AIAgent.query.filter_by(
-                    name=agent_data.get('name'),
-                    endpoint=agent_data.get('endpoint')
-                ).first()
+        try:
+            # Get discovered agents from the environment scanner
+            discovered_agents = environment_scanner.get_discovered_agents()
+            
+            if not discovered_agents:
+                self.logger.info("No new agents discovered in this scan")
+                return
+            
+            new_agents_count = 0
+            
+            for agent_data in discovered_agents:
+                try:
+                    # Check if agent already exists
+                    existing_agent = AIAgent.query.filter_by(
+                        name=agent_data.get('name'),
+                        protocol=agent_data.get('protocol')
+                    ).first()
+                    
+                    if existing_agent:
+                        # Update last scanned time
+                        existing_agent.last_scanned = datetime.utcnow()
+                        db.session.commit()
+                        continue
+                    
+                    # Create new agent if auto-registration is enabled
+                    if self.configuration.auto_register:
+                        new_agent = await self._create_agent_from_discovery(agent_data)
+                        if new_agent:
+                            new_agents_count += 1
+                            self.logger.info(f"🤖 Auto-registered new AI agent: {new_agent.name}")
+                    
+                except Exception as e:
+                    self.logger.error(f"Failed to process discovered agent {agent_data.get('name', 'unknown')}: {str(e)}")
+            
+            self.stats['agents_discovered'] += len(discovered_agents)
+            self.stats['agents_added'] += new_agents_count
+            
+            if new_agents_count > 0:
+                self.logger.info(f"🎯 Added {new_agents_count} new AI agents to the system")
+            else:
+                self.logger.info(f"📊 Scanned {len(discovered_agents)} agents, all already registered")
                 
-                if existing_agent:
-                    # Update last scanned time
-                    existing_agent.last_scanned = datetime.utcnow()
-                    db.session.commit()
-                    continue
-                
-                # Create new agent if auto-registration is enabled
-                if self.configuration.auto_register:
-                    new_agent = await self._create_agent_from_discovery(agent_data)
-                    if new_agent:
-                        new_agents_count += 1
-                        self.logger.info(f"Auto-registered new AI agent: {new_agent.name}")
-                
-            except Exception as e:
-                self.logger.error(f"Failed to process discovered agent {agent_data.get('name', 'unknown')}: {str(e)}")
-        
-        self.stats['agents_discovered'] += len(scan_result.discovered_agents)
-        self.stats['agents_added'] += new_agents_count
-        
-        if new_agents_count > 0:
-            self.logger.info(f"Added {new_agents_count} new AI agents to the system")
+        except Exception as e:
+            self.logger.error(f"Failed to process discovered agents: {str(e)}")
     
     async def _create_agent_from_discovery(self, agent_data: Dict[str, Any]) -> Optional[AIAgent]:
         """Create AIAgent instance from discovered agent data"""
