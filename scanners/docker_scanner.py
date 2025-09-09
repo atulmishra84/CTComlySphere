@@ -3,6 +3,7 @@ from app import db
 from models import AIAgent, ScanResult, RiskLevel
 import json
 import os
+from datetime import datetime
 
 class DockerScanner(BaseScanner):
     """Scanner for Docker-deployed AI agents"""
@@ -40,7 +41,7 @@ class DockerScanner(BaseScanner):
                 'scan_duration': self.end_scan()
             }
     
-    def discover_agents(self):
+    def discover_agents(self, target=None):
         """Discover AI agents in Docker containers"""
         agents = []
         

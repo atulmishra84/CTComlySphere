@@ -46,7 +46,7 @@ class KubernetesScanner(BaseScanner):
                 'scan_duration': self.end_scan()
             }
     
-    def discover_agents(self):
+    def discover_agents(self, target=None):
         """Discover AI agents in Kubernetes cluster with advanced detection"""
         agents = []
         
