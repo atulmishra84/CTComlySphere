@@ -24,8 +24,6 @@ class KubernetesIntegration:
         self.v1 = None
         self.apps_v1 = None
         self.is_connected = False
-        self.watch_threads = {}
-        self.event_handlers = []
         self.last_heartbeat = None
         
         try:
@@ -355,78 +353,10 @@ class KubernetesIntegration:
         
         return result
     
-    def start_real_time_monitoring(self):
-        """Start real-time monitoring of Kubernetes resources"""
-        if not self.is_connected:
-            logger.error("Cannot start monitoring: not connected to Kubernetes")
-            return False
-        
-        try:
-            # Start watching pods
-            self._start_resource_watch('pods', self.v1.list_pod_for_all_namespaces)
-            
-            # Start watching deployments
-            self._start_resource_watch('deployments', self.apps_v1.list_deployment_for_all_namespaces)
-            
-            # Start watching services
-            self._start_resource_watch('services', self.v1.list_service_for_all_namespaces)
-            
-            logger.info("Started real-time Kubernetes monitoring")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Failed to start real-time monitoring: {e}")
-            return False
     
-    def _start_resource_watch(self, resource_type: str, list_func):
-        """Start watching a specific resource type"""
-        def watch_resource():
-            w = watch.Watch()
-            while True:
-                try:
-                    for event in w.stream(list_func, timeout_seconds=300):
-                        self._handle_resource_event(resource_type, event)
-                except Exception as e:
-                    logger.error(f"Error watching {resource_type}: {e}")
-                    time.sleep(10)  # Wait before reconnecting
-        
-        thread = threading.Thread(target=watch_resource, daemon=True)
-        thread.start()
-        self.watch_threads[resource_type] = thread
     
-    def _handle_resource_event(self, resource_type: str, event: Dict[str, Any]):
-        """Handle resource change events"""
-        event_type = event['type']  # ADDED, MODIFIED, DELETED
-        resource = event['object']
-        
-        # Only process AI workloads
-        labels = getattr(resource.metadata, 'labels', None) or {}
-        annotations = getattr(resource.metadata, 'annotations', None) or {}
-        
-        if not self._is_ai_workload(labels, annotations):
-            return
-        
-        logger.info(f"AI workload {event_type}: {resource.metadata.name} ({resource_type})")
-        
-        # Trigger event handlers
-        for handler in self.event_handlers:
-            try:
-                handler(resource_type, event_type, resource)
-            except Exception as e:
-                logger.error(f"Error in event handler: {e}")
     
-    def add_event_handler(self, handler):
-        """Add an event handler for resource changes"""
-        self.event_handlers.append(handler)
     
-    def stop_monitoring(self):
-        """Stop real-time monitoring"""
-        # Stop watch threads
-        for resource_type, thread in self.watch_threads.items():
-            logger.info(f"Stopping {resource_type} watch")
-        
-        self.watch_threads.clear()
-        self.event_handlers.clear()
     
     def get_ai_workload_metrics(self) -> Dict[str, Any]:
         """Get real-time metrics for AI workloads"""
