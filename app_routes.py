@@ -260,37 +260,60 @@ def shadow_ai_systems():
     # Shadow AI types - identify by agent types
     shadow_ai_types = ['Unauthorized Process AI', 'Containerized Shadow AI', 'Unauthorized AI Model File', 'Unauthorized AI Code Implementation']
     
-    # Build query for Shadow AI agents only
-    agent_query = AIAgent.query.filter(AIAgent.type.in_(shadow_ai_types))
-    
-    # Apply risk filter if specified
-    if risk_filter:
-        agent_query = agent_query.join(ScanResult).filter(
-            ScanResult.risk_level.in_([getattr(RiskLevel, risk_filter, RiskLevel.LOW)])
-        )
-    
-    # Paginate agents
-    agents = agent_query.order_by(AIAgent.discovered_at.desc()).paginate(
-        page=page, per_page=20, error_out=False
-    )
-    
-    # Get agent data with latest scans for display
-    agent_data = []
-    for agent in agents.items:
-        latest_scan = ScanResult.query.filter_by(ai_agent_id=agent.id).order_by(
-            ScanResult.created_at.desc()
-        ).first()
+    try:
+        # Build optimized query for Shadow AI agents only
+        agent_query = AIAgent.query.filter(AIAgent.type.in_(shadow_ai_types))
         
-        agent_data.append({
-            'agent': agent,
-            'latest_scan': latest_scan
-        })
+        # Apply risk filter if specified - optimized with subquery
+        if risk_filter:
+            from sqlalchemy import exists
+            risk_level_enum = getattr(RiskLevel, risk_filter, RiskLevel.LOW)
+            agent_query = agent_query.filter(
+                exists().where(
+                    (ScanResult.ai_agent_id == AIAgent.id) &
+                    (ScanResult.risk_level == risk_level_enum)
+                )
+            )
+        
+        # Paginate agents
+        agents = agent_query.order_by(AIAgent.discovered_at.desc()).paginate(
+            page=page, per_page=20, error_out=False
+        )
+        
+        # Optimized query to get latest scans in batch
+        agent_ids = [agent.id for agent in agents.items]
+        latest_scans_subquery = db.session.query(
+            ScanResult.ai_agent_id,
+            db.func.max(ScanResult.created_at).label('max_created_at')
+        ).filter(ScanResult.ai_agent_id.in_(agent_ids)).group_by(ScanResult.ai_agent_id).subquery()
+        
+        latest_scans = db.session.query(ScanResult).join(
+            latest_scans_subquery,
+            (ScanResult.ai_agent_id == latest_scans_subquery.c.ai_agent_id) &
+            (ScanResult.created_at == latest_scans_subquery.c.max_created_at)
+        ).all()
+        
+        # Create lookup dictionary for faster access
+        scans_by_agent = {scan.ai_agent_id: scan for scan in latest_scans}
+        
+        # Build agent data efficiently
+        agent_data = []
+        for agent in agents.items:
+            agent_data.append({
+                'agent': agent,
+                'latest_scan': scans_by_agent.get(agent.id)
+            })
+        
+        return render_template('shadow_ai_systems.html',
+                             agents=agents,
+                             agent_data=agent_data,
+                             current_risk_filter=risk_filter,
+                             shadow_ai_types=shadow_ai_types)
     
-    return render_template('shadow_ai_systems.html',
-                         agents=agents,
-                         agent_data=agent_data,
-                         current_risk_filter=risk_filter,
-                         shadow_ai_types=shadow_ai_types)
+    except Exception as e:
+        logger.error(f"Error loading Shadow AI systems: {e}")
+        flash('Error loading Shadow AI systems. Please try again.', 'error')
+        return redirect(url_for('dashboard'))
 
 
 @app.route('/shadow-ai/high-risk')
@@ -301,32 +324,59 @@ def high_risk_shadow_ai():
     # Shadow AI types - identify by agent types
     shadow_ai_types = ['Unauthorized Process AI', 'Containerized Shadow AI', 'Unauthorized AI Model File', 'Unauthorized AI Code Implementation']
     
-    # Build query for high-risk Shadow AI agents only
-    agent_query = AIAgent.query.filter(AIAgent.type.in_(shadow_ai_types)).join(ScanResult).filter(
-        ScanResult.risk_level.in_([RiskLevel.HIGH, RiskLevel.CRITICAL])
-    )
-    
-    # Paginate agents
-    agents = agent_query.order_by(AIAgent.discovered_at.desc()).paginate(
-        page=page, per_page=20, error_out=False
-    )
-    
-    # Get agent data with latest scans for display
-    agent_data = []
-    for agent in agents.items:
-        latest_scan = ScanResult.query.filter_by(ai_agent_id=agent.id).order_by(
-            ScanResult.created_at.desc()
-        ).first()
+    try:
+        # Optimized query for high-risk Shadow AI agents
+        from sqlalchemy import exists
+        agent_query = AIAgent.query.filter(
+            AIAgent.type.in_(shadow_ai_types)
+        ).filter(
+            exists().where(
+                (ScanResult.ai_agent_id == AIAgent.id) &
+                (ScanResult.risk_level.in_([RiskLevel.HIGH, RiskLevel.CRITICAL]))
+            )
+        )
         
-        agent_data.append({
-            'agent': agent,
-            'latest_scan': latest_scan
-        })
+        # Paginate agents
+        agents = agent_query.order_by(AIAgent.discovered_at.desc()).paginate(
+            page=page, per_page=20, error_out=False
+        )
+        
+        # Optimized batch query for latest scans
+        agent_ids = [agent.id for agent in agents.items]
+        if agent_ids:
+            latest_scans_subquery = db.session.query(
+                ScanResult.ai_agent_id,
+                db.func.max(ScanResult.created_at).label('max_created_at')
+            ).filter(ScanResult.ai_agent_id.in_(agent_ids)).group_by(ScanResult.ai_agent_id).subquery()
+            
+            latest_scans = db.session.query(ScanResult).join(
+                latest_scans_subquery,
+                (ScanResult.ai_agent_id == latest_scans_subquery.c.ai_agent_id) &
+                (ScanResult.created_at == latest_scans_subquery.c.max_created_at)
+            ).all()
+            
+            # Create lookup dictionary
+            scans_by_agent = {scan.ai_agent_id: scan for scan in latest_scans}
+        else:
+            scans_by_agent = {}
+        
+        # Build agent data efficiently
+        agent_data = []
+        for agent in agents.items:
+            agent_data.append({
+                'agent': agent,
+                'latest_scan': scans_by_agent.get(agent.id)
+            })
+        
+        return render_template('high_risk_shadow_ai.html',
+                             agents=agents,
+                             agent_data=agent_data,
+                             shadow_ai_types=shadow_ai_types)
     
-    return render_template('high_risk_shadow_ai.html',
-                         agents=agents,
-                         agent_data=agent_data,
-                         shadow_ai_types=shadow_ai_types)
+    except Exception as e:
+        logger.error(f"Error loading high-risk Shadow AI systems: {e}")
+        flash('Error loading high-risk Shadow AI systems. Please try again.', 'error')
+        return redirect(url_for('dashboard'))
 
 
 @app.route('/agents/<int:agent_id>/evaluate-compliance')
