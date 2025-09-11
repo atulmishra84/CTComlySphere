@@ -448,16 +448,27 @@
                 <div class="list-group list-group-flush">
                     {% for rec in scan.recommendations %}
                     <div class="list-group-item">
+                        {% if rec is mapping %}
                         <div class="d-flex w-100 justify-content-between">
                             <h6 class="mb-1">
-                                <span class="badge bg-{{ 'danger' if rec.priority == 'critical' else 'warning' if rec.priority == 'high' else 'info' }}">
-                                    {{ rec.priority.title() }}
+                                <span class="badge bg-{{ 'danger' if rec.get('priority') == 'critical' else 'warning' if rec.get('priority') == 'high' else 'info' }}">
+                                    {{ rec.get('priority', 'info').title() }}
                                 </span>
-                                {{ rec.category.replace('_', ' ').title() }}
+                                {{ rec.get('category', 'general').replace('_', ' ').title() }}
                             </h6>
                         </div>
-                        <p class="mb-1">{{ rec.description }}</p>
-                        <small><strong>Action:</strong> {{ rec.action }}</small>
+                        <p class="mb-1">{{ rec.get('description', 'No description available') }}</p>
+                        <small><strong>Action:</strong> {{ rec.get('action', 'No action specified') }}</small>
+                        {% else %}
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">
+                                <span class="badge bg-info">
+                                    Recommendation
+                                </span>
+                            </h6>
+                        </div>
+                        <p class="mb-1">{{ rec }}</p>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
