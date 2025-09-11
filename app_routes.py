@@ -251,6 +251,84 @@ def scan_results():
                          current_cloud_filter=cloud_filter)
 
 
+@app.route('/shadow-ai')
+def shadow_ai_systems():
+    """Display Shadow AI systems with filtering"""
+    page = request.args.get('page', 1, type=int)
+    risk_filter = request.args.get('risk_level')
+    
+    # Shadow AI types - identify by agent types
+    shadow_ai_types = ['Unauthorized Process AI', 'Containerized Shadow AI', 'Unauthorized AI Model File', 'Unauthorized AI Code Implementation']
+    
+    # Build query for Shadow AI agents only
+    agent_query = AIAgent.query.filter(AIAgent.type.in_(shadow_ai_types))
+    
+    # Apply risk filter if specified
+    if risk_filter:
+        agent_query = agent_query.join(ScanResult).filter(
+            ScanResult.risk_level.in_([getattr(RiskLevel, risk_filter, RiskLevel.LOW)])
+        )
+    
+    # Paginate agents
+    agents = agent_query.order_by(AIAgent.discovered_at.desc()).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    
+    # Get agent data with latest scans for display
+    agent_data = []
+    for agent in agents.items:
+        latest_scan = ScanResult.query.filter_by(ai_agent_id=agent.id).order_by(
+            ScanResult.created_at.desc()
+        ).first()
+        
+        agent_data.append({
+            'agent': agent,
+            'latest_scan': latest_scan
+        })
+    
+    return render_template('shadow_ai_systems.html',
+                         agents=agents,
+                         agent_data=agent_data,
+                         current_risk_filter=risk_filter,
+                         shadow_ai_types=shadow_ai_types)
+
+
+@app.route('/shadow-ai/high-risk')
+def high_risk_shadow_ai():
+    """Display high-risk Shadow AI systems"""
+    page = request.args.get('page', 1, type=int)
+    
+    # Shadow AI types - identify by agent types
+    shadow_ai_types = ['Unauthorized Process AI', 'Containerized Shadow AI', 'Unauthorized AI Model File', 'Unauthorized AI Code Implementation']
+    
+    # Build query for high-risk Shadow AI agents only
+    agent_query = AIAgent.query.filter(AIAgent.type.in_(shadow_ai_types)).join(ScanResult).filter(
+        ScanResult.risk_level.in_([RiskLevel.HIGH, RiskLevel.CRITICAL])
+    )
+    
+    # Paginate agents
+    agents = agent_query.order_by(AIAgent.discovered_at.desc()).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    
+    # Get agent data with latest scans for display
+    agent_data = []
+    for agent in agents.items:
+        latest_scan = ScanResult.query.filter_by(ai_agent_id=agent.id).order_by(
+            ScanResult.created_at.desc()
+        ).first()
+        
+        agent_data.append({
+            'agent': agent,
+            'latest_scan': latest_scan
+        })
+    
+    return render_template('high_risk_shadow_ai.html',
+                         agents=agents,
+                         agent_data=agent_data,
+                         shadow_ai_types=shadow_ai_types)
+
+
 @app.route('/agents/<int:agent_id>/evaluate-compliance')
 def evaluate_compliance(agent_id):
     """Evaluate compliance for a specific agent"""

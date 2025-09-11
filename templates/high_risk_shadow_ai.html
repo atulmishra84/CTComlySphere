@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}High-Risk Shadow AI{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 mb-1">
+            <i class="fas fa-exclamation-triangle text-danger me-2"></i>High-Risk Shadow AI
+        </h2>
+        <p class="text-muted mb-0">Critical and high-risk unauthorized AI systems requiring immediate attention</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#remediationModal">
+            <i class="fas fa-tools me-2"></i>Bulk Remediation
+        </button>
+        <a href="{{ url_for('shadow_ai_systems') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>All Shadow AI
+        </a>
+    </div>
+</div>
+
+<!-- Alert for High-Risk Systems -->
+{% if agent_data %}
+<div class="alert alert-danger border-danger">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+        <div>
+            <h5 class="alert-heading mb-1">High-Risk Shadow AI Detected</h5>
+            <p class="mb-0">{{ agents.total }} high-risk unauthorized AI systems have been detected in your environment. 
+            These systems pose significant security and compliance risks and require immediate remediation.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- High-Risk Overview Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <h3 class="text-danger">{{ agents.total }}</h3>
+                <p class="card-text small text-muted mb-0">High-Risk Shadow AI</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-dark">
+            <div class="card-body text-center">
+                <h3 class="text-dark">
+                    {{ agent_data | selectattr('latest_scan') | selectattr('latest_scan.risk_level.value', 'equalto', 'CRITICAL') | list | length }}
+                </h3>
+                <p class="card-text small text-muted mb-0">Critical Risk</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <h3 class="text-danger">
+                    {{ agent_data | selectattr('latest_scan') | selectattr('latest_scan.phi_exposure_detected', 'equalto', true) | list | length }}
+                </h3>
+                <p class="card-text small text-muted mb-0">PHI Exposure</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <h3 class="text-warning">
+                    {% set total_vulns = agent_data | selectattr('latest_scan') | map(attribute='latest_scan.vulnerabilities_found') | select('defined') | sum %}
+                    {{ total_vulns }}
+                </h3>
+                <p class="card-text small text-muted mb-0">Total Vulnerabilities</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- High-Risk Shadow AI Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center bg-danger text-white">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-exclamation-triangle me-2"></i>High-Risk Shadow AI Systems
+        </h5>
+        <span class="badge bg-light text-dark">{{ agents.total }} systems</span>
+    </div>
+    <div class="card-body">
+        {% if agent_data %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="selectAll" class="form-check-input">
+                        </th>
+                        <th>System</th>
+                        <th>Risk Level</th>
+                        <th>Vulnerabilities</th>
+                        <th>PHI Exposure</th>
+                        <th>Last Scan</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in agent_data %}
+                    {% set agent = item.agent %}
+                    {% set scan = item.latest_scan %}
+                    <tr class="{{ 'table-danger' if scan and scan.risk_level.value == 'CRITICAL' else 'table-warning' if scan and scan.risk_level.value == 'HIGH' else '' }}">
+                        <td>
+                            <input type="checkbox" class="form-check-input shadow-ai-checkbox" data-agent-id="{{ agent.id }}">
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user-secret text-danger me-2"></i>
+                                <div>
+                                    <strong>{{ agent.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ agent.type }}</small>
+                                    <br>
+                                    <small class="text-muted">{{ agent.location or 'Unknown location' }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if scan %}
+                            <span class="badge bg-{{ 'danger' if scan.risk_level.value == 'CRITICAL' else 'warning' }}">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                {{ scan.risk_level.value.title() }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-light text-dark">Unknown</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if scan %}
+                            <span class="text-danger fw-bold">{{ scan.vulnerabilities_found or 0 }}</span>
+                            {% else %}
+                            <span class="text-muted">Unknown</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if scan and scan.phi_exposure_detected %}
+                            <span class="text-danger"><i class="fas fa-exclamation-triangle"></i> <strong>DETECTED</strong></span>
+                            {% elif scan %}
+                            <span class="text-success"><i class="fas fa-check-circle"></i> None</span>
+                            {% else %}
+                            <span class="text-muted">Unknown</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if scan %}
+                            <small class="text-muted">{{ scan.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            <br>
+                            <small class="text-muted">Risk: {{ "%.1f"|format(scan.risk_score or 0) }}/100</small>
+                            {% else %}
+                            <small class="text-muted">Never scanned</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#agentModal{{ agent.id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#remediateModal{{ agent.id }}">
+                                    <i class="fas fa-tools"></i>
+                                </button>
+                                {% if scan %}
+                                <a href="{{ url_for('evaluate_compliance', agent_id=agent.id) }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if agents.pages > 1 %}
+        <nav aria-label="High-risk Shadow AI pagination">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {{ 'disabled' if not agents.has_prev }}">
+                    <a class="page-link" href="{{ url_for('high_risk_shadow_ai', page=agents.prev_num) if agents.has_prev }}">Previous</a>
+                </li>
+                {% for page_num in agents.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != agents.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('high_risk_shadow_ai', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {{ 'disabled' if not agents.has_next }}">
+                    <a class="page-link" href="{{ url_for('high_risk_shadow_ai', page=agents.next_num) if agents.has_next }}">Next</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+            <h4 class="text-success">No High-Risk Shadow AI Found</h4>
+            <p class="text-muted">Great! No high-risk unauthorized AI systems have been detected.</p>
+            <a href="{{ url_for('shadow_ai_systems') }}" class="btn btn-outline-primary">
+                <i class="fas fa-user-secret me-2"></i>View All Shadow AI Systems
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Agent Detail Modals -->
+{% for item in agent_data %}
+{% set agent = item.agent %}
+{% set scan = item.latest_scan %}
+<div class="modal fade" id="agentModal{{ agent.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    High-Risk Shadow AI: {{ agent.name }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    This Shadow AI system poses significant security and compliance risks.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Shadow AI Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Type:</strong></td>
+                                <td><span class="badge bg-danger">{{ agent.type }}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Location:</strong></td>
+                                <td>{{ agent.location or 'Unknown' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Protocol:</strong></td>
+                                <td>{{ agent.protocol or 'Unknown' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Discovered:</strong></td>
+                                <td>{{ agent.discovered_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        {% if scan %}
+                        <h6>Critical Security Issues</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Risk Level:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if scan.risk_level.value == 'CRITICAL' else 'warning' }}">
+                                        {{ scan.risk_level.value.title() }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Risk Score:</strong></td>
+                                <td><span class="text-danger fw-bold">{{ "%.1f"|format(scan.risk_score or 0) }}/100</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Vulnerabilities:</strong></td>
+                                <td><span class="text-danger fw-bold">{{ scan.vulnerabilities_found or 0 }}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>PHI Exposure:</strong></td>
+                                <td>
+                                    {% if scan.phi_exposure_detected %}
+                                        <span class="text-danger fw-bold">DETECTED</span>
+                                    {% else %}
+                                        <span class="text-success">None</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Scan Date:</strong></td>
+                                <td>{{ scan.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                        </table>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#remediateModal{{ agent.id }}" data-bs-dismiss="modal">
+                    <i class="fas fa-tools me-2"></i>Immediate Remediation
+                </button>
+                <a href="{{ url_for('evaluate_compliance', agent_id=agent.id) }}" class="btn btn-primary">
+                    <i class="fas fa-clipboard-check me-2"></i>Compliance Report
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Bulk Remediation Modal -->
+<div class="modal fade" id="remediationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Bulk Shadow AI Remediation</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>This will initiate automated remediation for selected high-risk Shadow AI systems.</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> Remediation may disable or isolate unauthorized AI systems.
+                </div>
+                <div id="selectedSystems">
+                    <p class="text-muted">Select Shadow AI systems from the table above.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmRemediation">
+                    <i class="fas fa-tools me-2"></i>Start Remediation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Bulk selection functionality
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.shadow-ai-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+    updateSelectedSystems();
+});
+
+document.querySelectorAll('.shadow-ai-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', updateSelectedSystems);
+});
+
+function updateSelectedSystems() {
+    const selected = document.querySelectorAll('.shadow-ai-checkbox:checked');
+    const container = document.getElementById('selectedSystems');
+    
+    if (selected.length > 0) {
+        container.innerHTML = `<p><strong>${selected.length}</strong> Shadow AI systems selected for remediation.</p>`;
+    } else {
+        container.innerHTML = `<p class="text-muted">Select Shadow AI systems from the table above.</p>`;
+    }
+}
+</script>
+
+{% endblock %}
