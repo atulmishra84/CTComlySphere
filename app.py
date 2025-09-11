@@ -34,7 +34,7 @@ with app.app_context():
     db.create_all()
 
 # Import and register routes
-import routes
+import app_routes
 
 # Initialize continuous scanning scheduler
 try:
