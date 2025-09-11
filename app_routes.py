@@ -489,10 +489,16 @@ def analytics():
         protocol = agent.protocol
         protocol_distribution[protocol] = protocol_distribution.get(protocol, 0) + 1
     
+    # Protocol stats for the template
+    protocol_stats = []
+    for protocol, count in protocol_distribution.items():
+        protocol_stats.append((protocol, count))
+    
     return render_template('analytics.html',
                          risk_trends=risk_trends,
                          discovery_trends=discovery_trends,
-                         protocol_distribution=protocol_distribution)
+                         protocol_distribution=protocol_distribution,
+                         protocol_stats=protocol_stats)
 
 
 @app.route('/start_scan', methods=['POST'])
