@@ -4,20 +4,7 @@ Defines the various compliance frameworks and their requirements
 """
 
 import json
-from enum import Enum
-
-class ComplianceFramework(Enum):
-    HIPAA = "HIPAA"
-    HITRUST_CSF = "HITRUST_CSF"
-    FDA_SAMD = "FDA_SAMD"
-    GDPR = "GDPR"
-    SOC2_TYPE_II = "SOC2_TYPE_II"
-    NIST_AI_RMF = "NIST_AI_RMF"
-    OWASP_AI = "OWASP_AI"
-    MITRE_ATLAS = "MITRE_ATLAS"
-    DATABRICKS_AI_GOVERNANCE = "DATABRICKS_AI_GOVERNANCE"
-    DASF = "DASF"
-    SAIF_GOOGLE = "SAIF_GOOGLE"
+from models import ComplianceFramework
 
 class ComplianceFrameworks:
     """Manages compliance framework definitions and requirements"""

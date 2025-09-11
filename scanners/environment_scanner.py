@@ -237,10 +237,11 @@ class EnvironmentScanner:
             }
             
             # Store agents in database with enhanced classification and analysis
-            stored_agents = await self._store_discovered_agents(unique_agents)
+            stored_agent_ids = await self._store_discovered_agents(unique_agents)
+            self.logger.info(f"Stored {len(stored_agent_ids)} agent IDs: {stored_agent_ids}")
             
             # Trigger security scans and compliance evaluations for newly stored agents
-            await self._trigger_post_discovery_analysis(stored_agents)
+            await self._trigger_post_discovery_analysis(stored_agent_ids)
             
             # Update cache
             self._update_discovery_cache(unique_agents)
@@ -467,7 +468,7 @@ class EnvironmentScanner:
     
     async def _store_discovered_agents(self, agents: List[DiscoveredAgent]):
         """Store discovered agents in database with enhanced AI type classification"""
-        stored_agents = []
+        stored_agent_ids = []
         with app.app_context():
             for agent in agents:
                 try:
@@ -485,7 +486,8 @@ class EnvironmentScanner:
                         existing_agent.last_scanned = agent.discovery_timestamp
                         existing_agent.agent_metadata = agent.metadata
                         existing_agent.ai_type = classified_ai_type
-                        stored_agents.append(existing_agent)
+                        db.session.commit()
+                        stored_agent_ids.append(existing_agent.id)
                     else:
                         # Create new agent with proper AI type classification
                         new_agent = AIAgent(
@@ -499,15 +501,14 @@ class EnvironmentScanner:
                             agent_metadata=agent.metadata
                         )
                         db.session.add(new_agent)
-                        stored_agents.append(new_agent)
-                    
-                    db.session.commit()
+                        db.session.commit()
+                        stored_agent_ids.append(new_agent.id)
                     
                 except Exception as e:
                     self.logger.error(f"Failed to store agent {agent.name}: {str(e)}")
                     db.session.rollback()
         
-        return stored_agents
+        return stored_agent_ids
     
     def _classify_ai_type(self, agent):
         """Enhanced AI type classification based on agent metadata and capabilities"""
@@ -596,22 +597,26 @@ class EnvironmentScanner:
         
         return findings
     
-    async def _trigger_post_discovery_analysis(self, stored_agents):
+    async def _trigger_post_discovery_analysis(self, stored_agent_ids):
         """Trigger security scans and compliance evaluations for discovered agents"""
-        if not stored_agents:
+        if not stored_agent_ids:
             return
             
         with app.app_context():
             try:
                 from compliance.evaluator import ComplianceEvaluator
-                from models import ComplianceFramework, ScanResult, ScanStatus, RiskLevel
+                from models import ComplianceFramework, ScanResult, ScanStatus, RiskLevel, AIAgent
                 
-                self.logger.info(f"Starting post-discovery analysis for {len(stored_agents)} agents")
+                self.logger.info(f"Starting post-discovery analysis for {len(stored_agent_ids)} agents")
+                
+                # Query agents by IDs in current session
+                session_agents = AIAgent.query.filter(AIAgent.id.in_(stored_agent_ids)).all()
+                self.logger.info(f"Queried {len(session_agents)} agents for analysis")
                 
                 # Initialize compliance evaluator
                 compliance_evaluator = ComplianceEvaluator()
                 
-                for agent in stored_agents:
+                for agent in session_agents:
                     try:
                         # Run security scan
                         scan_data = {
@@ -657,16 +662,30 @@ class EnvironmentScanner:
                                 compliance_result = compliance_evaluator.evaluate_agent(agent, framework)
                                 self.logger.debug(f"Compliance evaluation completed for {agent.name} against {framework.value}")
                             except Exception as e:
-                                self.logger.warning(f"Compliance evaluation failed for {agent.name} against {framework.value}: {str(e)}")
+                                self.logger.error(f"Compliance evaluation failed for {agent.name} against {framework.value}: {str(e)}")
+                                # Log the full traceback for debugging
+                                import traceback
+                                self.logger.error(f"Compliance evaluation traceback: {traceback.format_exc()}")
                         
                         self.logger.debug(f"Post-discovery analysis completed for agent {agent.name}")
                         
                     except Exception as e:
                         self.logger.error(f"Post-discovery analysis failed for agent {agent.name}: {str(e)}")
+                        # Log the full traceback for debugging
+                        import traceback
+                        self.logger.error(f"Post-discovery analysis traceback: {traceback.format_exc()}")
                         continue
                 
-                db.session.commit()
-                self.logger.info(f"Post-discovery analysis completed for {len(stored_agents)} agents")
+                # Commit the scan results even if compliance evaluations failed
+                try:
+                    db.session.commit()
+                    self.logger.info(f"Post-discovery analysis completed for {len(session_agents)} agents")
+                except Exception as e:
+                    self.logger.error(f"Failed to commit post-discovery analysis results: {str(e)}")
+                    import traceback
+                    self.logger.error(f"Commit traceback: {traceback.format_exc()}")
+                    db.session.rollback()
+                    raise
                 
             except Exception as e:
                 self.logger.error(f"Post-discovery analysis workflow failed: {str(e)}")

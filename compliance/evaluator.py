@@ -98,7 +98,7 @@ class ComplianceEvaluator:
     def _evaluate_control(self, agent, control, category, latest_scan):
         """Evaluate a specific compliance control"""
         # Get agent metadata and scan results
-        metadata = agent.metadata or {}
+        metadata = agent.agent_metadata or {}
         scan_data = latest_scan.scan_data if latest_scan else {}
         
         # Evaluate based on control type and available data
