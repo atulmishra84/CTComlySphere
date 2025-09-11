@@ -85,26 +85,45 @@ def bootstrap_scheduler():
         logging.error(f"Failed to initialize scheduler: {e}")
 
 def bootstrap_remediation():
-    """Initialize automated remediation system in background"""
+    """Initialize automated remediation system in background with persistent event loop"""
     try:
         logging.info("Initializing automated remediation system...")
         
         from services.remediation_templates import remediation_template_manager
         from services.automated_remediation_service import automated_remediation_service
         import asyncio
+        import threading
         
         with app.app_context():
             # Initialize remediation templates
             remediation_template_manager.initialize_templates()
             remediation_template_manager.install_default_workflows()
             
-            # Initialize automated remediation service
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(automated_remediation_service.initialize())
-            loop.close()
+            logging.info("🔧 Starting persistent remediation service...")
             
-            logging.info("🔧 Automated remediation system initialized successfully")
+            # Start persistent service in its own thread with event loop
+            def run_persistent_service():
+                """Run the remediation service with persistent event loop"""
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                try:
+                    # Initialize and run the service
+                    loop.run_until_complete(automated_remediation_service.initialize())
+                    loop.run_until_complete(automated_remediation_service.start_monitoring())
+                    
+                    # Keep the loop running
+                    loop.run_forever()
+                except Exception as e:
+                    logging.error(f"Persistent remediation service error: {e}")
+                finally:
+                    loop.close()
+            
+            # Start in daemon thread
+            service_thread = threading.Thread(target=run_persistent_service, daemon=True)
+            service_thread.start()
+            
+            logging.info("🔧 Automated remediation system initialized successfully with persistent monitoring")
     except Exception as e:
         logging.error(f"Failed to initialize automated remediation system: {e}")
 
