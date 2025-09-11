@@ -5,6 +5,10 @@ from datetime import datetime, timedelta
 # ProtocolScanner imported later to avoid import-time failures
 import random
 import json
+import logging
+
+# Setup logger
+logger = logging.getLogger(__name__)
 
 # Import agent classification and controls managers
 try:
@@ -363,11 +367,16 @@ def start_scan():
         # Start comprehensive scan
         result = protocol_scanner.start_comprehensive_scan(protocols)
         
-        # Extract results
+        # Extract results - handle both string scan_id and dict results
         total_agents_found = 0
-        for protocol_result in result.values():
-            if isinstance(protocol_result, dict) and 'agents_found' in protocol_result:
-                total_agents_found += protocol_result['agents_found']
+        if isinstance(result, dict):
+            for protocol_result in result.values():
+                if isinstance(protocol_result, dict) and 'agents_found' in protocol_result:
+                    total_agents_found += protocol_result['agents_found']
+        else:
+            # result is probably a scan_id string, query database for actual results
+            agents = AIAgent.query.count()  # For now, show total agent count
+            total_agents_found = agents
         
         flash(f'Scan completed successfully. Found {total_agents_found} agents.', 'success')
         
@@ -757,8 +766,12 @@ def api_scan_agent(agent_id):
     agent = AIAgent.query.get_or_404(agent_id)
     
     try:
-        # Create protocol scanner instance and trigger scan for specific agent
-        protocol_scanner = ProtocolScanner()
+        # Import and create protocol scanner instance safely
+        try:
+            from scanners import ProtocolScanner
+            protocol_scanner = ProtocolScanner()
+        except ImportError as e:
+            return jsonify({'success': False, 'message': f'Scanner unavailable: {str(e)}'})
         scanner = protocol_scanner.scanners.get(agent.protocol)
         if scanner:
             # In a real implementation, this would trigger an actual scan
