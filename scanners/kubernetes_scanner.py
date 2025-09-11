@@ -6,6 +6,16 @@ import os
 import re
 from datetime import datetime
 
+try:
+    from kubernetes import client, config
+    from kubernetes.client.rest import ApiException
+    KUBERNETES_AVAILABLE = True
+except ImportError:
+    KUBERNETES_AVAILABLE = False
+    client = None
+    config = None
+    ApiException = Exception
+
 class KubernetesScanner(BaseScanner):
     """Scanner for Kubernetes-deployed AI agents"""
     
@@ -13,6 +23,14 @@ class KubernetesScanner(BaseScanner):
         super().__init__()
         self.namespace = os.getenv('K8S_NAMESPACE', 'default')
         self.cluster_endpoint = os.getenv('K8S_CLUSTER_ENDPOINT', 'https://kubernetes.default.svc')
+        self.kubeconfig_path = os.getenv('KUBECONFIG', os.path.expanduser('~/.kube/config'))
+        self.k8s_client = None
+        self.apps_v1_client = None
+        self.is_connected = False
+        
+        # Try to initialize Kubernetes connection
+        if KUBERNETES_AVAILABLE:
+            self._try_connect_to_kubernetes()
     
     def scan(self):
         """Scan Kubernetes cluster for AI agents"""
@@ -46,9 +64,53 @@ class KubernetesScanner(BaseScanner):
                 'scan_duration': self.end_scan()
             }
     
+    def _try_connect_to_kubernetes(self):
+        """Try to connect to local Kubernetes cluster"""
+        try:
+            # Try to load kubeconfig
+            if os.path.exists(self.kubeconfig_path):
+                config.load_kube_config(config_file=self.kubeconfig_path)
+                self.logger.info(f"Loaded kubeconfig from {self.kubeconfig_path}")
+            else:
+                # Try in-cluster config (if running inside Kubernetes)
+                try:
+                    config.load_incluster_config()
+                    self.logger.info("Loaded in-cluster Kubernetes configuration")
+                except config.ConfigException:
+                    self.logger.warning("No kubeconfig found and not running in cluster")
+                    return False
+            
+            # Initialize clients
+            self.k8s_client = client.CoreV1Api()
+            self.apps_v1_client = client.AppsV1Api()
+            
+            # Test connection
+            self.k8s_client.list_namespace(limit=1)
+            self.is_connected = True
+            self.logger.info("Successfully connected to Kubernetes cluster")
+            return True
+            
+        except Exception as e:
+            self.logger.warning(f"Failed to connect to Kubernetes: {e}")
+            self.is_connected = False
+            return False
+    
     def discover_agents(self, target=None):
         """Discover AI agents in Kubernetes cluster with advanced detection"""
         agents = []
+        
+        # Try to discover real Kubernetes workloads first
+        if self.is_connected:
+            try:
+                real_agents = self._discover_real_kubernetes_agents()
+                if real_agents:
+                    self.logger.info(f"Found {len(real_agents)} real Kubernetes AI agents")
+                    return real_agents
+            except Exception as e:
+                self.logger.error(f"Failed to discover real Kubernetes agents: {e}")
+        
+        # Fallback to simulated agents for demonstration
+        self.logger.info("Using simulated Kubernetes agents for demonstration")
         
         # Discover Pods with AI labels
         ai_pods = self.discover_ai_pods()
@@ -64,6 +126,202 @@ class KubernetesScanner(BaseScanner):
         
         self.logger.info(f"Discovered {len(agents)} AI agents in Kubernetes cluster")
         return agents
+    
+    def _discover_real_kubernetes_agents(self):
+        """Discover actual AI workloads from real Kubernetes cluster"""
+        ai_agents = []
+        
+        try:
+            # Discover AI Pods
+            pods = self._discover_real_ai_pods()
+            ai_agents.extend(pods)
+            
+            # Discover AI Deployments
+            deployments = self._discover_real_ai_deployments()
+            ai_agents.extend(deployments)
+            
+            # Discover AI Services
+            services = self._discover_real_ai_services()
+            ai_agents.extend(services)
+            
+        except Exception as e:
+            self.logger.error(f"Error discovering real Kubernetes agents: {e}")
+            raise
+        
+        return ai_agents
+    
+    def _discover_real_ai_pods(self):
+        """Discover AI pods from real cluster"""
+        ai_pods = []
+        
+        try:
+            # Get pods from all namespaces or specific namespace
+            if self.namespace and self.namespace != 'default':
+                pods = self.k8s_client.list_namespaced_pod(namespace=self.namespace)
+            else:
+                pods = self.k8s_client.list_pod_for_all_namespaces()
+            
+            for pod in pods.items:
+                if self._is_ai_workload(pod.metadata.labels, pod.metadata.annotations):
+                    ai_pod_data = {
+                        'name': pod.metadata.name,
+                        'type': 'Kubernetes Pod',
+                        'protocol': 'kubernetes',
+                        'endpoint': f"kubernetes://{pod.metadata.name}",
+                        'cloud_provider': 'local-kubernetes',
+                        'region': 'local',
+                        'metadata': {
+                            'namespace': pod.metadata.namespace,
+                            'labels': dict(pod.metadata.labels) if pod.metadata.labels else {},
+                            'annotations': dict(pod.metadata.annotations) if pod.metadata.annotations else {},
+                            'status': pod.status.phase,
+                            'node_name': pod.spec.node_name,
+                            'service_account': pod.spec.service_account_name,
+                            'containers': [
+                                {
+                                    'name': container.name,
+                                    'image': container.image,
+                                    'ports': [{'containerPort': port.container_port, 'protocol': port.protocol} 
+                                             for port in (container.ports or [])]
+                                }
+                                for container in pod.spec.containers
+                            ],
+                            'discovery_method': 'real-kubernetes-scan',
+                            'discovery_timestamp': datetime.utcnow().isoformat(),
+                            'created': pod.metadata.creation_timestamp.isoformat() if pod.metadata.creation_timestamp else ''
+                        }
+                    }
+                    ai_pods.append(ai_pod_data)
+                    
+        except Exception as e:
+            self.logger.error(f"Error discovering real AI pods: {e}")
+            
+        return ai_pods
+    
+    def _discover_real_ai_deployments(self):
+        """Discover AI deployments from real cluster"""
+        ai_deployments = []
+        
+        try:
+            # Get deployments from all namespaces or specific namespace
+            if self.namespace and self.namespace != 'default':
+                deployments = self.apps_v1_client.list_namespaced_deployment(namespace=self.namespace)
+            else:
+                deployments = self.apps_v1_client.list_deployment_for_all_namespaces()
+            
+            for deployment in deployments.items:
+                if self._is_ai_workload(deployment.metadata.labels, deployment.metadata.annotations):
+                    ai_deployment_data = {
+                        'name': deployment.metadata.name,
+                        'type': 'Kubernetes Deployment',
+                        'protocol': 'kubernetes',
+                        'endpoint': f"kubernetes://{deployment.metadata.name}",
+                        'cloud_provider': 'local-kubernetes',
+                        'region': 'local',
+                        'metadata': {
+                            'namespace': deployment.metadata.namespace,
+                            'labels': dict(deployment.metadata.labels) if deployment.metadata.labels else {},
+                            'annotations': dict(deployment.metadata.annotations) if deployment.metadata.annotations else {},
+                            'replicas': {
+                                'desired': deployment.spec.replicas,
+                                'ready': deployment.status.ready_replicas or 0,
+                                'available': deployment.status.available_replicas or 0
+                            },
+                            'containers': [
+                                {
+                                    'name': container.name,
+                                    'image': container.image,
+                                    'ports': [{'containerPort': port.container_port, 'protocol': port.protocol} 
+                                             for port in (container.ports or [])]
+                                }
+                                for container in deployment.spec.template.spec.containers
+                            ],
+                            'discovery_method': 'real-kubernetes-scan',
+                            'discovery_timestamp': datetime.utcnow().isoformat(),
+                            'created': deployment.metadata.creation_timestamp.isoformat() if deployment.metadata.creation_timestamp else ''
+                        }
+                    }
+                    ai_deployments.append(ai_deployment_data)
+                    
+        except Exception as e:
+            self.logger.error(f"Error discovering real AI deployments: {e}")
+            
+        return ai_deployments
+    
+    def _discover_real_ai_services(self):
+        """Discover AI services from real cluster"""
+        ai_services = []
+        
+        try:
+            # Get services from all namespaces or specific namespace
+            if self.namespace and self.namespace != 'default':
+                services = self.k8s_client.list_namespaced_service(namespace=self.namespace)
+            else:
+                services = self.k8s_client.list_service_for_all_namespaces()
+            
+            for service in services.items:
+                if self._is_ai_workload(service.metadata.labels, service.metadata.annotations):
+                    ai_service_data = {
+                        'name': service.metadata.name,
+                        'type': 'Kubernetes Service',
+                        'protocol': 'kubernetes',
+                        'endpoint': f"kubernetes://{service.metadata.name}",
+                        'cloud_provider': 'local-kubernetes',
+                        'region': 'local',
+                        'metadata': {
+                            'namespace': service.metadata.namespace,
+                            'labels': dict(service.metadata.labels) if service.metadata.labels else {},
+                            'annotations': dict(service.metadata.annotations) if service.metadata.annotations else {},
+                            'cluster_ip': service.spec.cluster_ip,
+                            'service_type': service.spec.type,
+                            'ports': [
+                                {
+                                    'port': port.port,
+                                    'target_port': str(port.target_port) if port.target_port else None,
+                                    'protocol': port.protocol,
+                                    'name': port.name
+                                }
+                                for port in (service.spec.ports or [])
+                            ],
+                            'discovery_method': 'real-kubernetes-scan',
+                            'discovery_timestamp': datetime.utcnow().isoformat(),
+                            'created': service.metadata.creation_timestamp.isoformat() if service.metadata.creation_timestamp else ''
+                        }
+                    }
+                    ai_services.append(ai_service_data)
+                    
+        except Exception as e:
+            self.logger.error(f"Error discovering real AI services: {e}")
+            
+        return ai_services
+    
+    def _is_ai_workload(self, labels, annotations):
+        """Check if a Kubernetes workload is AI-related"""
+        if not labels and not annotations:
+            return False
+        
+        ai_indicators = [
+            'ai', 'ml', 'model', 'tensorflow', 'pytorch', 'sklearn', 'huggingface',
+            'inference', 'training', 'serving', 'mlflow', 'kubeflow', 'seldon',
+            'kfserving', 'torchserve', 'triton', 'onnx', 'transformers', 'bert',
+            'llm', 'nlp', 'cv', 'vision', 'neural', 'deep-learning', 'machine-learning'
+        ]
+        
+        # Check labels
+        if labels:
+            for key, value in labels.items():
+                for indicator in ai_indicators:
+                    if indicator in key.lower() or indicator in str(value).lower():
+                        return True
+        
+        # Check annotations
+        if annotations:
+            for key, value in annotations.items():
+                for indicator in ai_indicators:
+                    if indicator in key.lower() or indicator in str(value).lower():
+                        return True
+        
+        return False
     
     def discover_ai_pods(self):
         """Discover Pods with AI-specific labels and annotations"""
