@@ -255,7 +255,7 @@
                 <h5 class="modal-title">Complete Step</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="{{ url_for('onboarding.complete_step', customer_id=customer_id, step_key=step.step_key) }}">
+            <form method="POST" action="{{ url_for('onboarding.complete_onboarding_step', customer_id=customer_id, step_key=step.step_key) }}">
                 <div class="modal-body">
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
