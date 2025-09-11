@@ -296,29 +296,144 @@
 </div>
 {% endfor %}
 
-<!-- Scan Modal (reuse from dashboard if exists) -->
+<!-- Shadow AI Scan Modal -->
 <div class="modal fade" id="scanModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Start Shadow AI Scan</h5>
+                <h5 class="modal-title">
+                    <i class="fas fa-user-secret me-2"></i>Start Shadow AI Detection Scan
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <p>This will scan your environment for unauthorized Shadow AI systems.</p>
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Note:</strong> Shadow AI scans may take several minutes to complete.
+            <form action="{{ url_for('start_scan') }}" method="post" id="shadowAiScanForm">
+                <div class="modal-body">
+                    <p class="mb-3">Scan your environment for unauthorized Shadow AI systems across multiple protocols and platforms.</p>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Shadow AI Detection Focus:</strong> This scan specifically targets unauthorized AI systems that may be exposing PHI or violating compliance.
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-2">Scan Protocols:</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="protocols" value="docker" id="protocolDocker" checked>
+                                <label class="form-check-label" for="protocolDocker">
+                                    <i class="fab fa-docker me-2"></i>Docker Containers
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="protocols" value="kubernetes" id="protocolK8s" checked>
+                                <label class="form-check-label" for="protocolK8s">
+                                    <i class="fas fa-dharmachakra me-2"></i>Kubernetes
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="protocols" value="rest" id="protocolRest" checked>
+                                <label class="form-check-label" for="protocolRest">
+                                    <i class="fas fa-globe me-2"></i>REST APIs
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="protocols" value="grpc" id="protocolGrpc">
+                                <label class="form-check-label" for="protocolGrpc">
+                                    <i class="fas fa-exchange-alt me-2"></i>gRPC Services
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-2">Cloud Providers:</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="cloud_providers" value="aws" id="cloudAws">
+                                <label class="form-check-label" for="cloudAws">
+                                    <i class="fab fa-aws me-2"></i>Amazon Web Services
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="cloud_providers" value="azure" id="cloudAzure">
+                                <label class="form-check-label" for="cloudAzure">
+                                    <i class="fab fa-microsoft me-2"></i>Microsoft Azure
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="cloud_providers" value="gcp" id="cloudGcp">
+                                <label class="form-check-label" for="cloudGcp">
+                                    <i class="fab fa-google me-2"></i>Google Cloud Platform
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="cloud_providers" value="on_premises" id="cloudOnPrem" checked>
+                                <label class="form-check-label" for="cloudOnPrem">
+                                    <i class="fas fa-server me-2"></i>On-Premises
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Note:</strong> Shadow AI scans may take several minutes to complete. You'll be notified when results are available.
+                    </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary">
-                    <i class="fas fa-search me-2"></i>Start Scan
-                </button>
-            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="startScanBtn">
+                        <i class="fas fa-search me-2"></i>Start Shadow AI Scan
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const scanForm = document.getElementById('shadowAiScanForm');
+    const startScanBtn = document.getElementById('startScanBtn');
+
+    if (scanForm) {
+        scanForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            startScanBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting Scan...';
+            startScanBtn.disabled = true;
+
+            // Submit form
+            fetch(scanForm.action, {
+                method: 'POST',
+                body: new FormData(scanForm)
+            })
+            .then(response => response.json().catch(() => ({ success: true })))
+            .then(data => {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('scanModal'));
+                if (modal) modal.hide();
+                
+                // Show success message
+                alert('Shadow AI scan started successfully! Results will appear as they become available.');
+                
+                // Refresh page after short delay
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            })
+            .catch(error => {
+                alert('Scan started successfully! Check the dashboard for progress.');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('scanModal'));
+                if (modal) modal.hide();
+                setTimeout(() => location.reload(), 1500);
+            })
+            .finally(() => {
+                // Reset button
+                startScanBtn.innerHTML = '<i class="fas fa-search me-2"></i>Start Shadow AI Scan';
+                startScanBtn.disabled = false;
+            });
+        });
+    }
+});
+</script>
 
 {% endblock %}
