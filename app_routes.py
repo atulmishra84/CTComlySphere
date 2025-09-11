@@ -179,6 +179,14 @@ def dashboard():
         AIAgent.discovered_at >= datetime.utcnow() - timedelta(days=7)
     ).count()
     
+    # Shadow AI metrics - identify by agent types
+    shadow_ai_types = ['Unauthorized Process AI', 'Containerized Shadow AI', 'Unauthorized AI Model File', 'Unauthorized AI Code Implementation']
+    shadow_ai_count = AIAgent.query.filter(AIAgent.type.in_(shadow_ai_types)).count()
+    high_risk_shadow_ai = AIAgent.query.join(ScanResult).filter(
+        AIAgent.type.in_(shadow_ai_types),
+        ScanResult.risk_level.in_([RiskLevel.HIGH, RiskLevel.CRITICAL])
+    ).count()
+    
     return render_template('dashboard.html',
                          total_agents=total_agents,
                          recent_scans=recent_scans,
@@ -189,7 +197,9 @@ def dashboard():
                          agentic_metrics=agentic_metrics,
                          genai_risk_analysis=genai_risk_analysis,
                          recent_genai=recent_genai,
-                         recent_agentic=recent_agentic)
+                         recent_agentic=recent_agentic,
+                         shadow_ai_count=shadow_ai_count,
+                         high_risk_shadow_ai=high_risk_shadow_ai)
 
 
 @app.route('/scan/results')

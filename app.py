@@ -28,6 +28,12 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 # Initialize the app with the extension
 db.init_app(app)
 
+# Add a simple health endpoint that doesn't touch the database
+@app.route('/healthz')
+def health_check():
+    """Simple health check endpoint"""
+    return "ok", 200
+
 # Import and register routes first (should be side-effect free)
 try:
     import app_routes
@@ -38,6 +44,16 @@ except Exception as e:
     @app.route('/')
     def home():
         return "<h1>Healthcare AI Compliance Platform</h1><p>Application is starting...</p>"
+
+# Import and register blueprints with proper error handling
+try:
+    from routes.environment_scanner_routes import environment_scanner_bp
+    from routes.enhanced_dashboard_routes import enhanced_dashboard_bp
+    app.register_blueprint(environment_scanner_bp)
+    app.register_blueprint(enhanced_dashboard_bp)
+    logging.info("Blueprints registered successfully")
+except Exception as e:
+    logging.error(f"Failed to register blueprints: {e}")
 
 # Central asynchronous bootstrap system
 import threading
