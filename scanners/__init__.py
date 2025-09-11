@@ -14,6 +14,7 @@ from .hl7_scanner import HL7Scanner
 from .dicom_scanner import DICOMScanner
 from .webrtc_scanner import WebRTCScanner
 from .amqp_scanner import AMQPScanner
+from .shadow_ai_scanner import ShadowAIScanner
 
 class ProtocolScanner:
     """Main scanner orchestrator that manages all protocol-specific scanners"""
@@ -34,7 +35,8 @@ class ProtocolScanner:
             'hl7': HL7Scanner(),
             'dicom': DICOMScanner(),
             'webrtc': WebRTCScanner(),
-            'amqp': AMQPScanner()
+            'amqp': AMQPScanner(),
+            'shadow_ai': ShadowAIScanner()
         }
     
     def start_comprehensive_scan(self, protocols, cloud_providers=None):
