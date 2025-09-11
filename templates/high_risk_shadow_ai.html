@@ -346,29 +346,57 @@
 </div>
 
 <script>
-// Bulk selection functionality
-document.getElementById('selectAll').addEventListener('change', function() {
-    const checkboxes = document.querySelectorAll('.shadow-ai-checkbox');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = this.checked;
-    });
-    updateSelectedSystems();
-});
-
-document.querySelectorAll('.shadow-ai-checkbox').forEach(checkbox => {
-    checkbox.addEventListener('change', updateSelectedSystems);
-});
-
-function updateSelectedSystems() {
-    const selected = document.querySelectorAll('.shadow-ai-checkbox:checked');
-    const container = document.getElementById('selectedSystems');
-    
-    if (selected.length > 0) {
-        container.innerHTML = `<p><strong>${selected.length}</strong> Shadow AI systems selected for remediation.</p>`;
-    } else {
-        container.innerHTML = `<p class="text-muted">Select Shadow AI systems from the table above.</p>`;
+document.addEventListener('DOMContentLoaded', function() {
+    // Bulk selection functionality
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.shadow-ai-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateSelectedSystems();
+        });
     }
-}
+
+    document.querySelectorAll('.shadow-ai-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedSystems);
+    });
+
+    function updateSelectedSystems() {
+        const selected = document.querySelectorAll('.shadow-ai-checkbox:checked');
+        const container = document.getElementById('selectedSystems');
+        
+        if (container) {
+            if (selected.length > 0) {
+                container.innerHTML = `<p><strong>${selected.length}</strong> Shadow AI systems selected for remediation.</p>`;
+            } else {
+                container.innerHTML = `<p class="text-muted">Select Shadow AI systems from the table above.</p>`;
+            }
+        }
+    }
+
+    // Handle bulk remediation confirmation
+    const confirmRemediationBtn = document.getElementById('confirmRemediation');
+    if (confirmRemediationBtn) {
+        confirmRemediationBtn.addEventListener('click', function() {
+            const selected = document.querySelectorAll('.shadow-ai-checkbox:checked');
+            if (selected.length > 0) {
+                // Show loading state
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting Remediation...';
+                this.disabled = true;
+                
+                // Simulate remediation process
+                setTimeout(() => {
+                    alert(`Remediation initiated for ${selected.length} Shadow AI systems. Check the remediation dashboard for progress.`);
+                    location.reload();
+                }, 2000);
+            } else {
+                alert('Please select Shadow AI systems first.');
+            }
+        });
+    }
+});
 </script>
 
 {% endblock %}
