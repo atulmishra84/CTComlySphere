@@ -378,6 +378,17 @@ def high_risk_shadow_ai():
         flash('Error loading high-risk Shadow AI systems. Please try again.', 'error')
         return redirect(url_for('dashboard'))
 
+@app.route('/agents/<int:agent_id>/details')
+def agent_details(agent_id):
+    """Detailed view of a specific AI agent with enhanced information"""
+    try:
+        agent = AIAgent.query.get_or_404(agent_id)
+        return render_template('agents/agent_details.html', agent=agent)
+    except Exception as e:
+        logger.error(f"Error loading agent details for ID {agent_id}: {e}")
+        flash('Error loading agent details. Please try again.', 'error')
+        return redirect(url_for('shadow_ai_systems'))
+
 
 @app.route('/agents/<int:agent_id>/evaluate-compliance')
 def evaluate_compliance(agent_id):

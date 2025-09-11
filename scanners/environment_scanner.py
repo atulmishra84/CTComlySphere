@@ -72,6 +72,32 @@ class DiscoveredAgent:
     compliance_frameworks: List[str]
     discovery_timestamp: datetime
     
+    # Enhanced agent details
+    owner_organization: Optional[str] = None
+    owner_contact: Optional[str] = None
+    deployment_environment: Optional[str] = None
+    deployment_method: Optional[str] = None
+    service_account: Optional[str] = None
+    process_owner: Optional[str] = None
+    
+    # Current operations
+    current_actions: Optional[List[Dict[str, Any]]] = None
+    active_sessions: Optional[int] = 0
+    last_activity: Optional[datetime] = None
+    operation_mode: Optional[str] = None
+    current_workload: Optional[Dict[str, Any]] = None
+    performance_metrics: Optional[Dict[str, Any]] = None
+    
+    # Access and permissions
+    data_access_permissions: Optional[List[str]] = None
+    api_permissions: Optional[Dict[str, Any]] = None
+    network_access: Optional[Dict[str, Any]] = None
+    authentication_method: Optional[str] = None
+    authorization_scope: Optional[List[str]] = None
+    resource_limits: Optional[Dict[str, Any]] = None
+    compliance_controls: Optional[Dict[str, Any]] = None
+    audit_logging: Optional[bool] = False
+    
     
 @dataclass
 class ScanResult:
@@ -489,7 +515,7 @@ class EnvironmentScanner:
                         db.session.commit()
                         stored_agent_ids.append(existing_agent.id)
                     else:
-                        # Create new agent with proper AI type classification
+                        # Create new agent with proper AI type classification and enhanced details
                         new_agent = AIAgent(
                             name=agent.name,
                             type=agent.type,
@@ -498,7 +524,33 @@ class EnvironmentScanner:
                             endpoint=f"{agent.protocol}://{agent.name}",
                             discovered_at=agent.discovery_timestamp,
                             last_scanned=agent.discovery_timestamp,
-                            agent_metadata=agent.metadata
+                            agent_metadata=agent.metadata,
+                            
+                            # Enhanced agent details
+                            owner_organization=agent.owner_organization,
+                            owner_contact=agent.owner_contact,
+                            deployment_environment=agent.deployment_environment,
+                            deployment_method=agent.deployment_method,
+                            service_account=agent.service_account,
+                            process_owner=agent.process_owner,
+                            
+                            # Current operations
+                            current_actions=agent.current_actions,
+                            active_sessions=agent.active_sessions or 0,
+                            last_activity=agent.last_activity,
+                            operation_mode=agent.operation_mode,
+                            current_workload=agent.current_workload,
+                            performance_metrics=agent.performance_metrics,
+                            
+                            # Access and permissions
+                            data_access_permissions=agent.data_access_permissions,
+                            api_permissions=agent.api_permissions,
+                            network_access=agent.network_access,
+                            authentication_method=agent.authentication_method,
+                            authorization_scope=agent.authorization_scope,
+                            resource_limits=agent.resource_limits,
+                            compliance_controls=agent.compliance_controls,
+                            audit_logging=agent.audit_logging or False
                         )
                         db.session.add(new_agent)
                         db.session.commit()

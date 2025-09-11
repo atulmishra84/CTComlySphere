@@ -95,6 +95,32 @@ class AIAgent(db.Model):
     tool_access = db.Column(JSON)  # list of tools/APIs the agent can access
     safety_measures = db.Column(JSON)  # implemented safety measures
     
+    # Enhanced Agent Details - Owner/Operator Information
+    owner_organization = db.Column(db.String(255))  # Organization that owns/operates the agent
+    owner_contact = db.Column(db.String(255))  # Contact person or email
+    deployment_environment = db.Column(db.String(100))  # production, staging, development
+    deployment_method = db.Column(db.String(100))  # kubernetes, docker, serverless, etc.
+    service_account = db.Column(db.String(255))  # Service account running the agent
+    process_owner = db.Column(db.String(255))  # Process or team that owns the agent
+    
+    # Current Actions and Operations
+    current_actions = db.Column(JSON)  # List of current/recent actions being performed
+    active_sessions = db.Column(db.Integer, default=0)  # Number of active user sessions
+    last_activity = db.Column(db.DateTime)  # Timestamp of last recorded activity
+    operation_mode = db.Column(db.String(50))  # interactive, batch, autonomous, scheduled
+    current_workload = db.Column(JSON)  # Current tasks/jobs being processed
+    performance_metrics = db.Column(JSON)  # CPU, memory, response time metrics
+    
+    # Detailed Access and Permissions
+    data_access_permissions = db.Column(JSON)  # Specific data sources the agent can access
+    api_permissions = db.Column(JSON)  # External APIs and their permission levels
+    network_access = db.Column(JSON)  # Network endpoints and firewall rules
+    authentication_method = db.Column(db.String(100))  # OAuth, API key, certificate, etc.
+    authorization_scope = db.Column(JSON)  # Specific permissions and scopes granted
+    resource_limits = db.Column(JSON)  # CPU, memory, storage, rate limits
+    compliance_controls = db.Column(JSON)  # HIPAA, GDPR controls in place
+    audit_logging = db.Column(db.Boolean, default=False)  # Whether actions are logged
+    
     # Relationships
     scan_results = db.relationship('ScanResult', backref='ai_agent', lazy=True)
     compliance_evaluations = db.relationship('ComplianceEvaluation', backref='ai_agent', lazy=True)

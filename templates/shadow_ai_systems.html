@@ -105,10 +105,11 @@
                 <thead class="table-dark">
                     <tr>
                         <th>System</th>
-                        <th>Type</th>
+                        <th>Owner/Environment</th>
+                        <th>Current Status</th>
                         <th>Risk Level</th>
                         <th>PHI Exposure</th>
-                        <th>Last Scan</th>
+                        <th>Access Level</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -121,10 +122,44 @@
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-user-secret text-warning me-2"></i>
                                 <div>
-                                    <strong>{{ agent.name }}</strong>
+                                    <strong><a href="{{ url_for('agent_details', agent_id=agent.id) }}" class="text-decoration-none">{{ agent.name }}</a></strong>
                                     <br>
-                                    <small class="text-muted">{{ agent.location or 'Unknown location' }}</small>
+                                    <small class="text-muted">{{ agent.protocol }}://{{ agent.endpoint.split('://')[-1] if '://' in agent.endpoint else agent.endpoint }}</small>
                                 </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>{{ agent.owner_organization or 'Unknown Org' }}</strong>
+                                <br>
+                                {% if agent.deployment_environment %}
+                                    {% if agent.deployment_environment == 'production' %}
+                                        <span class="badge bg-danger">{{ agent.deployment_environment.title() }}</span>
+                                    {% elif agent.deployment_environment == 'staging' %}
+                                        <span class="badge bg-warning">{{ agent.deployment_environment.title() }}</span>
+                                    {% else %}
+                                        <span class="badge bg-info">{{ agent.deployment_environment.title() }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-secondary">Unknown</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                {% if agent.operation_mode %}
+                                    <span class="badge bg-primary">{{ agent.operation_mode.title() }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Unknown</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">
+                                    {% if agent.active_sessions %}
+                                        {{ agent.active_sessions }} active sessions
+                                    {% else %}
+                                        No active sessions
+                                    {% endif %}
+                                </small>
                             </div>
                         </td>
                         <td>
@@ -149,6 +184,25 @@
                             {% else %}
                             <span class="text-muted">Unknown</span>
                             {% endif %}
+                        </td>
+                        <td>
+                            <div>
+                                {% if agent.authentication_method %}
+                                    <span class="badge bg-info">{{ agent.authentication_method.title() }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Unknown Auth</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">
+                                    {% if agent.data_access_permissions %}
+                                        {{ agent.data_access_permissions|length }} data sources
+                                    {% elif agent.api_permissions %}
+                                        {{ agent.api_permissions|length }} API permissions
+                                    {% else %}
+                                        No permissions data
+                                    {% endif %}
+                                </small>
+                            </div>
                         </td>
                         <td>
                             {% if scan %}
