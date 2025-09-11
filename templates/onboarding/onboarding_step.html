@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+
+{% block title %}{{ step.step_name }} - {{ customer.organization_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('onboarding.onboarding_dashboard') }}">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('onboarding.onboarding_progress', customer_id=customer_id) }}">
+                            {{ customer.organization_name }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">{{ step.step_name }}</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1 class="h3 mb-1">Step {{ step.step_order }}: {{ step.step_name }}</h1>
+                    <p class="text-muted mb-0">{{ step.step_description }}</p>
+                </div>
+                <div>
+                    {% if step.is_required %}
+                        <span class="badge bg-danger me-2">Required</span>
+                    {% else %}
+                        <span class="badge bg-secondary me-2">Optional</span>
+                    {% endif %}
+                    {% if step.category %}
+                        <span class="badge bg-light text-dark">{{ step.category.title() }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-md-8">
+            <!-- Step Status -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            {% if step.status == 'completed' %}
+                                <div class="d-flex align-items-center text-success">
+                                    <i class="fas fa-check-circle fa-2x me-3"></i>
+                                    <div>
+                                        <h5 class="mb-0">Step Completed!</h5>
+                                        {% if step.completed_at %}
+                                        <small class="text-muted">Completed on {{ step.completed_at[:10] }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% elif step.status == 'in_progress' %}
+                                <div class="d-flex align-items-center text-warning">
+                                    <i class="fas fa-clock fa-2x me-3"></i>
+                                    <div>
+                                        <h5 class="mb-0">In Progress</h5>
+                                        <small class="text-muted">You can complete this step when ready</small>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="d-flex align-items-center text-primary">
+                                    <i class="fas fa-circle fa-2x me-3"></i>
+                                    <div>
+                                        <h5 class="mb-0">Ready to Start</h5>
+                                        <small class="text-muted">Let's get this step completed</small>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="text-muted mb-2">
+                                <i class="fas fa-clock me-1"></i>
+                                Estimated time: {{ step.estimated_time_minutes }} minutes
+                            </div>
+                            {% if step.status != 'completed' %}
+                            <button type="button" class="btn btn-success" onclick="completeStep()">
+                                <i class="fas fa-check"></i> Mark as Complete
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step Instructions -->
+            {% if step.instructions %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list-ol me-2"></i>Instructions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="step-instructions">
+                        {{ step.instructions|safe }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Validation Rules -->
+            {% if step.validation_rules %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-check-square me-2"></i>Requirements Checklist
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="validation-checklist">
+                        {% for rule in step.validation_rules %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" 
+                                   id="rule_{{ loop.index }}" 
+                                   onchange="updateCompletionButton()">
+                            <label class="form-check-label" for="rule_{{ loop.index }}">
+                                {{ rule.description if rule.description else rule }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="validationMessage" class="alert alert-warning mt-3" style="display: none;">
+                        Please complete all requirements before marking this step as complete.
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Progress Notes -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-sticky-note me-2"></i>Progress Notes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="notesForm">
+                        <div class="mb-3">
+                            <label for="progressNotes" class="form-label">Add notes about your progress</label>
+                            <textarea class="form-control" id="progressNotes" rows="4" 
+                                      placeholder="Document any challenges, decisions, or important information..."></textarea>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary" onclick="saveNotes()">
+                            <i class="fas fa-save"></i> Save Notes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Step Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Step Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Step Type</label>
+                        <div>{{ step.step_type.replace('_', ' ').title() if step.step_type else 'Standard' }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Estimated Duration</label>
+                        <div>{{ step.estimated_time_minutes }} minutes</div>
+                    </div>
+                    {% if step.prerequisites %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Prerequisites</label>
+                        <div>
+                            {% for prereq in step.prerequisites %}
+                            <span class="badge bg-light text-dark me-1">{{ prereq }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="mb-0">
+                        <label class="form-label text-muted">Order</label>
+                        <div>{{ step.step_order }} of {{ total_steps if total_steps else 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Resources -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Resources</h6>
+                </div>
+                <div class="card-body">
+                    {% if step.help_content %}
+                    <div class="mb-3">
+                        <h6>Help</h6>
+                        <div class="help-content">
+                            {{ step.help_content|safe }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if step.video_url %}
+                    <div class="mb-3">
+                        <h6>Tutorial Video</h6>
+                        <a href="{{ step.video_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-play"></i> Watch Tutorial
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if step.documentation_links %}
+                    <div class="mb-0">
+                        <h6>Documentation</h6>
+                        {% for link in step.documentation_links %}
+                        <a href="{{ link.url }}" target="_blank" class="d-block mb-2">
+                            <i class="fas fa-external-link-alt me-1"></i>{{ link.title }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('onboarding.onboarding_progress', customer_id=customer_id) }}" 
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left"></i> Back to Progress
+                        </a>
+                        {% if step.status != 'completed' %}
+                        <button type="button" class="btn btn-success" onclick="completeStep()" id="mainCompleteBtn">
+                            <i class="fas fa-check"></i> Mark as Complete
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Completion Confirmation Modal -->
+<div class="modal fade" id="completionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Complete Step</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('onboarding.complete_step', customer_id=customer_id, step_key=step.step_key) }}">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Are you sure you want to mark this step as completed?
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="completionNotes" class="form-label">Completion Notes (Optional)</label>
+                        <textarea class="form-control" id="completionNotes" name="completion_notes" rows="3" 
+                                  placeholder="Add any final notes about completing this step..."></textarea>
+                    </div>
+                    
+                    {% if step.validation_rules %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Please ensure all requirements have been met before completing this step.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="finalCompleteBtn">
+                        <i class="fas fa-check"></i> Complete Step
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function completeStep() {
+    {% if step.validation_rules %}
+    // Check if all validation rules are checked
+    const checkboxes = document.querySelectorAll('.validation-checklist input[type="checkbox"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    
+    if (!allChecked && checkboxes.length > 0) {
+        document.getElementById('validationMessage').style.display = 'block';
+        document.getElementById('validationMessage').scrollIntoView({ behavior: 'smooth' });
+        return;
+    }
+    {% endif %}
+    
+    // Show confirmation modal
+    const modal = new bootstrap.Modal(document.getElementById('completionModal'));
+    modal.show();
+}
+
+function updateCompletionButton() {
+    const checkboxes = document.querySelectorAll('.validation-checklist input[type="checkbox"]');
+    const completeButtons = document.querySelectorAll('#mainCompleteBtn, button[onclick="completeStep()"]');
+    const validationMessage = document.getElementById('validationMessage');
+    
+    if (checkboxes.length > 0) {
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        
+        completeButtons.forEach(btn => {
+            if (allChecked) {
+                btn.classList.remove('btn-outline-success');
+                btn.classList.add('btn-success');
+                btn.disabled = false;
+            } else {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-success');
+            }
+        });
+        
+        if (allChecked) {
+            validationMessage.style.display = 'none';
+        }
+    }
+}
+
+function saveNotes() {
+    const notes = document.getElementById('progressNotes').value;
+    
+    // Here you would typically send the notes to the server
+    // For now, we'll just show a success message
+    const originalBtn = document.querySelector('button[onclick="saveNotes()"]');
+    const originalText = originalBtn.innerHTML;
+    
+    originalBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+    originalBtn.disabled = true;
+    
+    setTimeout(() => {
+        originalBtn.innerHTML = originalText;
+        originalBtn.disabled = false;
+    }, 2000);
+}
+
+// Initialize validation checking on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateCompletionButton();
+    
+    // Auto-save notes functionality
+    const notesTextarea = document.getElementById('progressNotes');
+    let saveTimeout;
+    
+    notesTextarea.addEventListener('input', function() {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            // Auto-save notes after 2 seconds of inactivity
+            saveNotes();
+        }, 2000);
+    });
+});
+</script>
+
+<style>
+.step-instructions {
+    line-height: 1.6;
+}
+
+.step-instructions h1,
+.step-instructions h2,
+.step-instructions h3 {
+    color: #495057;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.step-instructions ul,
+.step-instructions ol {
+    padding-left: 1.5rem;
+}
+
+.step-instructions li {
+    margin-bottom: 0.5rem;
+}
+
+.help-content {
+    background-color: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.validation-checklist .form-check-input:checked + .form-check-label {
+    color: #198754;
+    text-decoration: line-through;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: ">";
+}
+
+.card-title i {
+    color: #6c757d;
+}
+</style>
+
+{% endblock %}

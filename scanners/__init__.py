@@ -20,24 +20,36 @@ class ProtocolScanner:
     """Main scanner orchestrator that manages all protocol-specific scanners"""
     
     def __init__(self):
-        self.scanners = {
-            'kubernetes': KubernetesScanner(),
-            'docker': DockerScanner(),
-            'rest_api': APIScanner(),
-            'grpc': GRPCScanner(),
-            'websocket': WebSocketScanner(),
-            'mqtt': MQTTScanner(),
-            'graphql': GraphQLScanner(),
-            'cloud_services': CloudServiceScanner(),
-            'a2a_communication': A2ACommunicationScanner(),
-            'mcp_protocol': MCPScanner(),
-            'fhir': FHIRScanner(),
-            'hl7': HL7Scanner(),
-            'dicom': DICOMScanner(),
-            'webrtc': WebRTCScanner(),
-            'amqp': AMQPScanner(),
-            'shadow_ai': ShadowAIScanner()
+        self.scanners = {}
+        self._scanner_classes = {
+            'kubernetes': KubernetesScanner,
+            'docker': DockerScanner,
+            'rest_api': APIScanner,
+            'grpc': GRPCScanner,
+            'websocket': WebSocketScanner,
+            'mqtt': MQTTScanner,
+            'graphql': GraphQLScanner,
+            'cloud_services': CloudServiceScanner,
+            'a2a_communication': A2ACommunicationScanner,
+            'mcp_protocol': MCPScanner,
+            'fhir': FHIRScanner,
+            'hl7': HL7Scanner,
+            'dicom': DICOMScanner,
+            'webrtc': WebRTCScanner,
+            'amqp': AMQPScanner,
+            'shadow_ai': ShadowAIScanner
         }
+    
+    def _ensure_scanner(self, protocol):
+        """Lazy-initialize scanner only when needed"""
+        if protocol not in self.scanners and protocol in self._scanner_classes:
+            try:
+                self.scanners[protocol] = self._scanner_classes[protocol]()
+            except Exception as e:
+                import logging
+                logging.warning(f"Failed to initialize {protocol} scanner: {e}")
+                return None
+        return self.scanners.get(protocol)
     
     def start_comprehensive_scan(self, protocols, cloud_providers=None):
         """Start a comprehensive scan across specified protocols"""
@@ -46,9 +58,10 @@ class ProtocolScanner:
         
         results = {}
         for protocol in protocols:
-            if protocol in self.scanners:
+            scanner = self._ensure_scanner(protocol)
+            if scanner:
                 try:
-                    scanner_results = self.scanners[protocol].scan()
+                    scanner_results = scanner.scan()
                     results[protocol] = scanner_results
                 except Exception as e:
                     results[protocol] = {'error': str(e)}
@@ -57,7 +70,7 @@ class ProtocolScanner:
     
     def get_supported_protocols(self):
         """Get list of all supported scanning protocols"""
-        return list(self.scanners.keys())
+        return list(self._scanner_classes.keys())
 
 # Initialize global scanner instance
 protocol_scanner = ProtocolScanner()
