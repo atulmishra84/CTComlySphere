@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Remediation Workflow{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('remediation.index') }}">Remediation</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('remediation.view_workflow', id=workflow.id) }}">Workflow #{{ workflow.id }}</a></li>
+                    <li class="breadcrumb-item active">Edit</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="h3 mb-0">
+                        <i class="fas fa-edit text-primary me-2"></i>Edit Remediation Workflow
+                    </h2>
+                    <p class="text-muted mb-0">Modify workflow configuration and settings</p>
+                </div>
+                <a href="{{ url_for('remediation.view_workflow', id=workflow.id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Workflow
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cog me-2"></i>Workflow Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Basic Information -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Workflow Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ workflow.name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="priority" class="form-label">Priority *</label>
+                                <select class="form-select" id="priority" name="priority" required>
+                                    {% for priority in priorities %}
+                                    <option value="{{ priority.value }}" 
+                                            {% if workflow.priority == priority %}selected{% endif %}>
+                                        {{ priority.value.title() }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="3">{{ workflow.description or '' }}</textarea>
+                        </div>
+
+                        <!-- Trigger Configuration -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="trigger_type" class="form-label">Trigger Type *</label>
+                                <select class="form-select" id="trigger_type" name="trigger_type" required>
+                                    {% for trigger in trigger_types %}
+                                    <option value="{{ trigger.value }}" 
+                                            {% if workflow.trigger_type == trigger %}selected{% endif %}>
+                                        {{ trigger.value.replace('_', ' ').title() }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="action_type" class="form-label">Action Type *</label>
+                                <select class="form-select" id="action_type" name="action_type" required>
+                                    {% for action in action_types %}
+                                    <option value="{{ action.value }}" 
+                                            {% if workflow.action_type == action %}selected{% endif %}>
+                                        {{ action.value.replace('_', ' ').title() }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Execution Settings -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="timeout_minutes" class="form-label">Timeout (minutes)</label>
+                                <input type="number" class="form-control" id="timeout_minutes" name="timeout_minutes" 
+                                       value="{{ workflow.timeout_minutes or 30 }}" min="1" max="1440">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="retry_attempts" class="form-label">Retry Attempts</label>
+                                <input type="number" class="form-control" id="retry_attempts" name="retry_attempts" 
+                                       value="{{ workflow.retry_attempts or 3 }}" min="0" max="10">
+                            </div>
+                        </div>
+
+                        <!-- Options -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Workflow Options</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="is_enabled" name="is_enabled" 
+                                               {% if workflow.is_enabled %}checked{% endif %}>
+                                        <label class="form-check-label" for="is_enabled">
+                                            <i class="fas fa-toggle-on me-1"></i>Enabled
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="auto_execute" name="auto_execute" 
+                                               {% if workflow.auto_execute %}checked{% endif %}>
+                                        <label class="form-check-label" for="auto_execute">
+                                            <i class="fas fa-play-circle me-1"></i>Auto Execute
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="auto_rollback" name="auto_rollback" 
+                                               {% if workflow.auto_rollback %}checked{% endif %}>
+                                        <label class="form-check-label" for="auto_rollback">
+                                            <i class="fas fa-undo me-1"></i>Auto Rollback
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Target Criteria -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Target Criteria</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label for="target_frameworks" class="form-label">Frameworks</label>
+                                    <select class="form-select" id="target_frameworks" name="target_frameworks" multiple>
+                                        <option value="hipaa" {% if workflow.target_frameworks and 'hipaa' in workflow.target_frameworks %}selected{% endif %}>HIPAA</option>
+                                        <option value="hitrust" {% if workflow.target_frameworks and 'hitrust' in workflow.target_frameworks %}selected{% endif %}>HITRUST CSF</option>
+                                        <option value="fda_samd" {% if workflow.target_frameworks and 'fda_samd' in workflow.target_frameworks %}selected{% endif %}>FDA SaMD</option>
+                                        <option value="gdpr" {% if workflow.target_frameworks and 'gdpr' in workflow.target_frameworks %}selected{% endif %}>GDPR</option>
+                                        <option value="soc2" {% if workflow.target_frameworks and 'soc2' in workflow.target_frameworks %}selected{% endif %}>SOC 2</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="target_protocols" class="form-label">Protocols</label>
+                                    <select class="form-select" id="target_protocols" name="target_protocols" multiple>
+                                        <option value="kubernetes" {% if workflow.target_protocols and 'kubernetes' in workflow.target_protocols %}selected{% endif %}>Kubernetes</option>
+                                        <option value="docker" {% if workflow.target_protocols and 'docker' in workflow.target_protocols %}selected{% endif %}>Docker</option>
+                                        <option value="rest_api" {% if workflow.target_protocols and 'rest_api' in workflow.target_protocols %}selected{% endif %}>REST API</option>
+                                        <option value="grpc" {% if workflow.target_protocols and 'grpc' in workflow.target_protocols %}selected{% endif %}>gRPC</option>
+                                        <option value="websocket" {% if workflow.target_protocols and 'websocket' in workflow.target_protocols %}selected{% endif %}>WebSocket</option>
+                                        <option value="mqtt" {% if workflow.target_protocols and 'mqtt' in workflow.target_protocols %}selected{% endif %}>MQTT</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="target_risk_levels" class="form-label">Risk Levels</label>
+                                    <select class="form-select" id="target_risk_levels" name="target_risk_levels" multiple>
+                                        <option value="critical" {% if workflow.target_risk_levels and 'critical' in workflow.target_risk_levels %}selected{% endif %}>Critical</option>
+                                        <option value="high" {% if workflow.target_risk_levels and 'high' in workflow.target_risk_levels %}selected{% endif %}>High</option>
+                                        <option value="medium" {% if workflow.target_risk_levels and 'medium' in workflow.target_risk_levels %}selected{% endif %}>Medium</option>
+                                        <option value="low" {% if workflow.target_risk_levels and 'low' in workflow.target_risk_levels %}selected{% endif %}>Low</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <small class="text-muted">Hold Ctrl/Cmd to select multiple options</small>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('remediation.view_workflow', id=workflow.id) }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Update Workflow
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Workflow Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Workflow ID</small>
+                        <div class="fw-bold">#{{ workflow.id }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Created</small>
+                        <div>{{ workflow.created_at.strftime('%Y-%m-%d %H:%M') if workflow.created_at else 'Unknown' }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Last Updated</small>
+                        <div>{{ workflow.updated_at.strftime('%Y-%m-%d %H:%M') if workflow.updated_at else 'Never' }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Status</small>
+                        <div>
+                            {% if workflow.is_enabled %}
+                                <span class="badge bg-success">Enabled</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Disabled</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Tips
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Auto Execute will run workflows automatically when triggered
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Auto Rollback will revert changes if the workflow fails
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Target criteria help filter which agents this workflow applies to
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

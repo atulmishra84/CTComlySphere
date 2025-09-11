@@ -9,7 +9,7 @@ from app import db
 from models import (
     RemediationWorkflow, RemediationExecution, RemediationActionExecution,
     RemediationTemplate, RemediationWorkflowStatus, RemediationActionType,
-    RemediationTriggerType, AIAgent, ScanResult, ComplianceEvaluation
+    RemediationTriggerType, AIAgent, ScanResult, ComplianceEvaluation, RiskLevel
 )
 from datetime import datetime, timedelta
 import asyncio
@@ -230,6 +230,63 @@ def view_workflow(id):
         logger.error(f"Error viewing workflow {id}: {str(e)}")
         flash(f'Error loading workflow: {str(e)}', 'error')
         return redirect(url_for('remediation.workflows'))
+
+
+@remediation_bp.route('/workflows/<int:id>/edit', methods=['GET', 'POST'])
+def edit_workflow(id):
+    """Edit a remediation workflow"""
+    try:
+        workflow = RemediationWorkflow.query.get_or_404(id)
+        
+        if request.method == 'POST':
+            # Update workflow with form data
+            workflow.name = request.form.get('name', workflow.name)
+            workflow.description = request.form.get('description', workflow.description)
+            workflow.trigger_type = RemediationTriggerType(request.form.get('trigger_type', workflow.trigger_type.value))
+            workflow.action_type = RemediationActionType(request.form.get('action_type', workflow.action_type.value))
+            workflow.priority = RiskLevel(request.form.get('priority', workflow.priority.value))
+            workflow.is_enabled = request.form.get('is_enabled') == 'on'
+            workflow.auto_execute = request.form.get('auto_execute') == 'on'
+            workflow.auto_rollback = request.form.get('auto_rollback') == 'on'
+            
+            # Parse integer fields
+            try:
+                if request.form.get('timeout_minutes'):
+                    workflow.timeout_minutes = int(request.form.get('timeout_minutes'))
+                if request.form.get('retry_attempts'):
+                    workflow.retry_attempts = int(request.form.get('retry_attempts'))
+            except ValueError:
+                flash('Invalid timeout or retry attempts value', 'error')
+                return render_template('remediation/edit_workflow.html', 
+                                     workflow=workflow,
+                                     action_types=RemediationActionType,
+                                     trigger_types=RemediationTriggerType,
+                                     priorities=RiskLevel)
+            
+            # Parse target arrays
+            target_frameworks = request.form.getlist('target_frameworks')
+            target_protocols = request.form.getlist('target_protocols')
+            target_risk_levels = request.form.getlist('target_risk_levels')
+            
+            workflow.target_frameworks = target_frameworks
+            workflow.target_protocols = target_protocols
+            workflow.target_risk_levels = target_risk_levels
+            
+            db.session.commit()
+            flash(f'Workflow "{workflow.name}" updated successfully!', 'success')
+            return redirect(url_for('remediation.view_workflow', id=workflow.id))
+        
+        # GET request - show edit form
+        return render_template('remediation/edit_workflow.html',
+                             workflow=workflow,
+                             action_types=RemediationActionType,
+                             trigger_types=RemediationTriggerType,
+                             priorities=RiskLevel)
+    
+    except Exception as e:
+        logger.error(f"Error editing workflow {id}: {str(e)}")
+        flash(f'Error editing workflow: {str(e)}', 'error')
+        return redirect(url_for('remediation.view_workflow', id=id))
 
 
 @remediation_bp.route('/workflows/<int:id>/execute', methods=['POST'])
