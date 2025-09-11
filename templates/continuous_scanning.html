@@ -261,7 +261,7 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
                                             <strong>Scan {{ scan.scan_id[:8] }}</strong>
-                                            <span class="text-muted">• {{ scan.mode.value.replace('_', ' ').title() if scan.mode else 'Unknown' }} Mode</span>
+                                            <span class="text-muted">• {{ scan.mode.replace('_', ' ').title() if scan.mode else 'Unknown' }} Mode</span>
                                         </div>
                                         <small class="text-muted">{{ scan.timestamp }}</small>
                                     </div>

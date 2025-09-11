@@ -475,21 +475,18 @@ class EnvironmentScanner:
                     
                     if existing_agent:
                         # Update existing agent
-                        existing_agent.last_discovered = agent.discovery_timestamp
-                        existing_agent.discovery_metadata = agent.metadata
-                        existing_agent.risk_level = agent.risk_level
+                        existing_agent.last_scanned = agent.discovery_timestamp
+                        existing_agent.agent_metadata = agent.metadata
                     else:
                         # Create new agent
                         new_agent = AIAgent(
                             name=agent.name,
-                            ai_type=agent.type,
+                            type=agent.type,
                             protocol=agent.protocol,
+                            endpoint=f"{agent.protocol}://{agent.name}",
                             discovered_at=agent.discovery_timestamp,
-                            last_discovered=agent.discovery_timestamp,
-                            discovery_method=agent.discovered_by.value,
-                            discovery_metadata=agent.metadata,
-                            risk_level=agent.risk_level,
-                            healthcare_related=True  # Assume healthcare context
+                            last_scanned=agent.discovery_timestamp,
+                            agent_metadata=agent.metadata
                         )
                         db.session.add(new_agent)
                     
