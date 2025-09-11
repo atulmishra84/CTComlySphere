@@ -4,8 +4,16 @@ from models import AIAgent, ScanResult, RiskLevel
 import json
 import os
 from datetime import datetime
-import docker
-from docker.errors import DockerException, APIError
+
+try:
+    import docker
+    from docker.errors import DockerException, APIError
+    DOCKER_AVAILABLE = True
+except ImportError:
+    DOCKER_AVAILABLE = False
+    docker = None
+    DockerException = Exception
+    APIError = Exception
 
 class DockerScanner(BaseScanner):
     """Scanner for Docker-deployed AI agents"""
@@ -47,10 +55,15 @@ class DockerScanner(BaseScanner):
     
     def _initialize_docker_client(self):
         """Initialize Docker client connection"""
+        if not DOCKER_AVAILABLE:
+            self.logger.warning("Docker library not available, using simulated data")
+            self.docker_client = None
+            return
+            
         try:
             if os.path.exists('/var/run/docker.sock'):
                 self.docker_client = docker.from_env()
-                # Test connection
+                # Test connection with timeout
                 self.docker_client.ping()
                 self.logger.info("Connected to local Docker daemon")
             else:
@@ -244,13 +257,18 @@ class DockerScanner(BaseScanner):
                 else:
                     ports[container_port] = []
             
-            # Extract environment variables
+            # Extract and filter environment variables (security: avoid storing secrets)
             environment = {}
             env_list = config.get('Env', [])
             for env_var in env_list:
                 if '=' in env_var:
                     key, value = env_var.split('=', 1)
-                    environment[key] = value
+                    # Only store non-sensitive environment variables
+                    if self._is_safe_env_var(key):
+                        environment[key] = value if len(value) < 100 else value[:50] + '...[truncated]'
+                    elif self._is_ai_related_env_var(key):
+                        # Store AI-related env vars but redact values for security
+                        environment[key] = '[REDACTED]'
             
             # Extract volumes
             volumes = attrs.get('Mounts', [])
@@ -271,7 +289,7 @@ class DockerScanner(BaseScanner):
                 'environment': environment,
                 'labels': container.labels or {},
                 'created': attrs.get('Created', ''),
-                'command': ' '.join(config.get('Cmd', [])) if config.get('Cmd') else '',
+                'command': self._sanitize_command(' '.join(config.get('Cmd', [])) if config.get('Cmd') else ''),
                 'volumes': volume_info
             }
             
@@ -289,6 +307,73 @@ class DockerScanner(BaseScanner):
                 'command': '',
                 'volumes': {}
             }
+    
+    def _is_safe_env_var(self, key):
+        """Check if environment variable is safe to store (not a secret)"""
+        key_lower = key.lower()
+        
+        # Unsafe patterns - likely to contain secrets
+        unsafe_patterns = [
+            'password', 'passwd', 'secret', 'key', 'token', 'auth', 'credential',
+            'private', 'cert', 'ssl', 'tls', 'api_key', 'access_key', 'session',
+            'jwt', 'oauth', 'bearer', 'signature', 'hash', 'salt', 'nonce'
+        ]
+        
+        for pattern in unsafe_patterns:
+            if pattern in key_lower:
+                return False
+        
+        return True
+    
+    def _is_ai_related_env_var(self, key):
+        """Check if environment variable is AI-related (worth noting but redacting value)"""
+        key_lower = key.lower()
+        
+        ai_patterns = [
+            'model', 'tensorflow', 'pytorch', 'ml', 'ai', 'cuda', 'gpu',
+            'inference', 'training', 'dataset', 'algorithm', 'neural',
+            'sklearn', 'keras', 'transformers', 'huggingface'
+        ]
+        
+        for pattern in ai_patterns:
+            if pattern in key_lower:
+                return True
+        
+        return False
+    
+    def _sanitize_command(self, command):
+        """Sanitize command string to avoid exposing sensitive information"""
+        if not command:
+            return ''
+        
+        # Truncate very long commands
+        if len(command) > 200:
+            command = command[:200] + '...[truncated]'
+        
+        # Basic sanitization - remove potential secrets from command line
+        sensitive_flags = ['--password', '--secret', '--key', '--token', '--auth']
+        words = command.split()
+        sanitized_words = []
+        skip_next = False
+        
+        for word in words:
+            if skip_next:
+                sanitized_words.append('[REDACTED]')
+                skip_next = False
+                continue
+                
+            # Check if this word is a sensitive flag
+            if any(flag in word.lower() for flag in sensitive_flags):
+                sanitized_words.append(word)
+                if '=' not in word:  # If flag and value are separate words
+                    skip_next = True
+                else:  # If flag=value format
+                    parts = word.split('=', 1)
+                    sanitized_words[-1] = f"{parts[0]}=[REDACTED]"
+            else:
+                sanitized_words.append(word)
+        
+        return ' '.join(sanitized_words)
     
     def determine_ai_type(self, container):
         """Determine AI type from container metadata"""
