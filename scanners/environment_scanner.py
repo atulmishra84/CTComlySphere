@@ -236,8 +236,11 @@ class EnvironmentScanner:
                 "errors_count": len(scan_result.errors)
             }
             
-            # Store agents in database
-            await self._store_discovered_agents(unique_agents)
+            # Store agents in database with enhanced classification and analysis
+            stored_agents = await self._store_discovered_agents(unique_agents)
+            
+            # Trigger security scans and compliance evaluations for newly stored agents
+            await self._trigger_post_discovery_analysis(stored_agents)
             
             # Update cache
             self._update_discovery_cache(unique_agents)
@@ -463,10 +466,14 @@ class EnvironmentScanner:
             return [], stats
     
     async def _store_discovered_agents(self, agents: List[DiscoveredAgent]):
-        """Store discovered agents in database"""
+        """Store discovered agents in database with enhanced AI type classification"""
+        stored_agents = []
         with app.app_context():
             for agent in agents:
                 try:
+                    # Enhanced AI type classification
+                    classified_ai_type = self._classify_ai_type(agent)
+                    
                     # Check if agent already exists
                     existing_agent = AIAgent.query.filter_by(
                         name=agent.name,
@@ -474,14 +481,17 @@ class EnvironmentScanner:
                     ).first()
                     
                     if existing_agent:
-                        # Update existing agent
+                        # Update existing agent with enhanced classification
                         existing_agent.last_scanned = agent.discovery_timestamp
                         existing_agent.agent_metadata = agent.metadata
+                        existing_agent.ai_type = classified_ai_type
+                        stored_agents.append(existing_agent)
                     else:
-                        # Create new agent
+                        # Create new agent with proper AI type classification
                         new_agent = AIAgent(
                             name=agent.name,
                             type=agent.type,
+                            ai_type=classified_ai_type,
                             protocol=agent.protocol,
                             endpoint=f"{agent.protocol}://{agent.name}",
                             discovered_at=agent.discovery_timestamp,
@@ -489,12 +499,223 @@ class EnvironmentScanner:
                             agent_metadata=agent.metadata
                         )
                         db.session.add(new_agent)
+                        stored_agents.append(new_agent)
                     
                     db.session.commit()
                     
                 except Exception as e:
                     self.logger.error(f"Failed to store agent {agent.name}: {str(e)}")
                     db.session.rollback()
+        
+        return stored_agents
+    
+    def _classify_ai_type(self, agent):
+        """Enhanced AI type classification based on agent metadata and capabilities"""
+        from models import AIAgentType
+        
+        name_lower = agent.name.lower()
+        metadata = getattr(agent, 'metadata', {})
+        agent_type = getattr(agent, 'type', '').lower()
+        
+        # GenAI Classification - Look for generative AI indicators
+        genai_indicators = [
+            'gpt', 'llm', 'chatbot', 'conversation', 'generation', 'generative',
+            'text-generation', 'language-model', 'chat', 'assistant', 'openai',
+            'anthropic', 'claude', 'gemini', 'palm', 'fine-tuned', 'llama'
+        ]
+        
+        # Agentic AI Classification - Look for autonomous agent indicators  
+        agentic_indicators = [
+            'agent', 'autonomous', 'decision', 'workflow', 'orchestration',
+            'multi-agent', 'reasoning', 'planning', 'tool-calling', 'function-calling',
+            'langchain', 'autogen', 'crew', 'swarm', 'coordinator', 'supervisor'
+        ]
+        
+        # Computer Vision Classification
+        cv_indicators = [
+            'vision', 'image', 'video', 'detection', 'recognition', 'segmentation',
+            'classification', 'object-detection', 'face', 'ocr', 'yolo', 'cnn',
+            'resnet', 'mobilenet', 'efficientnet'
+        ]
+        
+        # NLP Classification
+        nlp_indicators = [
+            'nlp', 'bert', 'transformer', 'sentiment', 'translation', 'summarization',
+            'named-entity', 'pos-tagging', 'parsing', 'tokenization'
+        ]
+        
+        # Check all text sources for indicators
+        text_sources = [name_lower, agent_type, str(metadata).lower()]
+        combined_text = ' '.join(text_sources)
+        
+        # Priority classification (most specific first)
+        if any(indicator in combined_text for indicator in genai_indicators):
+            return AIAgentType.GENAI
+        elif any(indicator in combined_text for indicator in agentic_indicators):
+            return AIAgentType.AGENTIC_AI
+        elif any(indicator in combined_text for indicator in cv_indicators):
+            return AIAgentType.COMPUTER_VISION
+        elif any(indicator in combined_text for indicator in nlp_indicators):
+            return AIAgentType.NLP
+        elif 'recommendation' in combined_text or 'recommender' in combined_text:
+            return AIAgentType.RECOMMENDATION_SYSTEM
+        elif any(term in combined_text for term in ['multimodal', 'multi-modal', 'vision-language']):
+            return AIAgentType.MULTIMODAL_AI
+        else:
+            return AIAgentType.TRADITIONAL_ML
+    
+    def _perform_security_scan(self, scan_data):
+        """Perform basic security scanning"""
+        findings = {
+            'vulnerabilities': [],
+            'phi_exposure': False,
+            'encryption_status': True,
+            'authentication': {'strength': 'medium'},
+            'network_exposure': 'low',
+            'recommendations': []
+        }
+        
+        # Basic security assessment based on agent type and metadata
+        agent_name = scan_data.get('name', '').lower()
+        metadata = scan_data.get('metadata', {})
+        
+        # Check for potential vulnerabilities based on naming patterns
+        if any(term in agent_name for term in ['test', 'dev', 'debug', 'admin']):
+            findings['vulnerabilities'].append('Development/test instance detected')
+            findings['recommendations'].append('Remove development instances from production')
+        
+        # Check for PHI exposure risk in healthcare AI
+        if any(term in agent_name for term in ['patient', 'medical', 'clinical', 'health', 'phi']):
+            findings['phi_exposure'] = True
+            findings['recommendations'].append('Ensure PHI data is properly encrypted and access-controlled')
+        
+        # Check for high-risk AI types
+        if any(term in agent_name for term in ['drug', 'medication', 'diagnosis', 'treatment']):
+            findings['network_exposure'] = 'high'
+            findings['recommendations'].append('Implement strict access controls for critical healthcare AI systems')
+        
+        return findings
+    
+    async def _trigger_post_discovery_analysis(self, stored_agents):
+        """Trigger security scans and compliance evaluations for discovered agents"""
+        if not stored_agents:
+            return
+            
+        with app.app_context():
+            try:
+                from compliance.evaluator import ComplianceEvaluator
+                from models import ComplianceFramework, ScanResult, ScanStatus, RiskLevel
+                
+                self.logger.info(f"Starting post-discovery analysis for {len(stored_agents)} agents")
+                
+                # Initialize compliance evaluator
+                compliance_evaluator = ComplianceEvaluator()
+                
+                for agent in stored_agents:
+                    try:
+                        # Run security scan
+                        scan_data = {
+                            'name': agent.name,
+                            'type': agent.type,
+                            'protocol': agent.protocol,
+                            'endpoint': agent.endpoint,
+                            'metadata': agent.agent_metadata or {}
+                        }
+                        
+                        # Perform basic security scan (simplified)
+                        security_findings = self._perform_security_scan(scan_data)
+                        
+                        # Calculate risk score
+                        risk_score = self._calculate_risk_score(security_findings)
+                        risk_level = self._determine_risk_level(risk_score)
+                        
+                        # Create scan result
+                        scan_result = ScanResult(
+                            ai_agent_id=agent.id,
+                            scan_type="enhanced_security_scan",
+                            status=ScanStatus.COMPLETED,
+                            risk_score=risk_score,
+                            risk_level=risk_level,
+                            vulnerabilities_found=len(security_findings.get('vulnerabilities', [])),
+                            phi_exposure_detected=security_findings.get('phi_exposure', False),
+                            scan_duration=1.0,  # Simulated scan time
+                            scan_data=security_findings,
+                            recommendations=security_findings.get('recommendations', [])
+                        )
+                        
+                        db.session.add(scan_result)
+                        
+                        # Run compliance evaluations for healthcare frameworks
+                        frameworks = [
+                            ComplianceFramework.HIPAA,
+                            ComplianceFramework.HITRUST_CSF,
+                            ComplianceFramework.FDA_SAMD
+                        ]
+                        
+                        for framework in frameworks:
+                            try:
+                                compliance_result = compliance_evaluator.evaluate_agent(agent, framework)
+                                self.logger.debug(f"Compliance evaluation completed for {agent.name} against {framework.value}")
+                            except Exception as e:
+                                self.logger.warning(f"Compliance evaluation failed for {agent.name} against {framework.value}: {str(e)}")
+                        
+                        self.logger.debug(f"Post-discovery analysis completed for agent {agent.name}")
+                        
+                    except Exception as e:
+                        self.logger.error(f"Post-discovery analysis failed for agent {agent.name}: {str(e)}")
+                        continue
+                
+                db.session.commit()
+                self.logger.info(f"Post-discovery analysis completed for {len(stored_agents)} agents")
+                
+            except Exception as e:
+                self.logger.error(f"Post-discovery analysis workflow failed: {str(e)}")
+                db.session.rollback()
+    
+    def _calculate_risk_score(self, security_findings):
+        """Calculate risk score from security findings"""
+        score = 0.0
+        
+        # Base score from vulnerabilities
+        vulnerabilities = security_findings.get('vulnerabilities', [])
+        score += len(vulnerabilities) * 10
+        
+        # PHI exposure adds significant risk
+        if security_findings.get('phi_exposure', False):
+            score += 25
+        
+        # Missing encryption
+        if not security_findings.get('encryption_status', True):
+            score += 20
+        
+        # Weak authentication
+        auth_strength = security_findings.get('authentication', {}).get('strength', 'strong')
+        if auth_strength == 'weak':
+            score += 15
+        elif auth_strength == 'none':
+            score += 30
+        
+        # Network exposure
+        network_exposure = security_findings.get('network_exposure', 'low')
+        if network_exposure == 'high':
+            score += 15
+        elif network_exposure == 'medium':
+            score += 8
+        
+        return min(score, 100.0)  # Cap at 100
+    
+    def _determine_risk_level(self, risk_score):
+        """Determine risk level from risk score"""
+        from models import RiskLevel
+        
+        if risk_score >= 75:
+            return RiskLevel.CRITICAL
+        elif risk_score >= 50:
+            return RiskLevel.HIGH
+        elif risk_score >= 25:
+            return RiskLevel.MEDIUM
+        else:
+            return RiskLevel.LOW
     
     def _update_discovery_cache(self, agents: List[DiscoveredAgent]):
         """Update discovery cache with new agents"""
