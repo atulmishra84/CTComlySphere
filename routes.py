@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from app import app, db
 from models import AIAgent, ScanResult, ComplianceEvaluation, RiskLevel, ComplianceFramework, InventoryStatus, AIAgentInventory, RegistrationPlaybook, AgentRegistration, PlaybookExecution, RemediationWorkflow, RemediationExecution, RemediationActionExecution
 from datetime import datetime, timedelta
-from scanners import ProtocolScanner
+# ProtocolScanner imported later to avoid import-time failures
 import random
 import json
 
@@ -352,8 +352,13 @@ def start_scan():
         # Start scanning based on selected protocols
         scan_results = []
         
-        # Create protocol scanner instance
-        protocol_scanner = ProtocolScanner()
+        # Import and create protocol scanner instance safely
+        try:
+            from scanners import ProtocolScanner
+            protocol_scanner = ProtocolScanner()
+        except ImportError as e:
+            flash(f'Scan unavailable: {str(e)}', 'error')
+            return redirect(url_for('dashboard'))
         
         # Start comprehensive scan
         result = protocol_scanner.start_comprehensive_scan(protocols)

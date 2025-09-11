@@ -227,6 +227,9 @@ class ContinuousScanner:
     
     async def _process_discovered_agents(self, scan_id: str):
         """Process discovered agents and add new ones to database"""
+        from app import app, db
+        from models import AIAgent
+        
         try:
             # Get discovered agents from the environment scanner
             discovered_agents = environment_scanner.get_discovered_agents()
@@ -237,29 +240,31 @@ class ContinuousScanner:
             
             new_agents_count = 0
             
-            for agent_data in discovered_agents:
-                try:
-                    # Check if agent already exists
-                    existing_agent = AIAgent.query.filter_by(
-                        name=agent_data.get('name'),
-                        protocol=agent_data.get('protocol')
-                    ).first()
-                    
-                    if existing_agent:
-                        # Update last scanned time
-                        existing_agent.last_scanned = datetime.utcnow()
-                        db.session.commit()
-                        continue
-                    
-                    # Create new agent if auto-registration is enabled
-                    if self.configuration.auto_register:
-                        new_agent = await self._create_agent_from_discovery(agent_data)
-                        if new_agent:
-                            new_agents_count += 1
-                            self.logger.info(f"🤖 Auto-registered new AI agent: {new_agent.name}")
-                    
-                except Exception as e:
-                    self.logger.error(f"Failed to process discovered agent {agent_data.get('name', 'unknown')}: {str(e)}")
+            # Use Flask application context for database operations
+            with app.app_context():
+                for agent_data in discovered_agents:
+                    try:
+                        # Check if agent already exists
+                        existing_agent = AIAgent.query.filter_by(
+                            name=agent_data.get('name'),
+                            protocol=agent_data.get('protocol')
+                        ).first()
+                        
+                        if existing_agent:
+                            # Update last scanned time
+                            existing_agent.last_scanned = datetime.utcnow()
+                            db.session.commit()
+                            continue
+                        
+                        # Create new agent if auto-registration is enabled
+                        if self.configuration.auto_register:
+                            new_agent = await self._create_agent_from_discovery(agent_data)
+                            if new_agent:
+                                new_agents_count += 1
+                                self.logger.info(f"🤖 Auto-registered new AI agent: {new_agent.name}")
+                        
+                    except Exception as e:
+                        self.logger.error(f"Failed to process discovered agent {agent_data.get('name', 'unknown')}: {str(e)}")
             
             self.stats['agents_discovered'] += len(discovered_agents)
             self.stats['agents_added'] += new_agents_count
