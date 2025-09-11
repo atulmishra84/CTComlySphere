@@ -619,7 +619,10 @@ class ShadowAIScanner(BaseScanner):
                 db.session.commit()
                 
                 # Create security scan result
-                self._create_shadow_ai_scan_result(new_agent, agent_data)
+                scan_result = self._create_shadow_ai_scan_result(new_agent, agent_data)
+                
+                # Trigger automated remediation for shadow AI detection
+                self._trigger_automated_remediation(new_agent, scan_result, agent_data)
                 
                 return new_agent
                 
@@ -627,6 +630,61 @@ class ShadowAIScanner(BaseScanner):
             self.logger.error(f"Failed to create/update shadow AI agent: {e}")
             db.session.rollback()
             return None
+    
+    def _trigger_automated_remediation(self, agent: 'AIAgent', scan_result: 'ScanResult', agent_data: Dict):
+        """Trigger automated remediation for shadow AI detection"""
+        try:
+            # Import here to avoid circular imports
+            from services.automated_remediation_service import automated_remediation_service
+            import asyncio
+            
+            self.logger.warning(f"🕵️ Shadow AI detected: {agent.name} - triggering automated remediation")
+            
+            # Create remediation trigger
+            trigger_data = {
+                'trigger_type': 'shadow_ai_detection',
+                'agent_id': agent.id,
+                'scan_result_id': scan_result.id if scan_result else None,
+                'detection_method': agent_data.get('detection_method'),
+                'risk_factors': agent_data.get('metadata', {}).get('shadow_risk_factors', []),
+                'compliance_concerns': agent_data.get('metadata', {}).get('compliance_concerns', []),
+                'discovery_timestamp': agent_data.get('metadata', {}).get('discovery_timestamp'),
+                'severity': 'CRITICAL',  # Shadow AI is always critical
+                'requires_immediate_attention': True,
+                'shadow_ai_metadata': agent_data.get('metadata', {})
+            }
+            
+            # Create trigger object
+            from services.automated_remediation_service import RemediationTrigger, RemediationTriggerType
+            from models import RiskLevel
+            
+            trigger = RemediationTrigger(
+                trigger_type=RemediationTriggerType.SECURITY_ALERT,
+                agent_id=agent.id,
+                severity=RiskLevel.CRITICAL,
+                details=trigger_data
+            )
+            
+            # Queue for remediation (non-blocking)
+            try:
+                loop = asyncio.get_event_loop()
+                loop.create_task(automated_remediation_service.remediation_queue.put(trigger))
+                self.logger.info(f"✅ Queued shadow AI remediation for agent {agent.id}")
+            except RuntimeError:
+                # If no event loop is running, try to create one
+                try:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    loop.run_until_complete(automated_remediation_service.remediation_queue.put(trigger))
+                    loop.close()
+                    self.logger.info(f"✅ Queued shadow AI remediation for agent {agent.id}")
+                except Exception as e:
+                    self.logger.error(f"❌ Failed to queue shadow AI remediation: {str(e)}")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to trigger automated remediation for shadow AI: {str(e)}")
+            # Don't fail the detection process if remediation triggering fails
+            pass
 
     def _create_shadow_ai_scan_result(self, agent: 'AIAgent', agent_data: Dict):
         """Create scan result for shadow AI agent"""
@@ -654,6 +712,9 @@ class ShadowAIScanner(BaseScanner):
             db.session.add(scan_result)
             db.session.commit()
             
+            return scan_result
+            
         except Exception as e:
             self.logger.error(f"Failed to create shadow AI scan result: {e}")
             db.session.rollback()
+            return None

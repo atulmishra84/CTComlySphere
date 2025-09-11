@@ -1,0 +1,629 @@
+{% extends "base.html" %}
+
+{% block title %}Automated Remediation Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">Automated Remediation Dashboard</h1>
+                    <p class="text-muted mb-0">Monitor and manage automated remediation workflows</p>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#createWorkflowModal">
+                        <i class="fas fa-plus"></i> New Workflow
+                    </button>
+                    <a href="{{ url_for('remediation.workflow_templates') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-template"></i> Templates
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-0">Active Workflows</h6>
+                            <h3 class="mb-0">{{ status.active_workflows }}</h3>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-cogs fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-0">24h Executions</h6>
+                            <h3 class="mb-0">{{ status.recent_executions }}</h3>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-play-circle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-0">Queue Size</h6>
+                            <h3 class="mb-0">{{ status.queue_size }}</h3>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-clock fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 {% if status.service_status == 'running' %}bg-info{% else %}bg-danger{% endif %} text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-0">Service Status</h6>
+                            <h3 class="mb-0">{{ status.service_status.title() }}</h3>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-{% if status.service_status == 'running' %}check-circle{% else %}exclamation-triangle{% endif %} fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Execution Status Chart -->
+    <div class="row mb-4">
+        <div class="col-md-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Execution Status</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="executionStatusChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Success Rate</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="successRateChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Executions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Recent Executions</h5>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshExecutions()">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="executionsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Execution ID</th>
+                                    <th>Workflow</th>
+                                    <th>Agent</th>
+                                    <th>Trigger</th>
+                                    <th>Status</th>
+                                    <th>Duration</th>
+                                    <th>Started</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for execution in recent_executions %}
+                                <tr>
+                                    <td>
+                                        <code>#{{ execution.id }}</code>
+                                    </td>
+                                    <td>
+                                        <strong>{{ execution.workflow.name }}</strong>
+                                        <small class="d-block text-muted">{{ execution.workflow.workflow_type.title() }}</small>
+                                    </td>
+                                    <td>
+                                        <strong>{{ execution.agent.name }}</strong>
+                                        <small class="d-block text-muted">{{ execution.agent.type }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">
+                                            {{ execution.workflow.trigger_type.value.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if execution.status.value == 'completed' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check"></i> Completed
+                                            </span>
+                                        {% elif execution.status.value == 'running' %}
+                                            <span class="badge bg-primary">
+                                                <i class="fas fa-spinner fa-spin"></i> Running
+                                            </span>
+                                        {% elif execution.status.value == 'failed' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times"></i> Failed
+                                            </span>
+                                        {% elif execution.status.value == 'pending' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock"></i> Pending
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ execution.status.value.title() }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if execution.duration_seconds %}
+                                            {{ "%.1f"|format(execution.duration_seconds) }}s
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ execution.started_at.strftime('%Y-%m-%d %H:%M') if execution.started_at else 'Not started' }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('remediation.execution_details', execution_id=execution.id) }}" 
+                                               class="btn btn-outline-primary btn-sm" 
+                                               title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if execution.status.value == 'running' %}
+                                            <button type="button" class="btn btn-outline-warning btn-sm" 
+                                                    onclick="cancelExecution({{ execution.id }})"
+                                                    title="Cancel Execution">
+                                                <i class="fas fa-stop"></i>
+                                            </button>
+                                            {% endif %}
+                                            {% if execution.status.value == 'failed' and execution.workflow.auto_rollback %}
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                    onclick="retryExecution({{ execution.id }})"
+                                                    title="Retry Execution">
+                                                <i class="fas fa-redo"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if not recent_executions %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">
+                                        No recent executions found
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Workflows -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Active Workflows</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Workflow</th>
+                                    <th>Type</th>
+                                    <th>Trigger</th>
+                                    <th>Target Frameworks</th>
+                                    <th>Execution Count</th>
+                                    <th>Last Executed</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for workflow in active_workflows %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ workflow.name }}</strong>
+                                        <small class="d-block text-muted">{{ workflow.description[:60] }}{% if workflow.description|length > 60 %}...{% endif %}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ workflow.workflow_type.title() }}</span>
+                                    </td>
+                                    <td>
+                                        <small>{{ workflow.trigger_type.value.replace('_', ' ').title() }}</small>
+                                    </td>
+                                    <td>
+                                        {% if workflow.target_frameworks %}
+                                            {% for framework in workflow.target_frameworks[:2] %}
+                                                <span class="badge bg-secondary me-1">{{ framework }}</span>
+                                            {% endfor %}
+                                            {% if workflow.target_frameworks|length > 2 %}
+                                                <small class="text-muted">+{{ workflow.target_frameworks|length - 2 }} more</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">All</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ workflow.execution_count }}</td>
+                                    <td>
+                                        {% if workflow.last_executed %}
+                                            <small class="text-muted">{{ workflow.last_executed.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        {% else %}
+                                            <span class="text-muted">Never</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if workflow.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('remediation.workflow_details', workflow_id=workflow.id) }}" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                    onclick="editWorkflow({{ workflow.id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            {% if workflow.is_active %}
+                                            <button type="button" class="btn btn-outline-warning btn-sm" 
+                                                    onclick="disableWorkflow({{ workflow.id }})">
+                                                <i class="fas fa-pause"></i>
+                                            </button>
+                                            {% else %}
+                                            <button type="button" class="btn btn-outline-success btn-sm" 
+                                                    onclick="enableWorkflow({{ workflow.id }})">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Workflow Modal -->
+<div class="modal fade" id="createWorkflowModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Workflow</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('remediation.create_workflow') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="workflowName" class="form-label">Workflow Name</label>
+                        <input type="text" class="form-control" id="workflowName" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="workflowDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="workflowDescription" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="workflowType" class="form-label">Workflow Type</label>
+                                <select class="form-select" id="workflowType" name="workflow_type" required>
+                                    <option value="compliance">Compliance</option>
+                                    <option value="security">Security</option>
+                                    <option value="maintenance">Maintenance</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="triggerType" class="form-label">Trigger Type</label>
+                                <select class="form-select" id="triggerType" name="trigger_type" required>
+                                    <option value="compliance_violation">Compliance Violation</option>
+                                    <option value="security_alert">Security Alert</option>
+                                    <option value="manual_request">Manual Request</option>
+                                    <option value="scheduled_maintenance">Scheduled Maintenance</option>
+                                    <option value="risk_threshold_exceeded">Risk Threshold Exceeded</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Target Frameworks</label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="target_frameworks" value="HIPAA" id="hipaa">
+                                    <label class="form-check-label" for="hipaa">HIPAA</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="target_frameworks" value="GDPR" id="gdpr">
+                                    <label class="form-check-label" for="gdpr">GDPR</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="target_frameworks" value="SOC2_TYPE_II" id="soc2">
+                                    <label class="form-check-label" for="soc2">SOC 2 Type II</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="target_frameworks" value="FDA_SAMD" id="fda">
+                                    <label class="form-check-label" for="fda">FDA SaMD</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="target_frameworks" value="NIST_AI_RMF" id="nist">
+                                    <label class="form-check-label" for="nist">NIST AI RMF</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="requiresApproval" name="requires_approval">
+                                <label class="form-check-label" for="requiresApproval">
+                                    Requires Approval
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="autoRollback" name="auto_rollback" checked>
+                                <label class="form-check-label" for="autoRollback">
+                                    Auto Rollback on Failure
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Workflow</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Execution Status Chart
+const statusData = {{ status.execution_status_counts | tojson }};
+const statusLabels = Object.keys(statusData);
+const statusCounts = Object.values(statusData);
+
+const statusCtx = document.getElementById('executionStatusChart').getContext('2d');
+new Chart(statusCtx, {
+    type: 'bar',
+    data: {
+        labels: statusLabels.map(label => label.replace('_', ' ').split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)).join(' ')),
+        datasets: [{
+            label: 'Executions',
+            data: statusCounts,
+            backgroundColor: [
+                '#ffc107',  // pending - warning
+                '#0d6efd',  // running - primary
+                '#198754',  // completed - success
+                '#dc3545',  // failed - danger
+                '#6c757d'   // cancelled - secondary
+            ],
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// Success Rate Chart
+const successRate = statusData.completed || 0;
+const failureRate = (statusData.failed || 0) + (statusData.cancelled || 0);
+const total = successRate + failureRate + (statusData.pending || 0) + (statusData.running || 0);
+
+const successCtx = document.getElementById('successRateChart').getContext('2d');
+new Chart(successCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Success', 'Failed', 'In Progress'],
+        datasets: [{
+            data: [
+                successRate,
+                failureRate,
+                (statusData.pending || 0) + (statusData.running || 0)
+            ],
+            backgroundColor: [
+                '#198754',  // success - green
+                '#dc3545',  // failed - red
+                '#ffc107'   // in progress - yellow
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Dashboard Actions
+function refreshExecutions() {
+    window.location.reload();
+}
+
+function cancelExecution(executionId) {
+    if (confirm('Are you sure you want to cancel this execution?')) {
+        fetch(`/remediation/executions/${executionId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to cancel execution: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to cancel execution');
+        });
+    }
+}
+
+function retryExecution(executionId) {
+    if (confirm('Are you sure you want to retry this execution?')) {
+        fetch(`/remediation/executions/${executionId}/retry`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to retry execution: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to retry execution');
+        });
+    }
+}
+
+function editWorkflow(workflowId) {
+    window.location.href = `/remediation/workflows/${workflowId}/edit`;
+}
+
+function disableWorkflow(workflowId) {
+    if (confirm('Are you sure you want to disable this workflow?')) {
+        fetch(`/remediation/workflows/${workflowId}/disable`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to disable workflow: ' + data.error);
+            }
+        });
+    }
+}
+
+function enableWorkflow(workflowId) {
+    fetch(`/remediation/workflows/${workflowId}/enable`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Failed to enable workflow: ' + data.error);
+        }
+    });
+}
+
+// Auto-refresh every 30 seconds
+setInterval(function() {
+    const statusCards = document.querySelectorAll('.card .card-body h3');
+    // Fetch updated status via AJAX without full page reload
+    fetch('/remediation/status')
+        .then(response => response.json())
+        .then(data => {
+            // Update status cards
+            if (statusCards[0]) statusCards[0].textContent = data.active_workflows;
+            if (statusCards[1]) statusCards[1].textContent = data.recent_executions;
+            if (statusCards[2]) statusCards[2].textContent = data.queue_size;
+        })
+        .catch(error => console.log('Status update failed:', error));
+}, 30000);
+</script>
+
+{% endblock %}

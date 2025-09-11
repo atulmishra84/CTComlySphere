@@ -57,7 +57,9 @@ def bootstrap_integrations():
     try:
         # Defer heavy integration imports to here
         logging.info("Initializing integrations...")
-        # Import integrations here when needed, don't trigger global initialization
+        
+        # Other integrations initialized here if needed
+            
         logging.info("Integrations initialized")
     except Exception as e:
         logging.error(f"Failed to initialize integrations: {e}")
@@ -82,6 +84,30 @@ def bootstrap_scheduler():
     except Exception as e:
         logging.error(f"Failed to initialize scheduler: {e}")
 
+def bootstrap_remediation():
+    """Initialize automated remediation system in background"""
+    try:
+        logging.info("Initializing automated remediation system...")
+        
+        from services.remediation_templates import remediation_template_manager
+        from services.automated_remediation_service import automated_remediation_service
+        import asyncio
+        
+        with app.app_context():
+            # Initialize remediation templates
+            remediation_template_manager.initialize_templates()
+            remediation_template_manager.install_default_workflows()
+            
+            # Initialize automated remediation service
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(automated_remediation_service.initialize())
+            loop.close()
+            
+            logging.info("🔧 Automated remediation system initialized successfully")
+    except Exception as e:
+        logging.error(f"Failed to initialize automated remediation system: {e}")
+
 def start_async_bootstrap():
     """Start all bootstrap processes in separate daemon threads"""
     import time
@@ -101,6 +127,10 @@ def start_async_bootstrap():
     
     time.sleep(2)
     threading.Thread(target=bootstrap_scheduler, daemon=True).start()
+    
+    # Initialize remediation system after database is ready
+    time.sleep(1)
+    threading.Thread(target=bootstrap_remediation, daemon=True).start()
     
     logging.info("Async bootstrap started - Flask should be responsive now")
 

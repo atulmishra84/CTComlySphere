@@ -33,56 +33,62 @@ except ImportError as e:
 
 @remediation_bp.route('/')
 def index():
-    """Remediation workflows dashboard"""
+    """Automated Remediation Dashboard"""
     try:
-        # Get workflow statistics
-        total_workflows = RemediationWorkflow.query.count()
-        active_workflows = RemediationWorkflow.query.filter_by(is_active=True).count()
+        # Get service status from automated remediation service
+        try:
+            from services.automated_remediation_service import automated_remediation_service
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            status = loop.run_until_complete(automated_remediation_service.get_remediation_status())
+            loop.close()
+        except Exception as e:
+            logger.warning(f"Could not get automated remediation status: {e}")
+            status = {
+                "active_workflows": RemediationWorkflow.query.filter_by(is_active=True).count(),
+                "recent_executions": RemediationExecution.query.filter(
+                    RemediationExecution.started_at >= datetime.utcnow() - timedelta(hours=24)
+                ).count(),
+                "queue_size": 0,
+                "execution_status_counts": {},
+                "service_status": "unknown"
+            }
         
-        # Get recent executions
+        # Get recent executions for detailed display
         recent_executions = RemediationExecution.query.order_by(
             RemediationExecution.started_at.desc()
         ).limit(10).all()
         
-        # Get execution statistics
-        executions_today = RemediationExecution.query.filter(
-            RemediationExecution.started_at >= datetime.utcnow().date()
-        ).count()
-        
-        successful_executions = RemediationExecution.query.filter_by(
-            status=RemediationWorkflowStatus.COMPLETED
-        ).count()
-        
-        failed_executions = RemediationExecution.query.filter_by(
-            status=RemediationWorkflowStatus.FAILED
-        ).count()
-        
-        # Get all workflows for display
-        workflows = RemediationWorkflow.query.order_by(
+        # Get active workflows for display
+        active_workflows = RemediationWorkflow.query.filter_by(is_active=True).order_by(
             RemediationWorkflow.created_at.desc()
         ).all()
         
-        return render_template('remediation/index.html',
-                             workflows=workflows,
+        # Calculate execution status counts if not provided
+        if not status.get("execution_status_counts"):
+            recent_time = datetime.utcnow() - timedelta(hours=24)
+            status["execution_status_counts"] = {}
+            for status_enum in RemediationWorkflowStatus:
+                count = RemediationExecution.query.filter(
+                    RemediationExecution.status == status_enum,
+                    RemediationExecution.started_at >= recent_time
+                ).count()
+                status["execution_status_counts"][status_enum.value] = count
+        
+        return render_template('remediation/dashboard.html',
+                             status=status,
                              recent_executions=recent_executions,
-                             total_workflows=total_workflows,
                              active_workflows=active_workflows,
-                             executions_today=executions_today,
-                             successful_executions=successful_executions,
-                             failed_executions=failed_executions,
                              workflow_engine_available=WORKFLOW_ENGINE_AVAILABLE)
     
     except Exception as e:
         logger.error(f"Error in remediation dashboard: {str(e)}")
         flash(f'Error loading remediation dashboard: {str(e)}', 'error')
-        return render_template('remediation/index.html',
-                             workflows=[],
+        return render_template('remediation/dashboard.html',
+                             status={"service_status": "error"},
                              recent_executions=[],
-                             total_workflows=0,
-                             active_workflows=0,
-                             executions_today=0,
-                             successful_executions=0,
-                             failed_executions=0,
+                             active_workflows=[],
                              workflow_engine_available=False)
 
 
@@ -501,5 +507,263 @@ def dashboard_stats():
     except Exception as e:
         logger.error(f"Error getting dashboard stats: {str(e)}")
         return jsonify({
+            'error': str(e)
+        }), 500
+
+
+# Additional API endpoints for the new dashboard
+
+@remediation_bp.route('/status')
+def get_status():
+    """Get remediation service status (API endpoint)"""
+    try:
+        from services.automated_remediation_service import automated_remediation_service
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        status = loop.run_until_complete(automated_remediation_service.get_remediation_status())
+        loop.close()
+        return jsonify(status)
+    except Exception as e:
+        logger.error(f"Error getting status: {str(e)}")
+        return jsonify({"service_status": "error", "error": str(e)})
+
+
+@remediation_bp.route('/executions/<int:execution_id>')
+def execution_details(execution_id):
+    """View detailed execution information"""
+    try:
+        execution = RemediationExecution.query.get_or_404(execution_id)
+        
+        # Get action executions
+        action_executions = RemediationActionExecution.query.filter_by(
+            execution_id=execution_id
+        ).order_by(RemediationActionExecution.execution_order).all()
+        
+        return render_template('remediation/execution_details.html',
+                             execution=execution,
+                             action_executions=action_executions)
+    
+    except Exception as e:
+        logger.error(f"Error viewing execution {execution_id}: {str(e)}")
+        flash(f'Error loading execution: {str(e)}', 'error')
+        return redirect(url_for('remediation.index'))
+
+
+@remediation_bp.route('/workflows/<int:workflow_id>')
+def workflow_details(workflow_id):
+    """View detailed workflow information"""
+    try:
+        workflow = RemediationWorkflow.query.get_or_404(workflow_id)
+        
+        # Get recent executions for this workflow
+        executions = RemediationExecution.query.filter_by(
+            workflow_id=workflow_id
+        ).order_by(RemediationExecution.started_at.desc()).limit(20).all()
+        
+        # Get execution statistics
+        total_executions = RemediationExecution.query.filter_by(workflow_id=workflow_id).count()
+        successful = RemediationExecution.query.filter_by(
+            workflow_id=workflow_id, status=RemediationWorkflowStatus.COMPLETED
+        ).count()
+        failed = RemediationExecution.query.filter_by(
+            workflow_id=workflow_id, status=RemediationWorkflowStatus.FAILED
+        ).count()
+        
+        success_rate = (successful / total_executions * 100) if total_executions > 0 else 0
+        
+        # Get available agents for manual execution
+        agents = AIAgent.query.limit(50).all()
+        
+        return render_template('remediation/workflow_details.html',
+                             workflow=workflow,
+                             executions=executions,
+                             total_executions=total_executions,
+                             successful=successful,
+                             failed=failed,
+                             success_rate=success_rate,
+                             agents=agents,
+                             workflow_engine_available=WORKFLOW_ENGINE_AVAILABLE)
+    
+    except Exception as e:
+        logger.error(f"Error viewing workflow {workflow_id}: {str(e)}")
+        flash(f'Error loading workflow: {str(e)}', 'error')
+        return redirect(url_for('remediation.index'))
+
+
+@remediation_bp.route('/workflow_templates')
+def workflow_templates():
+    """View workflow templates"""
+    try:
+        from services.remediation_templates import remediation_template_manager
+        
+        # Get available templates
+        templates = remediation_template_manager.get_available_templates()
+        
+        # Get existing workflows created from templates
+        existing_workflows = RemediationWorkflow.query.filter_by(created_by="system").all()
+        
+        return render_template('remediation/templates.html',
+                             templates=templates,
+                             existing_workflows=existing_workflows)
+    
+    except Exception as e:
+        logger.error(f"Error loading templates: {str(e)}")
+        flash(f'Error loading templates: {str(e)}', 'error')
+        return redirect(url_for('remediation.index'))
+
+
+@remediation_bp.route('/create_workflow', methods=['POST'])
+def create_workflow_new():
+    """Create a new workflow from dashboard"""
+    try:
+        # Get form data
+        name = request.form.get('name')
+        description = request.form.get('description', '')
+        workflow_type = request.form.get('workflow_type')
+        trigger_type = request.form.get('trigger_type')
+        target_frameworks = request.form.getlist('target_frameworks')
+        requires_approval = 'requires_approval' in request.form
+        auto_rollback = 'auto_rollback' in request.form
+        
+        # Validate required fields
+        if not all([name, workflow_type, trigger_type]):
+            flash('Name, workflow type, and trigger type are required', 'error')
+            return redirect(url_for('remediation.index'))
+        
+        # Create basic workflow (user will need to add actions separately)
+        workflow = RemediationWorkflow(
+            name=name,
+            description=description,
+            workflow_type=workflow_type,
+            trigger_type=RemediationTriggerType(trigger_type),
+            target_frameworks=target_frameworks,
+            requires_approval=requires_approval,
+            auto_rollback=auto_rollback,
+            actions=[],  # Empty initially
+            created_by='web_user',
+            is_active=False  # Start inactive until actions are configured
+        )
+        
+        db.session.add(workflow)
+        db.session.commit()
+        
+        flash(f'Workflow "{name}" created successfully! Configure actions to activate.', 'success')
+        return redirect(url_for('remediation.workflow_details', workflow_id=workflow.id))
+    
+    except Exception as e:
+        logger.error(f"Error creating workflow: {str(e)}")
+        flash(f'Error creating workflow: {str(e)}', 'error')
+        db.session.rollback()
+        return redirect(url_for('remediation.index'))
+
+
+@remediation_bp.route('/workflows/<int:workflow_id>/enable', methods=['POST'])
+def enable_workflow(workflow_id):
+    """Enable a workflow"""
+    try:
+        workflow = RemediationWorkflow.query.get_or_404(workflow_id)
+        workflow.is_active = True
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Workflow enabled'})
+    
+    except Exception as e:
+        logger.error(f"Error enabling workflow: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@remediation_bp.route('/workflows/<int:workflow_id>/disable', methods=['POST'])
+def disable_workflow(workflow_id):
+    """Disable a workflow"""
+    try:
+        workflow = RemediationWorkflow.query.get_or_404(workflow_id)
+        workflow.is_active = False
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Workflow disabled'})
+    
+    except Exception as e:
+        logger.error(f"Error disabling workflow: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@remediation_bp.route('/executions/<int:execution_id>/cancel', methods=['POST'])
+def cancel_execution_new(execution_id):
+    """Cancel a workflow execution"""
+    try:
+        execution = RemediationExecution.query.get_or_404(execution_id)
+        
+        if execution.status != RemediationWorkflowStatus.RUNNING:
+            return jsonify({
+                'success': False,
+                'error': 'Execution is not currently running'
+            }), 400
+        
+        execution.status = RemediationWorkflowStatus.CANCELLED
+        execution.completed_at = datetime.utcnow()
+        if execution.started_at:
+            execution.duration_seconds = (execution.completed_at - execution.started_at).total_seconds()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Execution cancelled successfully'
+        })
+    
+    except Exception as e:
+        logger.error(f"Error cancelling execution: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@remediation_bp.route('/executions/<int:execution_id>/retry', methods=['POST'])
+def retry_execution(execution_id):
+    """Retry a failed workflow execution"""
+    try:
+        original_execution = RemediationExecution.query.get_or_404(execution_id)
+        
+        if original_execution.status not in [RemediationWorkflowStatus.FAILED, RemediationWorkflowStatus.CANCELLED]:
+            return jsonify({
+                'success': False,
+                'error': 'Can only retry failed or cancelled executions'
+            }), 400
+        
+        if not WORKFLOW_ENGINE_AVAILABLE:
+            return jsonify({
+                'success': False,
+                'error': 'Workflow engine is not available'
+            }), 500
+        
+        # Create new execution with same parameters
+        trigger_data = original_execution.trigger_data.copy() if original_execution.trigger_data else {}
+        trigger_data['retry_of_execution_id'] = original_execution.id
+        trigger_data['retry_timestamp'] = datetime.utcnow().isoformat()
+        
+        # Execute workflow asynchronously
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        new_execution = loop.run_until_complete(
+            workflow_engine.execute_workflow(
+                original_execution.workflow_id,
+                original_execution.agent_id,
+                trigger_data
+            )
+        )
+        loop.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Execution retried successfully. New execution ID: {new_execution.id}',
+            'new_execution_id': new_execution.id
+        })
+    
+    except Exception as e:
+        logger.error(f"Error retrying execution: {str(e)}")
+        return jsonify({
+            'success': False,
             'error': str(e)
         }), 500
