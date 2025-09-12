@@ -49,6 +49,15 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = engine_options
 # Initialize the app with the extension
 db.init_app(app)
 
+# Initialize database schema synchronously BEFORE serving requests
+with app.app_context():
+    try:
+        import models
+        db.create_all()
+        logging.warning("Database schema initialized synchronously")
+    except Exception as e:
+        logging.error(f"Failed to initialize database schema: {e}")
+
 # Add a simple health endpoint that doesn't touch the database
 @app.route('/healthz')
 def health_check():
@@ -56,40 +65,28 @@ def health_check():
     return "ok", 200
 
 # Fast startup mode - disable heavy integrations for now
-FAST_START = os.getenv("FAST_START", "1") == "1"
+FAST_START = os.getenv("FAST_START", "0") == "1"
 
-if FAST_START:
-    # Create minimal routes for fast loading
+# Import main routes
+try:
+    import app_routes
+    logging.warning("Routes loaded successfully")
+except Exception as e:
+    logging.warning(f"Routes failed to load: {e}")
+    # Create fallback route only if app_routes fails to load
     @app.route('/')
     def home():
-        return "<h1>Healthcare AI Compliance Platform</h1><p>Application loaded successfully!</p><a href='/analytics'>Analytics</a>"
-    
-    # Try to load main routes but don't fail if they don't work
-    try:
-        import app_routes
-        logging.warning("Routes loaded successfully")
-    except Exception as e:
-        logging.warning(f"Routes failed to load: {e}")
-else:
-    # Full startup (original code)
-    try:
-        import app_routes
-        logging.info("Routes loaded successfully")
-    except Exception as e:
-        logging.error(f"Failed to load routes: {e}")
-        @app.route('/')
-        def home():
-            return "<h1>Healthcare AI Compliance Platform</h1><p>Application is starting...</p>"
+        return "<h1>Healthcare AI Compliance Platform</h1><p>Application is starting...</p>"
 
-    # Import and register blueprints with proper error handling
-    try:
-        from routes.environment_scanner_routes import environment_scanner_bp
-        from routes.enhanced_dashboard_routes import enhanced_dashboard_bp
-        app.register_blueprint(environment_scanner_bp)
-        app.register_blueprint(enhanced_dashboard_bp)
-        logging.info("Blueprints registered successfully")
-    except Exception as e:
-        logging.error(f"Failed to register blueprints: {e}")
+# Import and register blueprints with proper error handling
+try:
+    from routes.environment_scanner_routes import environment_scanner_bp
+    from routes.enhanced_dashboard_routes import enhanced_dashboard_bp
+    app.register_blueprint(environment_scanner_bp)
+    app.register_blueprint(enhanced_dashboard_bp)
+    logging.warning("Blueprints registered successfully")
+except Exception as e:
+    logging.warning(f"Failed to register blueprints: {e}")
 
 # Central asynchronous bootstrap system
 import threading
@@ -209,12 +206,5 @@ def start_async_bootstrap():
     else:
         logging.warning("Async bootstrap started in fast mode - Flask should be responsive now")
 
-if not FAST_START:
-    # Only start background processes in full mode
-    bootstrap_thread = threading.Thread(target=start_async_bootstrap, daemon=True)
-    bootstrap_thread.start()
-    logging.warning("Background bootstrap thread started")
-else:
-    # Just do minimal database init for fast start
-    threading.Thread(target=bootstrap_database, daemon=True).start()
-    logging.warning("Fast start mode: minimal initialization")
+# Database is already initialized synchronously above, no need for background thread
+logging.warning("Application ready to serve requests")

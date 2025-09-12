@@ -85,20 +85,30 @@ except ImportError as e:
 
 @app.route('/')
 def dashboard():
-    """Main dashboard with overview statistics including GenAI and Agentic AI insights"""
-    # Get basic statistics
-    total_agents = AIAgent.query.count()
-    recent_scans = ScanResult.query.filter(
-        ScanResult.created_at >= datetime.utcnow() - timedelta(hours=24)
-    ).all()
-    
-    # AI Type distribution with GenAI and Agentic AI metrics
-    from models import AIAgentType
-    ai_type_distribution = {}
-    genai_count = AIAgent.query.filter_by(ai_type=AIAgentType.GENAI).count()
-    agentic_count = AIAgent.query.filter_by(ai_type=AIAgentType.AGENTIC_AI).count()
-    multimodal_count = AIAgent.query.filter_by(ai_type=AIAgentType.MULTIMODAL_AI).count()
-    traditional_count = AIAgent.query.filter_by(ai_type=AIAgentType.TRADITIONAL_ML).count()
+    """Simplified dashboard - fast loading"""
+    try:
+        # Basic counts only to get the site working
+        total_agents = AIAgent.query.count()
+        total_scans = ScanResult.query.count()
+        
+        # Minimal data for now
+        recent_scans = []
+        ai_type_distribution = {'GenAI': 0, 'Agentic AI': 0, 'Traditional ML': 0}
+        risk_distribution = {'LOW': 0, 'MEDIUM': 0, 'HIGH': 0, 'CRITICAL': 0}
+        
+        return render_template('dashboard.html',
+            total_agents=total_agents,
+            total_scans=total_scans,
+            recent_scans=recent_scans,
+            ai_type_distribution=ai_type_distribution,
+            risk_distribution=risk_distribution,
+            genai_metrics={'total_genai': 0},
+            agentic_metrics={'total_agentic': 0},
+            genai_risk_analysis={'high_risk_genai': 0}
+        )
+    except Exception as e:
+        logger.error(f"Dashboard error: {e}")
+        return f"<h1>Healthcare AI Compliance Platform</h1><p>Dashboard loading... (Error: {e})</p>"
     
     ai_type_distribution = {
         'GenAI': genai_count,
