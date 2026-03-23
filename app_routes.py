@@ -85,131 +85,63 @@ except ImportError as e:
 
 @app.route('/')
 def dashboard():
-    """Simplified dashboard - fast loading"""
+    """Main dashboard with fast database queries"""
     try:
-        # Basic counts only to get the site working
+        # Basic counts
         total_agents = AIAgent.query.count()
         total_scans = ScanResult.query.count()
-        
-        # Minimal data for now
-        recent_scans = []
-        ai_type_distribution = {'GenAI': 0, 'Agentic AI': 0, 'Traditional ML': 0}
-        risk_distribution = {'LOW': 0, 'MEDIUM': 0, 'HIGH': 0, 'CRITICAL': 0}
-        
+
+        # Recent scans - limited to 6 to avoid loading too many rows
+        recent_scans = ScanResult.query.order_by(
+            ScanResult.created_at.desc()
+        ).limit(6).all()
+
+        # Risk distribution using individual counts
+        risk_distribution = {}
+        for level in RiskLevel:
+            risk_distribution[level.value] = ScanResult.query.filter_by(risk_level=level).count()
+
+        # AI type distribution
+        ai_type_distribution = {
+            'GenAI': 0, 'Agentic AI': 0, 'Multimodal AI': 0,
+            'Traditional ML': 0, 'Computer Vision': 0, 'NLP': 0, 'Conversational AI': 0
+        }
+        try:
+            from models import AIAgentType
+            ai_type_distribution['GenAI'] = AIAgent.query.filter_by(ai_type=AIAgentType.GENAI).count()
+            ai_type_distribution['Agentic AI'] = AIAgent.query.filter_by(ai_type=AIAgentType.AGENTIC_AI).count()
+        except Exception:
+            pass
+
+        # Compliance summary - aggregate by framework
+        compliance_summary = {}
+        try:
+            for framework in ComplianceFramework:
+                evals = ComplianceEvaluation.query.filter_by(framework=framework).all()
+                if evals:
+                    avg_score = sum(e.compliance_score for e in evals) / len(evals)
+                    compliant_pct = (sum(1 for e in evals if e.is_compliant) / len(evals)) * 100
+                    compliance_summary[framework.value] = {
+                        'average_score': round(avg_score, 1),
+                        'compliant_percentage': round(compliant_pct, 1)
+                    }
+        except Exception as e:
+            logger.warning(f"Compliance summary query failed: {e}")
+
         return render_template('dashboard.html',
             total_agents=total_agents,
             total_scans=total_scans,
             recent_scans=recent_scans,
-            ai_type_distribution=ai_type_distribution,
             risk_distribution=risk_distribution,
-            genai_metrics={'total_genai': 0},
-            agentic_metrics={'total_agentic': 0},
+            ai_type_distribution=ai_type_distribution,
+            compliance_summary=compliance_summary,
+            genai_metrics={'total_genai': ai_type_distribution.get('GenAI', 0)},
+            agentic_metrics={'total_agentic': ai_type_distribution.get('Agentic AI', 0)},
             genai_risk_analysis={'high_risk_genai': 0}
         )
     except Exception as e:
         logger.error(f"Dashboard error: {e}")
         return f"<h1>Healthcare AI Compliance Platform</h1><p>Dashboard loading... (Error: {e})</p>"
-    
-    ai_type_distribution = {
-        'GenAI': genai_count,
-        'Agentic AI': agentic_count,
-        'Multimodal AI': multimodal_count,
-        'Traditional ML': traditional_count,
-        'Computer Vision': AIAgent.query.filter_by(ai_type=AIAgentType.COMPUTER_VISION).count(),
-        'NLP': AIAgent.query.filter_by(ai_type=AIAgentType.NLP).count(),
-        'Conversational AI': AIAgent.query.filter_by(ai_type=AIAgentType.CONVERSATIONAL_AI).count()
-    }
-    
-    # GenAI specific metrics
-    genai_agents = AIAgent.query.filter_by(ai_type=AIAgentType.GENAI).all()
-    genai_metrics = {
-        'total_genai': genai_count,
-        'fine_tuned_count': sum(1 for agent in genai_agents if agent.fine_tuned),
-        'multimodal_genai': sum(1 for agent in genai_agents if agent.multimodal),
-        'model_families': list(set(agent.model_family for agent in genai_agents if agent.model_family)),
-        'capabilities_summary': {}
-    }
-    
-    # Agentic AI specific metrics
-    agentic_agents = AIAgent.query.filter_by(ai_type=AIAgentType.AGENTIC_AI).all()
-    agentic_metrics = {
-        'total_agentic': agentic_count,
-        'autonomous_count': sum(1 for agent in agentic_agents if agent.autonomy_level in ['high', 'full']),
-        'planning_enabled': sum(1 for agent in agentic_agents if agent.planning_capability),
-        'memory_enabled': sum(1 for agent in agentic_agents if agent.memory_enabled),
-        'frameworks': list(set(agent.agent_framework for agent in agentic_agents if agent.agent_framework))
-    }
-    
-    # Risk distribution
-    risk_distribution = {}
-    for risk_level in RiskLevel:
-        count = ScanResult.query.filter_by(risk_level=risk_level).count()
-        risk_distribution[risk_level.value] = count
-    
-    # GenAI/Agentic AI specific risk analysis
-    genai_risk_analysis = {
-        'high_risk_genai': 0,
-        'critical_risk_agentic': 0,
-        'total_specialized_risks': 0
-    }
-    
-    for agent in genai_agents:
-        latest_scan = ScanResult.query.filter_by(ai_agent_id=agent.id).order_by(ScanResult.created_at.desc()).first()
-        if latest_scan and latest_scan.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
-            genai_risk_analysis['high_risk_genai'] += 1
-    
-    for agent in agentic_agents:
-        latest_scan = ScanResult.query.filter_by(ai_agent_id=agent.id).order_by(ScanResult.created_at.desc()).first()
-        if latest_scan and latest_scan.risk_level == RiskLevel.CRITICAL:
-            genai_risk_analysis['critical_risk_agentic'] += 1
-    
-    # Compliance summary with GenAI/Agentic frameworks
-    compliance_summary = {}
-    for framework in ComplianceFramework:
-        evaluations = ComplianceEvaluation.query.filter_by(framework=framework).all()
-        if evaluations:
-            avg_score = sum(e.compliance_score for e in evaluations) / len(evaluations)
-            compliant_count = sum(1 for e in evaluations if e.compliance_score >= 80)
-            compliance_summary[framework.value] = {
-                'average_score': round(avg_score, 1),
-                'compliant_percentage': round((compliant_count / len(evaluations)) * 100, 1)
-            }
-        else:
-            compliance_summary[framework.value] = {
-                'average_score': 0,
-                'compliant_percentage': 0
-            }
-    
-    # Recent specialized AI discoveries
-    recent_genai = AIAgent.query.filter_by(ai_type=AIAgentType.GENAI).filter(
-        AIAgent.discovered_at >= datetime.utcnow() - timedelta(days=7)
-    ).count()
-    
-    recent_agentic = AIAgent.query.filter_by(ai_type=AIAgentType.AGENTIC_AI).filter(
-        AIAgent.discovered_at >= datetime.utcnow() - timedelta(days=7)
-    ).count()
-    
-    # Shadow AI metrics - identify by agent types
-    shadow_ai_types = ['Unauthorized Process AI', 'Containerized Shadow AI', 'Unauthorized AI Model File', 'Unauthorized AI Code Implementation']
-    shadow_ai_count = AIAgent.query.filter(AIAgent.type.in_(shadow_ai_types)).count()
-    high_risk_shadow_ai = AIAgent.query.join(ScanResult).filter(
-        AIAgent.type.in_(shadow_ai_types),
-        ScanResult.risk_level.in_([RiskLevel.HIGH, RiskLevel.CRITICAL])
-    ).count()
-    
-    return render_template('dashboard.html',
-                         total_agents=total_agents,
-                         recent_scans=recent_scans,
-                         risk_distribution=risk_distribution,
-                         compliance_summary=compliance_summary,
-                         ai_type_distribution=ai_type_distribution,
-                         genai_metrics=genai_metrics,
-                         agentic_metrics=agentic_metrics,
-                         genai_risk_analysis=genai_risk_analysis,
-                         recent_genai=recent_genai,
-                         recent_agentic=recent_agentic,
-                         shadow_ai_count=shadow_ai_count,
-                         high_risk_shadow_ai=high_risk_shadow_ai)
 
 
 @app.route('/scan/results')
