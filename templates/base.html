@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Healthcare AI Compliance Platform{% endblock %}</title>
+    <title>{% block title %}CT ComplySphere Visibility & Governance Platform{% endblock %}</title>
     
     <!-- Google Fonts - Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -131,7 +131,7 @@
                     </div>
                 </div>
                 <div class="brand-text">
-                    <span class="fw-bold fs-5 brand-title">Healthcare AI Compliance</span>
+                    <span class="fw-bold fs-5 brand-title">CT ComplySphere</span>
                     <small class="brand-subtitle d-block d-md-none text-muted">Platform</small>
                 </div>
             </a>
@@ -345,7 +345,7 @@
             <div class="text-center">
                 <p class="mb-0">
                     <i class="fas fa-shield-alt me-2"></i>
-                    Healthcare AI Compliance Platform &copy; 2025 | 
+                    CT ComplySphere Visibility & Governance Platform &copy; 2025 | 
                     <span class="text-muted">Ensuring HIPAA, HITRUST, FDA SaMD, GDPR & SOC 2 Compliance</span>
                 </p>
             </div>
@@ -421,7 +421,7 @@
                     <div class="mb-3">
                         <label for="companyName" class="form-label">Company Name (Optional)</label>
                         <input type="text" class="form-control" id="companyName" placeholder="Your Company Name">
-                        <div class="form-text">Will replace "Healthcare AI Compliance" if provided</div>
+                        <div class="form-text">Will replace "CT ComplySphere" if provided</div>
                     </div>
                     
                     <!-- Preview -->
@@ -431,7 +431,7 @@
                             <div id="logoPreview" class="me-2">
                                 <i class="fas fa-shield-alt text-primary"></i>
                             </div>
-                            <span id="namePreview" class="fw-bold">Healthcare AI Compliance</span>
+                            <span id="namePreview" class="fw-bold">CT ComplySphere</span>
                         </div>
                     </div>
                 </div>
@@ -469,7 +469,7 @@
         // Company name preview
         document.getElementById('companyName').addEventListener('input', function(e) {
             const namePreview = document.getElementById('namePreview');
-            namePreview.textContent = e.target.value || 'Healthcare AI Compliance';
+            namePreview.textContent = e.target.value || 'CT ComplySphere';
         });
     });
 
@@ -509,13 +509,13 @@
         localStorage.removeItem('companyName');
         
         // Reset to default
-        updateBrandDisplay(null, 'Healthcare AI Compliance');
+        updateBrandDisplay(null, 'CT ComplySphere');
         
         // Reset form
         document.getElementById('logoUpload').value = '';
         document.getElementById('companyName').value = '';
         document.getElementById('logoPreview').innerHTML = '<i class="fas fa-shield-alt text-primary"></i>';
-        document.getElementById('namePreview').textContent = 'Healthcare AI Compliance';
+        document.getElementById('namePreview').textContent = 'CT ComplySphere';
         
         bootstrap.Modal.getInstance(document.getElementById('logoUploadModal')).hide();
         showNotification('Logo reset to default', 'info');
@@ -526,7 +526,7 @@
         const savedName = localStorage.getItem('companyName');
         
         if (savedLogo || savedName) {
-            updateBrandDisplay(savedLogo, savedName || 'Healthcare AI Compliance');
+            updateBrandDisplay(savedLogo, savedName || 'CT ComplySphere');
         }
     }
 

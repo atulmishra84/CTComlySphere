@@ -2,7 +2,7 @@
 Comprehensive Audit Trail Service
 
 Provides comprehensive audit logging for all user actions, system events,
-compliance activities, and security events in the Healthcare AI Compliance Platform.
+compliance activities, and security events in the CT ComplySphere Visibility & Governance Platform.
 Similar to enterprise audit systems like those in aiauthshield.com.
 """
 

@@ -1,5 +1,5 @@
 """
-External Service Integrations for Healthcare AI Compliance Platform
+External Service Integrations for CT ComplySphere Visibility & Governance Platform
 
 This module provides integration with external threat intelligence feeds,
 compliance validation APIs, cloud security tools, and notification channels

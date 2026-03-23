@@ -1,5 +1,5 @@
 """
-Model Registry Routes for Healthcare AI Compliance Platform
+Model Registry Routes for CT ComplySphere Visibility & Governance Platform
 
 Provides comprehensive API endpoints for:
 - Model registry management

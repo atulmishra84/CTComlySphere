@@ -1,5 +1,5 @@
 """
-Multi-Cloud Management for Healthcare AI Compliance Platform
+Multi-Cloud Management for CT ComplySphere Visibility & Governance Platform
 Manages deployments across AWS, Azure, and GCP
 """
 
@@ -75,7 +75,7 @@ class MultiCloudManager:
                 'security_group_id': f"sg-{self._generate_id()}",
                 'instance_id': f"i-{self._generate_id()}",
                 'load_balancer_dns': f"healthcare-ai-lb-{self._generate_id()}.{deployment.region}.elb.amazonaws.com",
-                'cloudwatch_log_group': f"/aws/healthcare-ai-compliance/{deployment.id}",
+                'cloudwatch_log_group': f"/aws/ct-complysphere/{deployment.id}",
                 'iam_role_arn': f"arn:aws:iam::{self._generate_account_id()}:role/HealthcareAIComplianceRole"
             }
             
@@ -135,7 +135,7 @@ class MultiCloudManager:
         try:
             # Simulate GCP deployment
             gcp_config = {
-                'project_id': f"healthcare-ai-compliance-{deployment.id}",
+                'project_id': f"ct-complysphere-{deployment.id}",
                 'vpc_network': f"healthcare-ai-vpc-{deployment.id}",
                 'subnet': f"healthcare-ai-subnet-{deployment.id}",
                 'firewall_rule': f"healthcare-ai-firewall-{deployment.id}",

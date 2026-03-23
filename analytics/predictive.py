@@ -1,5 +1,5 @@
 """
-Predictive Analytics Engine for Healthcare AI Compliance Platform
+Predictive Analytics Engine for CT ComplySphere Visibility & Governance Platform
 Provides predictive insights for security threats and compliance trends
 """
 

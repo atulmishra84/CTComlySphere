@@ -1,5 +1,5 @@
 """
-Risk Scoring Engine for Healthcare AI Compliance Platform
+Risk Scoring Engine for CT ComplySphere Visibility & Governance Platform
 Provides advanced risk scoring and trending analytics
 """
 

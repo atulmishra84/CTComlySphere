@@ -1,5 +1,5 @@
 /**
- * Dashboard JavaScript for Healthcare AI Compliance Platform
+ * Dashboard JavaScript for CT ComplySphere Visibility & Governance Platform
  * Handles dashboard interactions, chart updates, and real-time data
  */
 

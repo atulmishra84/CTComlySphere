@@ -1,6 +1,6 @@
 # Overview
 
-Healthcare AI Compliance Platform is a comprehensive security and compliance management system designed specifically for AI agents operating in healthcare environments. The platform provides automated discovery, security scanning, risk assessment, and compliance evaluation against major healthcare frameworks including HIPAA, HITRUST CSF, FDA SaMD, GDPR, and SOC 2 Type II. It supports multiple deployment protocols (Kubernetes, Docker, REST APIs, gRPC, WebSocket, MQTT, GraphQL) and offers multi-cloud management capabilities across AWS, Azure, and GCP.
+CT ComplySphere Visibility & Governance Platform is a comprehensive security and compliance management system designed specifically for AI agents operating in healthcare environments. The platform provides automated discovery, security scanning, risk assessment, and compliance evaluation against major healthcare frameworks including HIPAA, HITRUST CSF, FDA SaMD, GDPR, and SOC 2 Type II. It supports multiple deployment protocols (Kubernetes, Docker, REST APIs, gRPC, WebSocket, MQTT, GraphQL) and offers multi-cloud management capabilities across AWS, Azure, and GCP.
 
 # User Preferences
 

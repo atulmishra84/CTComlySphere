@@ -141,7 +141,7 @@ def dashboard():
         )
     except Exception as e:
         logger.error(f"Dashboard error: {e}")
-        return f"<h1>Healthcare AI Compliance Platform</h1><p>Dashboard loading... (Error: {e})</p>"
+        return f"<h1>CT ComplySphere Visibility & Governance Platform</h1><p>Dashboard loading... (Error: {e})</p>"
 
 
 @app.route('/scan/results')

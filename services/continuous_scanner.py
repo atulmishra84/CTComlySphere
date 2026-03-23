@@ -66,7 +66,7 @@ class ContinuousScanner:
         }
         
         self.logger.info("🔧 Continuous Scanner service initialized")
-        self.logger.info("🏥 Healthcare AI Compliance Platform - Environment Scanner Ready")
+        self.logger.info("🏥 CT ComplySphere Visibility & Governance Platform - Environment Scanner Ready")
     
     def start_scanning(self, config: Optional[ScanConfiguration] = None) -> bool:
         """Start continuous scanning with specified configuration"""

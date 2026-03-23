@@ -421,13 +421,13 @@ class OnboardingService:
             {
                 'step_key': 'welcome',
                 'step_name': 'Welcome & Overview',
-                'step_description': 'Introduction to the Healthcare AI Compliance Platform',
+                'step_description': 'Introduction to the CT ComplySphere Visibility & Governance Platform',
                 'step_order': 1,
                 'step_type': 'introduction',
                 'category': 'setup',
                 'is_required': True,
                 'estimated_time_minutes': 5,
-                'instructions': 'Welcome to the Healthcare AI Compliance Platform. Let\'s get you started!'
+                'instructions': 'Welcome to the CT ComplySphere Visibility & Governance Platform. Let\'s get you started!'
             },
             {
                 'step_key': 'organization_setup',

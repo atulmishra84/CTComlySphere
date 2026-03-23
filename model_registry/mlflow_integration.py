@@ -1,5 +1,5 @@
 """
-MLflow Integration Service for Healthcare AI Compliance Platform
+MLflow Integration Service for CT ComplySphere Visibility & Governance Platform
 
 Provides comprehensive model registry integration with MLflow, including:
 - Model tracking and versioning

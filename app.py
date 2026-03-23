@@ -76,7 +76,7 @@ except Exception as e:
     # Create fallback route only if app_routes fails to load
     @app.route('/')
     def home():
-        return "<h1>Healthcare AI Compliance Platform</h1><p>Application is starting...</p>"
+        return "<h1>CT ComplySphere Visibility & Governance Platform</h1><p>Application is starting...</p>"
 
 # Import and register blueprints with proper error handling
 try:

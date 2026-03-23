@@ -1,5 +1,5 @@
 /**
- * Analytics JavaScript for Healthcare AI Compliance Platform
+ * Analytics JavaScript for CT ComplySphere Visibility & Governance Platform
  * Handles advanced analytics, predictive charts, and data visualization
  */
 

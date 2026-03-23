@@ -1,5 +1,5 @@
 /**
- * Data Flow Visualization for Healthcare AI Compliance Platform
+ * Data Flow Visualization for CT ComplySphere Visibility & Governance Platform
  * Uses D3.js to create interactive network diagrams showing data flow between AI agents
  */
 
