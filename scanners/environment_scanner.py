@@ -36,6 +36,7 @@ class ScannerType(Enum):
     API_GATEWAY = "api_gateway"
     MODEL_REGISTRY = "model_registry"
     PROCESS = "process"
+    CLAWBOT = "clawbot"
 
 
 class ScanStatus(Enum):
@@ -155,6 +156,7 @@ class EnvironmentScanner:
             # from scanners.api_gateway_scanner import APIGatewayScanner  # Temporarily disabled due to syntax issues
             from scanners.model_registry_scanner import ModelRegistryScanner
             from scanners.process_scanner import ProcessScanner
+            from scanners.clawbot_scanner import ClawbotScanner
             
             self.scanners = {
                 ScannerType.KUBERNETES: KubernetesScanner(),
@@ -165,7 +167,8 @@ class EnvironmentScanner:
                 ScannerType.API_ENDPOINT: APIEndpointScanner(),
                 # ScannerType.API_GATEWAY: APIGatewayScanner(),  # Temporarily disabled
                 ScannerType.MODEL_REGISTRY: ModelRegistryScanner(),
-                ScannerType.PROCESS: ProcessScanner()
+                ScannerType.PROCESS: ProcessScanner(),
+                ScannerType.CLAWBOT: ClawbotScanner(),
             }
             
             self.logger.info(f"Initialized {len(self.scanners)} discovery scanners")

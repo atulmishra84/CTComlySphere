@@ -15,13 +15,15 @@ Preferred communication style: Simple, everyday language.
 - **Visualization**: Chart.js and D3.js for analytics dashboards and data flow diagrams
 
 ## Application Structure
-- **Modular Scanner Architecture**: Protocol-specific scanners inherit from `BaseScanner` abstract class, supporting Kubernetes, Docker, REST APIs, gRPC, WebSocket, MQTT, and GraphQL
+- **Modular Scanner Architecture**: Protocol-specific scanners inherit from `BaseScanner` abstract class, supporting Kubernetes, Docker, REST APIs, gRPC, WebSocket, MQTT, GraphQL, and now ROS/VEX Clawbot protocols
+- **Clawbot Scanner**: Dedicated scanner (`scanners/clawbot_scanner.py`) that discovers robotic AI agents via ROS network scanning, MQTT broker detection, REST endpoint fingerprinting, and VEX controller discovery
 - **Compliance Engine**: Framework-agnostic evaluation system with configurable compliance rules and scoring algorithms
 - **Analytics Pipeline**: Predictive analytics engine with risk scoring, trend analysis, and security forecasting
 - **Multi-Cloud Support**: Abstracted cloud deployment manager supporting AWS, Azure, and GCP
 
 ## Data Models
 - **AIAgent**: Core entity representing discovered AI systems with metadata, protocol information, and discovery timestamps
+- **AIAgentType.CLAWBOT**: New agent type for autonomous robotic manipulators (surgical robots, lab handlers, medication dispensers, patient assist robots, rehabilitation robots)
 - **ScanResult**: Security scan outcomes with risk scores, vulnerability counts, and PHI exposure detection
 - **ComplianceEvaluation**: Framework-specific compliance assessments with scoring and remediation recommendations
 - **Enum-based Classifications**: Standardized risk levels, scan statuses, and compliance frameworks

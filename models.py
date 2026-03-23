@@ -64,6 +64,7 @@ class AIAgentType(enum.Enum):
     AUTONOMOUS_SYSTEM = "AUTONOMOUS_SYSTEM"
     CONVERSATIONAL_AI = "CONVERSATIONAL_AI"
     MULTIMODAL_AI = "MULTIMODAL_AI"
+    CLAWBOT = "CLAWBOT"
 
 class AIAgent(db.Model):
     id = db.Column(db.Integer, primary_key=True)

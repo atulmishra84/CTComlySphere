@@ -1563,6 +1563,184 @@ def toggle_auto_registration():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Toggle failed: {str(e)}'})
 
+@app.route('/clawbots')
+def clawbots_dashboard():
+    """Clawbot detection and registration dashboard"""
+    from scanners.clawbot_scanner import ClawbotScanner
+    scanner = ClawbotScanner()
+
+    import asyncio
+    try:
+        loop = asyncio.new_event_loop()
+        discovered = loop.run_until_complete(scanner.discover_agents())
+    except Exception:
+        discovered = scanner._get_simulated_clawbots()
+    finally:
+        loop.close()
+
+    clawbots_with_risk = []
+    risk_summary = {'CRITICAL': 0, 'HIGH': 0, 'MEDIUM': 0, 'LOW': 0}
+    protocol_counts = {}
+    type_counts = {}
+
+    for bot in discovered:
+        meta = bot.get('metadata', {})
+        risk = scanner.assess_clawbot_risk(meta)
+        risk_summary[risk['risk_level']] = risk_summary.get(risk['risk_level'], 0) + 1
+
+        proto = bot.get('protocol', 'unknown')
+        protocol_counts[proto] = protocol_counts.get(proto, 0) + 1
+
+        ctype = meta.get('clawbot_type', 'unknown')
+        type_counts[ctype] = type_counts.get(ctype, 0) + 1
+
+        clawbots_with_risk.append({
+            'bot': bot,
+            'risk': risk,
+        })
+
+    registered_clawbots = AIAgent.query.filter(
+        AIAgent.ai_type.in_(['CLAWBOT']) if hasattr(AIAgent, 'ai_type') else False
+    ).all() if hasattr(AIAgent, 'ai_type') else []
+
+    try:
+        from models import AIAgentType
+        registered_clawbots = AIAgent.query.filter(
+            AIAgent.ai_type == AIAgentType.CLAWBOT
+        ).all()
+    except Exception:
+        registered_clawbots = []
+
+    return render_template(
+        'clawbots.html',
+        clawbots=clawbots_with_risk,
+        risk_summary=risk_summary,
+        protocol_counts=protocol_counts,
+        type_counts=type_counts,
+        registered_count=len(registered_clawbots),
+        registered_clawbots=registered_clawbots,
+        total_discovered=len(discovered),
+    )
+
+
+@app.route('/clawbots/scan', methods=['POST'])
+def clawbots_scan():
+    """Trigger a fresh Clawbot network scan"""
+    from scanners.clawbot_scanner import ClawbotScanner
+    import asyncio
+    scanner = ClawbotScanner()
+    try:
+        loop = asyncio.new_event_loop()
+        discovered = loop.run_until_complete(scanner.discover_agents())
+        loop.close()
+        flash(f'Clawbot scan complete. {len(discovered)} robotic agents discovered.', 'success')
+    except Exception as e:
+        flash(f'Scan completed with simulated data: {str(e)}', 'info')
+    return redirect(url_for('clawbots_dashboard'))
+
+
+@app.route('/clawbots/register', methods=['POST'])
+def clawbots_register():
+    """Register a discovered Clawbot as a tracked AI agent"""
+    from models import AIAgentType
+    name = request.form.get('name', '').strip()
+    protocol = request.form.get('protocol', 'ros').strip()
+    endpoint = request.form.get('endpoint', '').strip()
+    clawbot_type = request.form.get('clawbot_type', 'ros_robot').strip()
+    location = request.form.get('location', '').strip()
+    phi_access = request.form.get('phi_access', 'false').lower() == 'true'
+
+    if not name or not endpoint:
+        flash('Name and endpoint are required to register a Clawbot.', 'error')
+        return redirect(url_for('clawbots_dashboard'))
+
+    existing = AIAgent.query.filter_by(name=name).first()
+    if existing:
+        flash(f'A Clawbot named "{name}" is already registered.', 'warning')
+        return redirect(url_for('clawbots_dashboard'))
+
+    try:
+        agent = AIAgent(
+            name=name,
+            type='Clawbot',
+            ai_type=AIAgentType.CLAWBOT,
+            protocol=protocol,
+            endpoint=endpoint,
+            version='1.0',
+            status='active',
+            risk_level=RiskLevel.HIGH if phi_access else RiskLevel.MEDIUM,
+            agent_metadata={
+                'clawbot_type': clawbot_type,
+                'location': location,
+                'phi_access': phi_access,
+                'registered_via': 'clawbot_dashboard',
+                'registration_timestamp': datetime.utcnow().isoformat(),
+            },
+            discovery_method='clawbot_scanner',
+            discovered_at=datetime.utcnow(),
+        )
+        db.session.add(agent)
+        db.session.commit()
+        flash(f'Clawbot "{name}" successfully registered in the compliance inventory.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Registration failed: {str(e)}', 'error')
+
+    return redirect(url_for('clawbots_dashboard'))
+
+
+@app.route('/api/clawbots/discovered')
+def api_clawbots_discovered():
+    """API: Return live-discovered Clawbots as JSON"""
+    from scanners.clawbot_scanner import ClawbotScanner
+    import asyncio
+    scanner = ClawbotScanner()
+    try:
+        loop = asyncio.new_event_loop()
+        discovered = loop.run_until_complete(scanner.discover_agents())
+        loop.close()
+    except Exception:
+        discovered = scanner._get_simulated_clawbots()
+
+    result = []
+    for bot in discovered:
+        meta = bot.get('metadata', {})
+        risk = scanner.assess_clawbot_risk(meta)
+        result.append({
+            'name': bot.get('name'),
+            'type': bot.get('type'),
+            'protocol': bot.get('protocol'),
+            'endpoint': bot.get('endpoint'),
+            'risk_level': risk['risk_level'],
+            'risk_score': risk['risk_score'],
+            'metadata': meta,
+        })
+    return jsonify({'clawbots': result, 'total': len(result)})
+
+
+@app.route('/api/clawbots/registered')
+def api_clawbots_registered():
+    """API: Return registered Clawbots from database as JSON"""
+    from models import AIAgentType
+    try:
+        agents = AIAgent.query.filter_by(ai_type=AIAgentType.CLAWBOT).all()
+        result = []
+        for a in agents:
+            result.append({
+                'id': a.id,
+                'name': a.name,
+                'protocol': a.protocol,
+                'endpoint': a.endpoint,
+                'risk_level': a.risk_level.value if a.risk_level else None,
+                'status': a.status,
+                'discovered_at': a.discovered_at.isoformat() if a.discovered_at else None,
+                'metadata': a.agent_metadata or {},
+            })
+        return jsonify({'clawbots': result, 'total': len(result)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('404.html'), 404

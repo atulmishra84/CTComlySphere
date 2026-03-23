@@ -326,6 +326,86 @@ class AgentClassificationEngine:
                     'cross_modal_bias', 'deepfake_generation', 'privacy_inference',
                     'content_manipulation', 'biometric_exposure'
                 ]
+            },
+            'clawbot': {
+                'keywords': [
+                    'clawbot', 'claw-bot', 'claw_bot', 'robotic-arm', 'robotic_arm',
+                    'gripper', 'manipulator', 'end_effector', 'end-effector',
+                    'ros', 'ros-agent', 'ros_agent', 'ros-node', 'ros_node',
+                    'vex-robot', 'vex_robot', 'vex_iq',
+                    'surgical-robot', 'surgical_robot', 'robotic-surgery',
+                    'specimen-handler', 'lab-robot', 'lab_robot',
+                    'medication-dispenser', 'med-bot', 'medbot',
+                    'material-transport', 'logistics-robot',
+                    'patient-assist', 'patient_assist', 'carebot',
+                    'rehabilitation-robot', 'rehab-robot',
+                    'joint_states', 'gripper_state', 'actuator',
+                    'robot_model', 'degrees_of_freedom',
+                ],
+                'protocols': ['ros', 'mqtt', 'rest_api', 'vex_controller', 'websocket'],
+                'data_types': ['telemetry', 'sensor_data', 'phi', 'operational'],
+                'frameworks': [
+                    ComplianceFramework.HIPAA,
+                    ComplianceFramework.FDA_SAMD,
+                    ComplianceFramework.HITRUST_CSF,
+                    ComplianceFramework.SOC2_TYPE_II,
+                ],
+                'criticality': 'critical',
+                'description': (
+                    'Autonomous robotic AI agents with physical manipulation capability (claw/gripper) '
+                    'deployed in healthcare, laboratory, pharmacy, or patient-care environments'
+                ),
+                'ai_type': AIAgentType.CLAWBOT,
+                'work_engines': {
+                    'surgical_assistance': [
+                        'instrument_handling', 'tissue_manipulation', 'wound_closure',
+                        'endoscopic_assistance', 'laparoscopic_support',
+                    ],
+                    'specimen_handling': [
+                        'sample_pickup', 'sample_dropoff', 'barcode_validation',
+                        'centrifuge_loading', 'carousel_management',
+                    ],
+                    'medication_dispensing': [
+                        'drug_verification', 'vial_handling', 'dose_preparation',
+                        'unit_dose_dispensing', 'iv_compounding_assist',
+                    ],
+                    'patient_assistance': [
+                        'mobility_support', 'object_retrieval', 'positioning_aid',
+                        'rehabilitation_exercise', 'grip_strength_training',
+                    ],
+                    'logistics_transport': [
+                        'supply_delivery', 'waste_transport', 'linen_handling',
+                        'meal_delivery', 'equipment_transport',
+                    ],
+                },
+                'data_sources': {
+                    'primary': ['ros_topics', 'mqtt_broker', 'sensor_array', 'vision_system'],
+                    'secondary': ['ehr_systems', 'pharmacy_system', 'lis', 'scheduling_system'],
+                    'external': ['robot_cloud_api', 'fleet_management', 'remote_monitoring'],
+                },
+                'output_types': {
+                    'telemetry': ['joint_states', 'gripper_position', 'force_readings', 'battery_level'],
+                    'audit_logs': ['task_completion', 'error_events', 'safety_triggers', 'operator_overrides'],
+                    'clinical_data': ['procedure_timestamps', 'specimen_tracking', 'medication_dispensing_log'],
+                    'safety_events': ['collision_detected', 'force_limit_exceeded', 'emergency_stop'],
+                },
+                'department_usage': {
+                    'surgical': ['operating_room', 'interventional_radiology', 'endoscopy'],
+                    'laboratory': ['clinical_lab', 'pathology', 'blood_bank', 'microbiology'],
+                    'pharmacy': ['central_pharmacy', 'iv_room', 'unit_dose_dispensing'],
+                    'patient_care': ['wards', 'icu', 'rehabilitation', 'occupational_therapy'],
+                    'logistics': ['supply_chain', 'sterile_processing', 'environmental_services'],
+                },
+                'specific_risks': [
+                    'physical_patient_harm', 'medication_dispensing_error', 'specimen_contamination',
+                    'unencrypted_telemetry', 'unauthorized_remote_control', 'phi_exposure_via_sensor',
+                    'safety_system_bypass', 'firmware_vulnerability', 'network_lateral_movement',
+                ],
+                'registration_requirements': [
+                    'safety_systems_audit', 'phi_data_flow_mapping', 'encryption_validation',
+                    'firmware_version_check', 'iso_10218_compliance', 'iec_62061_sil_verification',
+                    'operator_training_records', 'maintenance_schedule_review',
+                ],
             }
         }
     
