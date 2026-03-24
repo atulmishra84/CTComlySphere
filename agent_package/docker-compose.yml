@@ -1,0 +1,46 @@
+version: "3.8"
+
+# CT ComplySphere Collector Agent — docker-compose deployment
+# ============================================================
+# 1. Copy this file into the customer environment
+# 2. Fill in PLATFORM_URL and API_TOKEN
+# 3. Run: docker-compose up -d
+
+services:
+  complysphere-agent:
+    image: complysphere/collector-agent:latest
+    # Alternatively build locally:
+    # build: .
+    container_name: complysphere-agent
+    restart: unless-stopped
+
+    environment:
+      # ── Required ─────────────────────────────────────────────────────────
+      PLATFORM_URL: "${PLATFORM_URL}"          # e.g. https://complysphere.example.com
+      API_TOKEN:    "${API_TOKEN}"             # Token generated in the platform UI
+
+      # ── Optional ─────────────────────────────────────────────────────────
+      SCAN_INTERVAL:    "${SCAN_INTERVAL:-3600}"      # Seconds between scans (default 1h)
+      ENABLED_SCANNERS: "${ENABLED_SCANNERS:-}"       # e.g. docker,mcp_protocol,clawbot
+      SCAN_TARGETS:     "${SCAN_TARGETS:-}"           # e.g. 10.0.0.0/24,192.168.1.0/24
+      LOG_LEVEL:        "${LOG_LEVEL:-INFO}"
+
+    volumes:
+      # Allow Docker scanner to inspect running containers
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    # Resource limits — adjust to customer environment
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

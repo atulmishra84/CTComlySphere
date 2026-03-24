@@ -1,0 +1,7 @@
+# CT ComplySphere Collector Agent — Python dependencies
+requests>=2.31.0
+
+# Optional — install for extended discovery capabilities
+# docker>=7.0.0           # Docker container discovery
+# kubernetes>=28.1.0      # Kubernetes workload discovery
+# psutil>=5.9.0           # Local process discovery

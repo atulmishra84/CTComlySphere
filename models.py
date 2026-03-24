@@ -754,3 +754,36 @@ class CustomerProgress(db.Model):
     
     # Unique constraint to prevent duplicate progress records
     __table_args__ = (db.UniqueConstraint('customer_id', 'step_key'),)
+
+
+class DeployedAgent(db.Model):
+    """Tracks collector agents deployed into customer environments"""
+    __tablename__ = 'deployed_agent'
+
+    id = db.Column(db.Integer, primary_key=True)
+    agent_id = db.Column(db.String(64), unique=True, nullable=False)
+    customer_name = db.Column(db.String(255), nullable=False)
+    environment_label = db.Column(db.String(255))
+    api_token = db.Column(db.String(128), unique=True, nullable=False)
+    token_created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Status & connectivity
+    status = db.Column(db.String(32), default='pending')   # pending, active, lost, revoked
+    last_heartbeat = db.Column(db.DateTime)
+    agent_version = db.Column(db.String(32))
+    hostname = db.Column(db.String(255))
+    ip_address = db.Column(db.String(64))
+    os_info = db.Column(db.String(255))
+
+    # Scan configuration
+    scan_interval_minutes = db.Column(db.Integer, default=60)
+    enabled_scanners = db.Column(JSON)      # list of scanner names
+    scan_targets = db.Column(JSON)          # network ranges / endpoints
+
+    # Reporting stats
+    total_reports = db.Column(db.Integer, default=0)
+    last_report_at = db.Column(db.DateTime)
+    agents_discovered_total = db.Column(db.Integer, default=0)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

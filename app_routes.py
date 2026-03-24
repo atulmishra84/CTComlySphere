@@ -1667,16 +1667,15 @@ def clawbots_register():
             protocol=protocol,
             endpoint=endpoint,
             version='1.0',
-            status='active',
-            risk_level=RiskLevel.HIGH if phi_access else RiskLevel.MEDIUM,
             agent_metadata={
                 'clawbot_type': clawbot_type,
                 'location': location,
                 'phi_access': phi_access,
+                'risk_level': 'HIGH' if phi_access else 'MEDIUM',
                 'registered_via': 'clawbot_dashboard',
+                'discovery_method': 'clawbot_scanner',
                 'registration_timestamp': datetime.utcnow().isoformat(),
             },
-            discovery_method='clawbot_scanner',
             discovered_at=datetime.utcnow(),
         )
         db.session.add(agent)
@@ -1739,6 +1738,275 @@ def api_clawbots_registered():
         return jsonify({'clawbots': result, 'total': len(result)})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+###############################################################################
+# DEPLOYED AGENT MANAGEMENT — /agent-deployment  &  /api/collector/*
+###############################################################################
+
+@app.route('/agent-deployment')
+def agent_deployment():
+    """Dashboard for managing collector agents deployed in customer environments"""
+    from models import DeployedAgent
+    from datetime import timezone
+    agents = DeployedAgent.query.order_by(DeployedAgent.created_at.desc()).all()
+
+    now = datetime.utcnow()
+    stats = {
+        'total': len(agents),
+        'active': sum(1 for a in agents if a.status == 'active'),
+        'pending': sum(1 for a in agents if a.status == 'pending'),
+        'lost': sum(1 for a in agents if a.status == 'lost'),
+        'revoked': sum(1 for a in agents if a.status == 'revoked'),
+        'total_discovered': sum(a.agents_discovered_total or 0 for a in agents),
+    }
+
+    # Mark agents as 'lost' if no heartbeat in 10 minutes
+    changed = False
+    for a in agents:
+        if a.status == 'active' and a.last_heartbeat:
+            delta = (now - a.last_heartbeat).total_seconds()
+            if delta > 600:
+                a.status = 'lost'
+                changed = True
+    if changed:
+        db.session.commit()
+
+    return render_template('agent_deployment.html', agents=agents, stats=stats)
+
+
+@app.route('/agent-deployment/create', methods=['POST'])
+def agent_deployment_create():
+    """Generate a new agent token for a customer environment"""
+    import secrets, uuid
+    from models import DeployedAgent
+
+    customer_name = request.form.get('customer_name', '').strip()
+    environment_label = request.form.get('environment_label', '').strip()
+    scan_interval = int(request.form.get('scan_interval_minutes', 60))
+    enabled_scanners = request.form.getlist('enabled_scanners')
+
+    if not customer_name:
+        flash('Customer name is required.', 'error')
+        return redirect(url_for('agent_deployment'))
+
+    agent_id = f"agent-{uuid.uuid4().hex[:12]}"
+    api_token = secrets.token_urlsafe(48)
+
+    agent = DeployedAgent(
+        agent_id=agent_id,
+        customer_name=customer_name,
+        environment_label=environment_label or f"{customer_name} Environment",
+        api_token=api_token,
+        scan_interval_minutes=scan_interval,
+        enabled_scanners=enabled_scanners or ['docker', 'mcp_protocol', 'api_endpoint', 'clawbot'],
+        status='pending',
+    )
+    db.session.add(agent)
+    db.session.commit()
+
+    flash(f'Agent token created for {customer_name}. Copy the token before leaving this page.', 'success')
+    return redirect(url_for('agent_deployment'))
+
+
+@app.route('/agent-deployment/<int:agent_id>/revoke', methods=['POST'])
+def agent_deployment_revoke(agent_id):
+    """Revoke an agent's API token"""
+    from models import DeployedAgent
+    agent = DeployedAgent.query.get_or_404(agent_id)
+    agent.status = 'revoked'
+    db.session.commit()
+    flash(f'Agent "{agent.environment_label}" has been revoked.', 'warning')
+    return redirect(url_for('agent_deployment'))
+
+
+@app.route('/agent-deployment/<int:agent_id>/delete', methods=['POST'])
+def agent_deployment_delete(agent_id):
+    """Delete an agent record"""
+    from models import DeployedAgent
+    agent = DeployedAgent.query.get_or_404(agent_id)
+    db.session.delete(agent)
+    db.session.commit()
+    flash('Agent record deleted.', 'info')
+    return redirect(url_for('agent_deployment'))
+
+
+# ── Collector REST API (called by the deployed agent) ──────────────────────
+
+def _resolve_agent_token():
+    """Extract and validate Bearer token from request headers, return DeployedAgent or None"""
+    from models import DeployedAgent
+    auth = request.headers.get('Authorization', '')
+    if not auth.startswith('Bearer '):
+        return None
+    token = auth[7:]
+    agent = DeployedAgent.query.filter_by(api_token=token).first()
+    if not agent or agent.status == 'revoked':
+        return None
+    return agent
+
+
+@app.route('/api/collector/register', methods=['POST'])
+def collector_register():
+    """
+    Called once by a freshly started collector agent to associate its
+    system info with the pre-issued token and mark itself as active.
+    """
+    agent = _resolve_agent_token()
+    if not agent:
+        return jsonify({'error': 'Invalid or revoked token'}), 401
+
+    data = request.get_json(silent=True) or {}
+    agent.hostname = data.get('hostname', agent.hostname)
+    agent.ip_address = data.get('ip_address', agent.ip_address)
+    agent.os_info = data.get('os_info', agent.os_info)
+    agent.agent_version = data.get('agent_version', '1.0.0')
+    agent.status = 'active'
+    agent.last_heartbeat = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({
+        'status': 'registered',
+        'agent_id': agent.agent_id,
+        'scan_interval_minutes': agent.scan_interval_minutes,
+        'enabled_scanners': agent.enabled_scanners or [],
+        'scan_targets': agent.scan_targets or [],
+        'platform': 'CT ComplySphere Visibility & Governance Platform',
+    })
+
+
+@app.route('/api/collector/heartbeat', methods=['POST'])
+def collector_heartbeat():
+    """Periodic keep-alive from a deployed collector agent"""
+    agent = _resolve_agent_token()
+    if not agent:
+        return jsonify({'error': 'Invalid or revoked token'}), 401
+
+    agent.last_heartbeat = datetime.utcnow()
+    if agent.status != 'revoked':
+        agent.status = 'active'
+    db.session.commit()
+
+    return jsonify({
+        'status': 'ok',
+        'server_time': datetime.utcnow().isoformat(),
+        'scan_interval_minutes': agent.scan_interval_minutes,
+    })
+
+
+@app.route('/api/collector/report', methods=['POST'])
+def collector_report():
+    """
+    Receive a discovery report from a deployed collector agent.
+    Each report contains a list of discovered AI agents found in the
+    customer's environment.
+    """
+    agent = _resolve_agent_token()
+    if not agent:
+        return jsonify({'error': 'Invalid or revoked token'}), 401
+
+    data = request.get_json(silent=True) or {}
+    discovered = data.get('discovered_agents', [])
+
+    saved = 0
+    skipped = 0
+    for item in discovered:
+        name = item.get('name', '').strip()
+        endpoint = item.get('endpoint', '').strip()
+        protocol = item.get('protocol', 'unknown').strip()
+        agent_type = item.get('type', 'Unknown').strip()
+        metadata = item.get('metadata', {})
+        metadata['source_agent_id'] = agent.agent_id
+        metadata['customer_name'] = agent.customer_name
+        metadata['environment_label'] = agent.environment_label
+
+        if not name or not endpoint:
+            skipped += 1
+            continue
+
+        existing = AIAgent.query.filter_by(name=name, endpoint=endpoint).first()
+        if existing:
+            skipped += 1
+            continue
+
+        try:
+            risk_val = item.get('risk_level', 'MEDIUM').upper()
+            risk_level = RiskLevel[risk_val] if risk_val in RiskLevel.__members__ else RiskLevel.MEDIUM
+        except Exception:
+            risk_level = RiskLevel.MEDIUM
+
+        metadata['discovery_method'] = 'deployed_collector'
+        metadata['risk_level'] = risk_val
+        new_agent = AIAgent(
+            name=name,
+            type=agent_type,
+            protocol=protocol,
+            endpoint=endpoint,
+            agent_metadata=metadata,
+            discovered_at=datetime.utcnow(),
+        )
+        db.session.add(new_agent)
+        saved += 1
+
+    agent.total_reports = (agent.total_reports or 0) + 1
+    agent.last_report_at = datetime.utcnow()
+    agent.agents_discovered_total = (agent.agents_discovered_total or 0) + saved
+    agent.last_heartbeat = datetime.utcnow()
+    agent.status = 'active'
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+    return jsonify({
+        'status': 'accepted',
+        'saved': saved,
+        'skipped': skipped,
+        'total_in_payload': len(discovered),
+    })
+
+
+@app.route('/api/collector/config', methods=['GET'])
+def collector_config():
+    """Return current scan configuration for the calling agent"""
+    agent = _resolve_agent_token()
+    if not agent:
+        return jsonify({'error': 'Invalid or revoked token'}), 401
+
+    return jsonify({
+        'agent_id': agent.agent_id,
+        'scan_interval_minutes': agent.scan_interval_minutes,
+        'enabled_scanners': agent.enabled_scanners or [],
+        'scan_targets': agent.scan_targets or [],
+    })
+
+
+@app.route('/api/collector/agents', methods=['GET'])
+def collector_agents_list():
+    """Admin view: list all deployed agents and their status"""
+    from models import DeployedAgent
+    agents = DeployedAgent.query.order_by(DeployedAgent.created_at.desc()).all()
+    result = []
+    now = datetime.utcnow()
+    for a in agents:
+        seconds_ago = None
+        if a.last_heartbeat:
+            seconds_ago = int((now - a.last_heartbeat).total_seconds())
+        result.append({
+            'agent_id': a.agent_id,
+            'customer_name': a.customer_name,
+            'environment_label': a.environment_label,
+            'status': a.status,
+            'hostname': a.hostname,
+            'ip_address': a.ip_address,
+            'agent_version': a.agent_version,
+            'last_heartbeat_seconds_ago': seconds_ago,
+            'total_reports': a.total_reports,
+            'agents_discovered_total': a.agents_discovered_total,
+        })
+    return jsonify({'agents': result, 'total': len(result)})
 
 
 @app.errorhandler(404)
