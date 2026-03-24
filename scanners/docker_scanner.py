@@ -34,6 +34,7 @@ class DockerScanner(BaseScanner):
             
             for agent_data in agents:
                 agent = self.create_or_update_agent(agent_data)
+                self.enrich_agent_metadata(agent, agent_data)
                 scan_result = self.perform_security_scan(agent, agent_data)
                 results.append(scan_result)
             
@@ -416,11 +417,11 @@ class DockerScanner(BaseScanner):
                 endpoint=agent_data['endpoint'],
                 cloud_provider=agent_data['cloud_provider'],
                 region=agent_data['region'],
-                metadata=agent_data['metadata']
+                agent_metadata=agent_data.get('agent_metadata') or agent_data.get('metadata')
             )
             db.session.add(agent)
         else:
-            agent.metadata = agent_data['metadata']
+            agent.agent_metadata = agent_data.get('agent_metadata') or agent_data.get('metadata')
         
         db.session.commit()
         return agent

@@ -24,6 +24,7 @@ class APIScanner(BaseScanner):
             
             for agent_data in agents:
                 agent = self.create_or_update_agent(agent_data)
+                self.enrich_agent_metadata(agent, agent_data)
                 scan_result = self.perform_security_scan(agent, agent_data)
                 results.append(scan_result)
             

@@ -291,6 +291,264 @@
                     {% endif %}
                 </div>
             </div>
+
+            <!-- ══ Metadata Intelligence ══ -->
+            <div class="card shadow-sm mb-4 border-primary" id="metadata-intelligence-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-microscope text-primary me-2"></i>Metadata Intelligence
+                    </h5>
+                    <button class="btn btn-sm btn-outline-primary" id="enrichBtn"
+                            onclick="runEnrichment({{ agent.id }})">
+                        <i class="fas fa-sync-alt me-1"></i>Re-Enrich Now
+                    </button>
+                </div>
+                <div class="card-body" id="metadata-body">
+
+                    <!-- Extracted typed fields row -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded" style="background:rgba(255,255,255,.04)">
+                                <small class="text-muted text-uppercase fw-semibold d-block mb-1">Model Family</small>
+                                <span id="mf-model-family">
+                                    {% if agent.model_family %}
+                                        <span class="badge bg-primary fs-6">{{ agent.model_family }}</span>
+                                    {% else %}
+                                        <span class="text-muted fst-italic">Not detected</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 rounded" style="background:rgba(255,255,255,.04)">
+                                <small class="text-muted text-uppercase fw-semibold d-block mb-1">Model Size</small>
+                                <span id="mf-model-size">
+                                    {% if agent.model_size %}
+                                        <strong>{{ agent.model_size }}</strong>
+                                    {% else %}
+                                        <span class="text-muted fst-italic">Unknown</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 rounded" style="background:rgba(255,255,255,.04)">
+                                <small class="text-muted text-uppercase fw-semibold d-block mb-1">Autonomy</small>
+                                <span id="mf-autonomy">
+                                    {% if agent.autonomy_level %}
+                                        {% set al = agent.autonomy_level %}
+                                        {% if al == 'full' %}<span class="badge bg-danger">{{ al|title }}</span>
+                                        {% elif al == 'high' %}<span class="badge bg-warning">{{ al|title }}</span>
+                                        {% elif al == 'medium' %}<span class="badge bg-info">{{ al|title }}</span>
+                                        {% else %}<span class="badge bg-success">{{ al|title }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted fst-italic">Unknown</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded" style="background:rgba(255,255,255,.04)">
+                                <small class="text-muted text-uppercase fw-semibold d-block mb-1">Agent Framework</small>
+                                <span id="mf-framework">
+                                    {% if agent.agent_framework %}
+                                        <span class="badge bg-secondary">{{ agent.agent_framework }}</span>
+                                    {% else %}
+                                        <span class="text-muted fst-italic">Not detected</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded" style="background:rgba(255,255,255,.04)">
+                                <small class="text-muted text-uppercase fw-semibold d-block mb-1">Auth Method</small>
+                                <span id="mf-auth">
+                                    {% if agent.authentication_method %}
+                                        {% if agent.authentication_method == 'none' %}
+                                            <span class="badge bg-danger"><i class="fas fa-unlock me-1"></i>No Auth</span>
+                                        {% else %}
+                                            <span class="badge bg-success"><i class="fas fa-lock me-1"></i>{{ agent.authentication_method }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted fst-italic">Not determined</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Capabilities -->
+                    <div class="mb-3">
+                        <small class="text-muted text-uppercase fw-semibold d-block mb-2">Detected Capabilities</small>
+                        <div id="mf-capabilities">
+                            {% if agent.capabilities %}
+                                {% for cap in agent.capabilities %}
+                                    {% set cap_icons = {
+                                        'text_generation': 'fa-comment-alt',
+                                        'embeddings': 'fa-project-diagram',
+                                        'image_generation': 'fa-image',
+                                        'speech_to_text': 'fa-microphone',
+                                        'vision': 'fa-eye',
+                                        'code_generation': 'fa-code',
+                                        'function_calling': 'fa-cogs',
+                                        'planning': 'fa-brain',
+                                        'memory': 'fa-memory',
+                                        'phi_processing': 'fa-heartbeat',
+                                        'rag': 'fa-search',
+                                        'robotics': 'fa-robot',
+                                    } %}
+                                    <span class="badge bg-dark border border-secondary me-1 mb-1 px-2 py-1">
+                                        <i class="fas {{ cap_icons.get(cap, 'fa-check') }} me-1 text-info"></i>{{ cap.replace('_', ' ')|title }}
+                                    </span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted fst-italic">Run enrichment to detect capabilities</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Tool Access -->
+                    {% if agent.tool_access %}
+                    <div class="mb-3">
+                        <small class="text-muted text-uppercase fw-semibold d-block mb-2">Tool Access</small>
+                        <div>
+                            {% for tool in agent.tool_access %}
+                                <span class="badge bg-dark border border-info me-1 mb-1 px-2 py-1" style="font-size:.78em">
+                                    <i class="fas fa-wrench me-1 text-warning"></i>{{ tool.replace('_', ' ')|title }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Probe results from last extraction -->
+                    {% set probe = (agent.agent_metadata or {}).get('_metadata_extraction', {}) %}
+                    {% if probe %}
+                    <hr class="my-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted text-uppercase fw-semibold">Last Probe Results</small>
+                        <small class="text-muted">{{ probe.get('extraction_timestamp', '') }}</small>
+                    </div>
+
+                    {% set pr = probe.get('probe_results', {}) %}
+
+                    <!-- Available models -->
+                    {% if pr.get('available_models') %}
+                    <div class="mb-2">
+                        <small class="text-muted fw-semibold">Models Detected ({{ pr.available_models|length }}):</small>
+                        <div class="mt-1">
+                            {% for m in pr.available_models[:8] %}
+                                <span class="badge bg-success me-1 mb-1">{{ m }}</span>
+                            {% endfor %}
+                            {% if pr.available_models|length > 8 %}
+                                <span class="badge bg-secondary">+{{ pr.available_models|length - 8 }} more</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- TLS / Auth pills -->
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        {% if pr.get('uses_tls') %}
+                            <span class="badge bg-success"><i class="fas fa-shield-alt me-1"></i>TLS Encrypted</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>No TLS</span>
+                        {% endif %}
+                        {% if pr.get('requires_auth') %}
+                            <span class="badge bg-success"><i class="fas fa-lock me-1"></i>Auth Required</span>
+                        {% else %}
+                            <span class="badge bg-danger"><i class="fas fa-unlock me-1"></i>No Auth</span>
+                        {% endif %}
+                        {% if pr.get('health_status') %}
+                            <span class="badge bg-info"><i class="fas fa-heartbeat me-1"></i>Health: {{ pr.health_status }}</span>
+                        {% endif %}
+                        {% if pr.get('service_mesh') %}
+                            <span class="badge bg-secondary"><i class="fas fa-network-wired me-1"></i>Service Mesh</span>
+                        {% endif %}
+                        {% if pr.get('ros_master_reachable') %}
+                            <span class="badge bg-warning text-dark"><i class="fas fa-robot me-1"></i>ROS Master Active</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Service info -->
+                    {% if pr.get('service_info') or pr.get('version') %}
+                    <div class="mb-2">
+                        <small class="text-muted fw-semibold">Service Info:</small>
+                        <pre class="mt-1 p-2 rounded small" style="background:rgba(0,0,0,.3);max-height:120px;overflow-y:auto">{{ (pr.get('service_info') or {'version': pr.get('version')})|tojson(indent=2) }}</pre>
+                    </div>
+                    {% endif %}
+
+                    <!-- GraphQL types -->
+                    {% if pr.get('schema_types') %}
+                    <div class="mb-2">
+                        <small class="text-muted fw-semibold">GraphQL Schema Types ({{ pr.type_count }}):</small>
+                        <div class="mt-1">
+                            {% for t in pr.schema_types[:12] %}
+                                <span class="badge bg-dark border border-secondary me-1 mb-1" style="font-size:.75em">{{ t }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Docker info -->
+                    {% if pr.get('image') %}
+                    <div class="mb-2">
+                        <small class="text-muted fw-semibold">Container Image:</small>
+                        <code class="ms-2">{{ pr.image }}</code>
+                        {% if pr.get('image_runtime') %}
+                            <span class="badge bg-info ms-2">{{ pr.image_runtime }}</span>
+                        {% endif %}
+                        {% if pr.get('uses_latest_tag') %}
+                            <span class="badge bg-warning text-dark ms-1"><i class="fas fa-exclamation-triangle me-1"></i>latest tag</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- K8s info -->
+                    {% if pr.get('namespace') %}
+                    <div class="mb-2">
+                        <small class="text-muted fw-semibold">Kubernetes:</small>
+                        <span class="ms-2"><code>{{ pr.namespace }}</code></span>
+                        {% if pr.get('k8s_ai_annotation') %}
+                            <span class="badge bg-secondary ms-2">{{ pr.k8s_ai_annotation }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- ROS info -->
+                    {% if pr.get('topic_count') %}
+                    <div class="mb-2">
+                        <small class="text-muted fw-semibold">ROS Topics:</small>
+                        <span class="ms-2 badge bg-warning text-dark">{{ pr.topic_count }} topics</span>
+                        <span class="ms-1 badge bg-warning text-dark">{{ pr.get('service_count', 0) }} services</span>
+                    </div>
+                    {% endif %}
+
+                    {% endif %}{# end probe block #}
+
+                    <!-- Run enrichment if never run -->
+                    {% if not probe %}
+                    <div class="alert alert-dark border border-secondary mb-0" style="background:rgba(255,255,255,.03)">
+                        <i class="fas fa-info-circle text-primary me-2"></i>
+                        Metadata has not been extracted yet for this agent.
+                        Click <strong>Re-Enrich Now</strong> to probe the endpoint and extract detailed intelligence.
+                    </div>
+                    {% endif %}
+
+                    <!-- Spinner (hidden by default) -->
+                    <div id="enrich-spinner" class="text-center py-3 d-none">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <div class="mt-2 text-muted">Probing endpoint &amp; extracting metadata…</div>
+                    </div>
+
+                    <!-- Result toast area -->
+                    <div id="enrich-result" class="mt-2"></div>
+                </div>
+            </div>
         </div>
 
         <!-- Right Sidebar -->
@@ -547,5 +805,85 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+function runEnrichment(agentId) {
+    const btn       = document.getElementById('enrichBtn');
+    const spinner   = document.getElementById('enrich-spinner');
+    const resultDiv = document.getElementById('enrich-result');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Enriching…';
+    spinner.classList.remove('d-none');
+    resultDiv.innerHTML = '';
+
+    fetch(`/api/agents/${agentId}/enrich`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            spinner.classList.add('d-none');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Re-Enrich Now';
+
+            if (data.success) {
+                // Patch in the freshly extracted values without a full page reload
+                if (data.model_family) {
+                    document.getElementById('mf-model-family').innerHTML =
+                        `<span class="badge bg-primary fs-6">${data.model_family}</span>`;
+                }
+                if (data.agent_framework) {
+                    document.getElementById('mf-framework').innerHTML =
+                        `<span class="badge bg-secondary">${data.agent_framework}</span>`;
+                }
+                if (data.autonomy_level) {
+                    const colors = {full:'danger', high:'warning', medium:'info', low:'success'};
+                    const color  = colors[data.autonomy_level] || 'secondary';
+                    document.getElementById('mf-autonomy').innerHTML =
+                        `<span class="badge bg-${color}">${data.autonomy_level.charAt(0).toUpperCase() + data.autonomy_level.slice(1)}</span>`;
+                }
+                if (data.authentication_method) {
+                    const isNone = data.authentication_method === 'none';
+                    document.getElementById('mf-auth').innerHTML = isNone
+                        ? `<span class="badge bg-danger"><i class="fas fa-unlock me-1"></i>No Auth</span>`
+                        : `<span class="badge bg-success"><i class="fas fa-lock me-1"></i>${data.authentication_method}</span>`;
+                }
+                if (data.capabilities && data.capabilities.length) {
+                    const capIcons = {
+                        text_generation:'fa-comment-alt', embeddings:'fa-project-diagram',
+                        image_generation:'fa-image', speech_to_text:'fa-microphone',
+                        vision:'fa-eye', code_generation:'fa-code', function_calling:'fa-cogs',
+                        planning:'fa-brain', memory:'fa-memory', phi_processing:'fa-heartbeat',
+                        rag:'fa-search', robotics:'fa-robot',
+                    };
+                    const html = data.capabilities.map(c =>
+                        `<span class="badge bg-dark border border-secondary me-1 mb-1 px-2 py-1">
+                            <i class="fas ${capIcons[c]||'fa-check'} me-1 text-info"></i>${c.replace(/_/g,' ').replace(/\b\w/g, x=>x.toUpperCase())}
+                         </span>`
+                    ).join('');
+                    document.getElementById('mf-capabilities').innerHTML = html;
+                }
+
+                const fields = data.updated_fields.join(', ') || 'none (already enriched)';
+                resultDiv.innerHTML =
+                    `<div class="alert alert-success py-2 small">
+                        <i class="fas fa-check-circle me-1"></i>
+                        Enrichment complete. Updated: <strong>${fields}</strong>.
+                        Reload the page for full probe results.
+                     </div>`;
+            } else {
+                resultDiv.innerHTML =
+                    `<div class="alert alert-warning py-2 small">
+                        <i class="fas fa-exclamation-triangle me-1"></i>${data.message || 'Enrichment returned no data.'}
+                     </div>`;
+            }
+        })
+        .catch(err => {
+            spinner.classList.add('d-none');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Re-Enrich Now';
+            resultDiv.innerHTML =
+                `<div class="alert alert-danger py-2 small">
+                    <i class="fas fa-times-circle me-1"></i>Enrichment request failed: ${err.message}
+                 </div>`;
+        });
+}
 </script>
 {% endblock %}

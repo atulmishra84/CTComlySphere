@@ -917,6 +917,140 @@ def api_scan_agent(agent_id):
         return jsonify({'success': False, 'message': str(e)})
 
 
+@app.route('/api/agents/<int:agent_id>/enrich', methods=['POST'])
+def api_enrich_agent_metadata(agent_id):
+    """
+    On-demand metadata enrichment for a discovered AI agent.
+    Runs the MetadataExtractor against the agent's endpoint and protocol,
+    then persists the extracted fields back to the AIAgent record.
+    """
+    agent = AIAgent.query.get_or_404(agent_id)
+
+    try:
+        from scanners.metadata_extractor import MetadataExtractor
+        extractor = MetadataExtractor(timeout=8)
+
+        agent_data = {
+            'name':          agent.name,
+            'type':          agent.type,
+            'protocol':      agent.protocol,
+            'endpoint':      agent.endpoint,
+            'agent_metadata': agent.agent_metadata or {},
+        }
+
+        enriched = extractor.extract(agent_data)
+
+        typed_fields = [
+            'model_family', 'model_size', 'capabilities', 'agent_framework',
+            'autonomy_level', 'tool_access', 'authentication_method',
+            'version', 'deployment_method',
+        ]
+        updated_fields = []
+        for field in typed_fields:
+            if field in enriched:
+                current = getattr(agent, field, None)
+                if not current:
+                    try:
+                        setattr(agent, field, enriched[field])
+                        updated_fields.append(field)
+                    except Exception:
+                        pass
+
+        extracted_blob = enriched.get('extracted_metadata')
+        if extracted_blob:
+            existing_meta = dict(agent.agent_metadata or {})
+            existing_meta['_metadata_extraction'] = extracted_blob
+            agent.agent_metadata = existing_meta
+            if '_metadata_extraction' not in updated_fields:
+                updated_fields.append('agent_metadata')
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'agent_id': agent_id,
+            'agent_name': agent.name,
+            'updated_fields': updated_fields,
+            'model_family':     enriched.get('model_family'),
+            'agent_framework':  enriched.get('agent_framework'),
+            'capabilities':     enriched.get('capabilities'),
+            'autonomy_level':   enriched.get('autonomy_level'),
+            'authentication_method': enriched.get('authentication_method'),
+            'extraction_timestamp': enriched.get('extracted_metadata', {}).get('extraction_timestamp'),
+        })
+
+    except ImportError:
+        return jsonify({'success': False, 'message': 'Metadata extractor not available'}), 503
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Metadata enrichment failed for agent {agent_id}: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/agents/enrich-all', methods=['POST'])
+def api_enrich_all_agents():
+    """
+    Batch metadata enrichment — re-enriches all known AI agents.
+    Returns a summary of how many were updated.
+    """
+    try:
+        from scanners.metadata_extractor import MetadataExtractor
+        extractor = MetadataExtractor(timeout=5)
+
+        agents = AIAgent.query.all()
+        enriched_count = 0
+        errors = []
+
+        for agent in agents:
+            try:
+                agent_data = {
+                    'name':          agent.name,
+                    'type':          agent.type,
+                    'protocol':      agent.protocol,
+                    'endpoint':      agent.endpoint,
+                    'agent_metadata': agent.agent_metadata or {},
+                }
+                enriched = extractor.extract(agent_data)
+
+                typed_fields = [
+                    'model_family', 'model_size', 'capabilities', 'agent_framework',
+                    'autonomy_level', 'tool_access', 'authentication_method',
+                    'version', 'deployment_method',
+                ]
+                for field in typed_fields:
+                    if field in enriched and not getattr(agent, field, None):
+                        try:
+                            setattr(agent, field, enriched[field])
+                        except Exception:
+                            pass
+
+                extracted_blob = enriched.get('extracted_metadata')
+                if extracted_blob:
+                    existing_meta = dict(agent.agent_metadata or {})
+                    existing_meta['_metadata_extraction'] = extracted_blob
+                    agent.agent_metadata = existing_meta
+
+                enriched_count += 1
+            except Exception as e:
+                errors.append({'agent_id': agent.id, 'name': agent.name, 'error': str(e)})
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'total_agents': len(agents),
+            'enriched': enriched_count,
+            'errors': len(errors),
+            'error_details': errors[:10],
+        })
+
+    except ImportError:
+        return jsonify({'success': False, 'message': 'Metadata extractor not available'}), 503
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 # ===== INTEGRATION ROUTES =====
 
 @app.route('/integrations')

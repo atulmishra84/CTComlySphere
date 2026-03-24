@@ -3,6 +3,14 @@ from datetime import datetime
 import logging
 from typing import Dict, List, Optional, Any
 
+try:
+    from scanners.metadata_extractor import MetadataExtractor as _MetadataExtractor
+    _extractor = _MetadataExtractor(timeout=5)
+    _METADATA_EXTRACTOR_AVAILABLE = True
+except Exception:
+    _METADATA_EXTRACTOR_AVAILABLE = False
+    _extractor = None
+
 class BaseScanner(ABC):
     """Abstract base class for all protocol scanners"""
     
@@ -276,3 +284,59 @@ class BaseScanner(ABC):
         }
         
         return ai_risks
+
+    def enrich_agent_metadata(self, agent_db_obj, agent_data: Dict[str, Any]) -> None:
+        """
+        Run the MetadataExtractor on a newly discovered agent and persist the
+        enriched fields back to the AIAgent database record.
+
+        Call this after `create_or_update_agent` inside `scan()` or
+        `discover_agents()` before the final db.session.commit().
+
+        Parameters
+        ----------
+        agent_db_obj : AIAgent
+            The SQLAlchemy model instance (already added to the session).
+        agent_data : dict
+            Raw discovery data dict from the scanner (name, endpoint, protocol,
+            agent_metadata / metadata, type, etc.).
+        """
+        if not _METADATA_EXTRACTOR_AVAILABLE or _extractor is None:
+            return
+
+        try:
+            enriched = _extractor.extract(agent_data)
+        except Exception as exc:
+            self.logger.warning(f"MetadataExtractor failed for {agent_db_obj.name}: {exc}")
+            return
+
+        # Map top-level typed fields onto the model (only overwrite if currently blank)
+        typed_fields = [
+            'model_family', 'model_size', 'capabilities', 'agent_framework',
+            'autonomy_level', 'tool_access', 'authentication_method',
+            'version', 'deployment_method',
+        ]
+        for field in typed_fields:
+            if field in enriched:
+                current = getattr(agent_db_obj, field, None)
+                if not current:
+                    try:
+                        setattr(agent_db_obj, field, enriched[field])
+                    except Exception:
+                        pass
+
+        # Merge the rich probe blob into agent_metadata JSON
+        extracted_blob = enriched.get('extracted_metadata')
+        if extracted_blob:
+            try:
+                existing_meta = dict(agent_db_obj.agent_metadata or {})
+                existing_meta['_metadata_extraction'] = extracted_blob
+                agent_db_obj.agent_metadata = existing_meta
+            except Exception:
+                pass
+
+        self.logger.debug(
+            f"Enriched {agent_db_obj.name}: model={enriched.get('model_family')} "
+            f"framework={enriched.get('agent_framework')} "
+            f"caps={enriched.get('capabilities')}"
+        )
