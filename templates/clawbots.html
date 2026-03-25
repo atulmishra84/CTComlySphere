@@ -6,120 +6,114 @@
 <div class="container-fluid">
 
     <!-- Page Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-                <div>
-                    <h1 class="h3 fw-bold mb-1">
-                        <i class="fas fa-robot text-warning me-2"></i>Clawbot Detection &amp; Registration
-                    </h1>
-                    <p class="text-muted mb-0">
-                        Discover and register autonomous robotic AI agents (Clawbots) operating in healthcare, laboratory, pharmacy, and patient-care environments.
-                    </p>
-                </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    <form method="POST" action="{{ url_for('clawbots_scan') }}" class="d-inline">
-                        <button type="submit" class="btn btn-warning shadow">
-                            <i class="fas fa-search me-2"></i>Run Network Scan
-                        </button>
-                    </form>
-                    <button class="btn btn-primary shadow" data-bs-toggle="modal" data-bs-target="#registerModal">
-                        <i class="fas fa-plus me-2"></i>Register Clawbot
-                    </button>
-                </div>
-            </div>
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+        <div>
+            <h1 class="h4 fw-bold mb-1">
+                <i class="fas fa-robot text-warning me-2"></i>Clawbot Detection &amp; Registration
+            </h1>
+            <p class="text-muted small mb-0">
+                Discover and register autonomous robotic AI agents operating in healthcare, lab, pharmacy, and patient-care environments.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <form method="POST" action="{{ url_for('clawbots_scan') }}" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-warning">
+                    <i class="fas fa-search me-1"></i>Run Scan
+                </button>
+            </form>
+            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">
+                <i class="fas fa-plus me-1"></i>Register Clawbot
+            </button>
         </div>
     </div>
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    {% for category, message in messages %}
-    <div class="alert alert-{{ 'danger' if category == 'error' else ('warning' if category == 'warning' else category) }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    {% if messages %}{% for category, message in messages %}
+    <div class="alert alert-{{ 'danger' if category == 'error' else ('warning' if category == 'warning' else category) }} alert-dismissible fade show py-2" role="alert">
+        {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-    {% endfor %}
-    {% endif %}
-    {% endwith %}
+    {% endfor %}{% endif %}{% endwith %}
 
-    <!-- Summary Cards -->
+    <!-- Summary Cards — compact row -->
     <div class="row g-3 mb-4">
-        <div class="col-xl-3 col-sm-6">
+        <div class="col-6 col-lg-3">
             <div class="card border-warning h-100">
-                <div class="card-body d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-warning bg-opacity-15 p-3">
-                        <i class="fas fa-robot fa-lg text-warning"></i>
+                <div class="card-body py-3 d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-warning bg-opacity-10 p-2 flex-shrink-0">
+                        <i class="fas fa-robot text-warning"></i>
                     </div>
-                    <div>
-                        <div class="h4 fw-bold mb-0">{{ total_discovered }}</div>
-                        <div class="text-muted small">Discovered Clawbots</div>
+                    <div class="min-w-0">
+                        <div class="h5 fw-bold mb-0">{{ total_discovered }}</div>
+                        <div class="text-muted small">Discovered</div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-sm-6">
+        <div class="col-6 col-lg-3">
             <div class="card border-success h-100">
-                <div class="card-body d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-success bg-opacity-15 p-3">
-                        <i class="fas fa-check-circle fa-lg text-success"></i>
+                <div class="card-body py-3 d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-success bg-opacity-10 p-2 flex-shrink-0">
+                        <i class="fas fa-check-circle text-success"></i>
                     </div>
-                    <div>
-                        <div class="h4 fw-bold mb-0">{{ registered_count }}</div>
-                        <div class="text-muted small">Registered in Inventory</div>
+                    <div class="min-w-0">
+                        <div class="h5 fw-bold mb-0">{{ registered_count }}</div>
+                        <div class="text-muted small">Registered</div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-sm-6">
+        <div class="col-6 col-lg-3">
             <div class="card border-danger h-100">
-                <div class="card-body d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-danger bg-opacity-15 p-3">
-                        <i class="fas fa-exclamation-triangle fa-lg text-danger"></i>
+                <div class="card-body py-3 d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-danger bg-opacity-10 p-2 flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-danger"></i>
                     </div>
-                    <div>
-                        <div class="h4 fw-bold mb-0">{{ (risk_summary.CRITICAL or 0) + (risk_summary.HIGH or 0) }}</div>
-                        <div class="text-muted small">High / Critical Risk</div>
+                    <div class="min-w-0">
+                        <div class="h5 fw-bold mb-0">{{ (risk_summary.CRITICAL or 0) + (risk_summary.HIGH or 0) }}</div>
+                        <div class="text-muted small">High / Critical</div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-sm-6">
+        <div class="col-6 col-lg-3">
             <div class="card border-info h-100">
-                <div class="card-body d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-info bg-opacity-15 p-3">
-                        <i class="fas fa-network-wired fa-lg text-info"></i>
+                <div class="card-body py-3 d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-info bg-opacity-10 p-2 flex-shrink-0">
+                        <i class="fas fa-network-wired text-info"></i>
                     </div>
-                    <div>
-                        <div class="h4 fw-bold mb-0">{{ protocol_counts | length }}</div>
-                        <div class="text-muted small">Protocols Detected</div>
+                    <div class="min-w-0">
+                        <div class="h5 fw-bold mb-0">{{ protocol_counts | length }}</div>
+                        <div class="text-muted small">Protocols</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row g-4 mb-4">
+    <!-- Charts + Types row — side by side, compact -->
+    <div class="row g-3 mb-4">
         <!-- Risk Distribution -->
         <div class="col-lg-4">
-            <div class="card border-secondary h-100">
-                <div class="card-header border-secondary py-3">
-                    <h6 class="card-title fw-semibold mb-0">
+            <div class="card h-100">
+                <div class="card-header py-2">
+                    <h6 class="card-title fw-semibold mb-0 small">
                         <i class="fas fa-shield-alt text-warning me-2"></i>Risk Distribution
                     </h6>
                 </div>
-                <div class="card-body">
-                    <canvas id="riskChart" height="200"></canvas>
-                    <div class="mt-3">
+                <div class="card-body py-2">
+                    <div style="height:140px;">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                    <div class="mt-2">
                         {% for level, count in risk_summary.items() %}
-                        <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="badge
                                 {% if level == 'CRITICAL' %}bg-danger
                                 {% elif level == 'HIGH' %}bg-warning text-dark
                                 {% elif level == 'MEDIUM' %}bg-primary
-                                {% else %}bg-success{% endif %}
-                                px-3">{{ level }}</span>
-                            <span class="fw-semibold">{{ count }} robot{{ 's' if count != 1 else '' }}</span>
+                                {% else %}bg-success{% endif %}">{{ level }}</span>
+                            <span class="text-muted small">{{ count }} robot{{ 's' if count != 1 else '' }}</span>
                         </div>
                         {% endfor %}
                     </div>
@@ -129,92 +123,85 @@
 
         <!-- Protocol Breakdown -->
         <div class="col-lg-4">
-            <div class="card border-secondary h-100">
-                <div class="card-header border-secondary py-3">
-                    <h6 class="card-title fw-semibold mb-0">
-                        <i class="fas fa-plug text-info me-2"></i>Communication Protocols
+            <div class="card h-100">
+                <div class="card-header py-2">
+                    <h6 class="card-title fw-semibold mb-0 small">
+                        <i class="fas fa-plug text-info me-2"></i>Protocols
                     </h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body py-2">
                     {% if protocol_counts %}
-                    <canvas id="protocolChart" height="200"></canvas>
-                    <div class="mt-3">
+                    <div style="height:140px;">
+                        <canvas id="protocolChart"></canvas>
+                    </div>
+                    <div class="mt-2">
                         {% for proto, count in protocol_counts.items() %}
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="text-capitalize fw-medium">
-                                <i class="fas fa-circle text-info me-2" style="font-size:0.5rem;vertical-align:middle;"></i>
-                                {{ proto.replace('_', ' ').upper() }}
-                            </span>
-                            <span class="text-muted">{{ count }}</span>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small fw-medium">{{ proto.replace('_', ' ').upper() }}</span>
+                            <span class="badge bg-secondary">{{ count }}</span>
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted">No protocol data available.</p>
+                    <p class="text-muted small mb-0">No data yet — run a scan.</p>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Clawbot Types -->
+        <!-- Robot Types -->
         <div class="col-lg-4">
-            <div class="card border-secondary h-100">
-                <div class="card-header border-secondary py-3">
-                    <h6 class="card-title fw-semibold mb-0">
-                        <i class="fas fa-tags text-success me-2"></i>Robot Types Detected
+            <div class="card h-100">
+                <div class="card-header py-2">
+                    <h6 class="card-title fw-semibold mb-0 small">
+                        <i class="fas fa-tags text-success me-2"></i>Robot Types
                     </h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body py-2" style="overflow-y:auto;max-height:260px;">
                     {% if type_counts %}
                     {% for ctype, count in type_counts.items() %}
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            {% if 'surgical' in ctype %}
-                            <i class="fas fa-scalpel text-danger me-2"></i>
-                            {% elif 'lab' in ctype or 'specimen' in ctype %}
-                            <i class="fas fa-vial text-warning me-2"></i>
-                            {% elif 'medication' in ctype or 'med' in ctype %}
-                            <i class="fas fa-pills text-info me-2"></i>
-                            {% elif 'patient' in ctype %}
-                            <i class="fas fa-user-injured text-primary me-2"></i>
-                            {% elif 'rehab' in ctype %}
-                            <i class="fas fa-dumbbell text-success me-2"></i>
-                            {% else %}
-                            <i class="fas fa-robot text-secondary me-2"></i>
-                            {% endif %}
-                            <span class="text-capitalize">{{ ctype.replace('_', ' ') }}</span>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="small text-truncate me-2">
+                            {% if 'surgical' in ctype %}<i class="fas fa-scalpel text-danger me-1"></i>
+                            {% elif 'lab' in ctype or 'specimen' in ctype %}<i class="fas fa-vial text-warning me-1"></i>
+                            {% elif 'medication' in ctype or 'med' in ctype %}<i class="fas fa-pills text-info me-1"></i>
+                            {% elif 'patient' in ctype %}<i class="fas fa-user-injured text-primary me-1"></i>
+                            {% elif 'rehab' in ctype %}<i class="fas fa-dumbbell text-success me-1"></i>
+                            {% else %}<i class="fas fa-robot text-secondary me-1"></i>{% endif %}
+                            {{ ctype.replace('_', ' ') | capitalize }}
                         </div>
-                        <span class="badge bg-secondary">{{ count }}</span>
+                        <span class="badge bg-secondary flex-shrink-0">{{ count }}</span>
                     </div>
                     {% endfor %}
                     {% else %}
-                    <p class="text-muted">No type data available.</p>
+                    <p class="text-muted small mb-0">No type data yet.</p>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Discovered Clawbots Table -->
-    <div class="card border-secondary mb-4">
-        <div class="card-header border-secondary py-3 d-flex justify-content-between align-items-center">
-            <h6 class="card-title fw-semibold mb-0">
+    <!-- Discovered Clawbots Table — fixed height, compact columns -->
+    <div class="card mb-4">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center">
+            <h6 class="card-title fw-semibold mb-0 small">
                 <i class="fas fa-list text-warning me-2"></i>Discovered Clawbots
-                <span class="badge bg-warning text-dark ms-2">{{ total_discovered }}</span>
+                <span class="badge bg-warning text-dark ms-1">{{ total_discovered }}</span>
             </h6>
-            <input class="form-control form-control-sm w-auto" type="search" id="clawbotSearch" placeholder="Filter robots...">
+            <input class="form-control form-control-sm" style="max-width:180px;" type="search"
+                   id="clawbotSearch" placeholder="Filter…">
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="clawbotTable">
-                    <thead>
-                        <tr class="border-secondary">
-                            <th class="ps-3">Robot Name</th>
-                            <th>Type</th>
+            <div class="table-responsive" style="max-height:380px;overflow-y:auto;">
+                <table class="table table-hover table-sm align-middle mb-0" id="clawbotTable">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th class="ps-3" style="min-width:160px;">Robot</th>
+                            <th style="min-width:120px;">Type</th>
                             <th>Protocol</th>
-                            <th>Location</th>
-                            <th>PHI Access</th>
-                            <th>Risk</th>
+                            <th style="min-width:100px;">Location</th>
+                            <th>PHI</th>
+                            <th style="min-width:110px;">Risk</th>
                             <th>Safety</th>
                             <th class="text-end pe-3">Actions</th>
                         </tr>
@@ -224,41 +211,37 @@
                         {% set bot = entry.bot %}
                         {% set risk = entry.risk %}
                         {% set meta = bot.metadata %}
-                        <tr class="border-secondary">
+                        <tr>
                             <td class="ps-3">
-                                <div class="fw-semibold">{{ bot.name }}</div>
-                                <div class="text-muted small font-monospace">{{ bot.endpoint }}</div>
+                                <div class="fw-semibold small text-truncate" style="max-width:160px;" title="{{ bot.name }}">{{ bot.name }}</div>
+                                <div class="text-muted font-monospace text-truncate" style="font-size:0.7rem;max-width:160px;" title="{{ bot.endpoint }}">{{ bot.endpoint }}</div>
                             </td>
                             <td>
-                                <span class="text-capitalize">
+                                <span class="small text-capitalize text-truncate d-block" style="max-width:120px;">
                                 {% set ctype = meta.get('clawbot_type', 'robot') %}
-                                {% if 'surgical' in ctype %}
-                                <i class="fas fa-scalpel text-danger me-1"></i>
-                                {% elif 'lab' in ctype or 'specimen' in ctype %}
-                                <i class="fas fa-vial text-warning me-1"></i>
-                                {% elif 'medication' in ctype or 'med' in ctype %}
-                                <i class="fas fa-pills text-info me-1"></i>
-                                {% elif 'patient' in ctype %}
-                                <i class="fas fa-user-injured text-primary me-1"></i>
-                                {% elif 'rehab' in ctype %}
-                                <i class="fas fa-dumbbell text-success me-1"></i>
-                                {% else %}
-                                <i class="fas fa-robot text-secondary me-1"></i>
-                                {% endif %}
+                                {% if 'surgical' in ctype %}<i class="fas fa-scalpel text-danger me-1"></i>
+                                {% elif 'lab' in ctype or 'specimen' in ctype %}<i class="fas fa-vial text-warning me-1"></i>
+                                {% elif 'medication' in ctype or 'med' in ctype %}<i class="fas fa-pills text-info me-1"></i>
+                                {% elif 'patient' in ctype %}<i class="fas fa-user-injured text-primary me-1"></i>
+                                {% elif 'rehab' in ctype %}<i class="fas fa-dumbbell text-success me-1"></i>
+                                {% else %}<i class="fas fa-robot text-secondary me-1"></i>{% endif %}
                                 {{ ctype.replace('_', ' ') }}
                                 </span>
                             </td>
                             <td>
                                 <span class="badge bg-secondary">{{ bot.protocol.upper() }}</span>
                             </td>
-                            <td class="text-muted small">
-                                {{ meta.get('location') or meta.get('department') or '—' }}
+                            <td>
+                                <span class="small text-muted text-truncate d-block" style="max-width:100px;"
+                                      title="{{ meta.get('location') or meta.get('department') or '—' }}">
+                                    {{ meta.get('location') or meta.get('department') or '—' }}
+                                </span>
                             </td>
                             <td>
                                 {% if meta.get('phi_access') %}
-                                <span class="badge bg-danger"><i class="fas fa-database me-1"></i>PHI</span>
+                                <span class="badge bg-danger">PHI</span>
                                 {% else %}
-                                <span class="badge bg-secondary">No PHI</span>
+                                <span class="badge bg-light text-muted border">No</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -267,50 +250,43 @@
                                     {% elif risk.risk_level == 'HIGH' %}bg-warning text-dark
                                     {% elif risk.risk_level == 'MEDIUM' %}bg-primary
                                     {% else %}bg-success{% endif %}">
-                                    {{ risk.risk_level }} ({{ risk.risk_score }})
+                                    {{ risk.risk_level }}<span class="ms-1 opacity-75">({{ risk.risk_score }})</span>
                                 </span>
                             </td>
                             <td>
                                 {% set safety = meta.get('safety', {}) %}
-                                {% if safety.get('collision_detection') %}
-                                <i class="fas fa-shield-alt text-success me-1" title="Collision Detection"></i>
-                                {% else %}
-                                <i class="fas fa-shield-alt text-danger me-1" title="No Collision Detection"></i>
-                                {% endif %}
-                                {% if safety.get('force_limiting') %}
-                                <i class="fas fa-hand-paper text-success" title="Force Limiting"></i>
-                                {% else %}
-                                <i class="fas fa-hand-paper text-danger" title="No Force Limiting"></i>
-                                {% endif %}
+                                <i class="fas fa-shield-alt {% if safety.get('collision_detection') %}text-success{% else %}text-danger{% endif %} me-1"
+                                   title="Collision Detection: {{ 'ON' if safety.get('collision_detection') else 'OFF' }}"></i>
+                                <i class="fas fa-hand-paper {% if safety.get('force_limiting') %}text-success{% else %}text-danger{% endif %}"
+                                   title="Force Limiting: {{ 'ON' if safety.get('force_limiting') else 'OFF' }}"></i>
                                 {% if safety.get('sil_level') and safety.sil_level != 'N/A' %}
-                                <span class="badge bg-dark border border-secondary ms-1">{{ safety.sil_level }}</span>
+                                <span class="badge bg-secondary ms-1" style="font-size:0.65rem;">{{ safety.sil_level }}</span>
                                 {% endif %}
                             </td>
                             <td class="text-end pe-3">
-                                <button class="btn btn-sm btn-outline-info me-1"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#detailModal"
-                                        data-bot='{{ bot | tojson }}'
-                                        data-risk='{{ risk | tojson }}'>
-                                    <i class="fas fa-eye"></i>
+                                <button class="btn btn-sm btn-outline-secondary py-0 px-2 me-1"
+                                        data-bs-toggle="modal" data-bs-target="#detailModal"
+                                        data-bot='{{ bot | tojson }}' data-risk='{{ risk | tojson }}'
+                                        title="View details">
+                                    <i class="fas fa-eye fa-xs"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-success"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#registerModal"
-                                        data-name="{{ bot.name }}"
-                                        data-protocol="{{ bot.protocol }}"
+                                <button class="btn btn-sm btn-outline-success py-0 px-2"
+                                        data-bs-toggle="modal" data-bs-target="#registerModal"
+                                        data-name="{{ bot.name }}" data-protocol="{{ bot.protocol }}"
                                         data-endpoint="{{ bot.endpoint }}"
                                         data-type="{{ meta.get('clawbot_type', '') }}"
                                         data-location="{{ meta.get('location') or meta.get('department') or '' }}"
-                                        data-phi="{{ 'true' if meta.get('phi_access') else 'false' }}">
-                                    <i class="fas fa-plus"></i>
+                                        data-phi="{{ 'true' if meta.get('phi_access') else 'false' }}"
+                                        title="Register">
+                                    <i class="fas fa-plus fa-xs"></i>
                                 </button>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-4">
-                                No Clawbots discovered. Run a network scan to detect robotic agents.
+                            <td colspan="8" class="text-center text-muted py-5">
+                                <i class="fas fa-robot fa-2x mb-2 d-block opacity-25"></i>
+                                No Clawbots discovered yet. Run a network scan to detect robotic agents.
                             </td>
                         </tr>
                         {% endfor %}
@@ -320,31 +296,31 @@
         </div>
     </div>
 
-    <!-- Registered Clawbots -->
+    <!-- Registered Clawbots — compact -->
     {% if registered_clawbots %}
-    <div class="card border-success mb-4">
-        <div class="card-header border-success py-3">
-            <h6 class="card-title fw-semibold mb-0">
-                <i class="fas fa-check-circle text-success me-2"></i>Registered Clawbots in Compliance Inventory
-                <span class="badge bg-success ms-2">{{ registered_count }}</span>
+    <div class="card mb-4">
+        <div class="card-header py-2 bg-success bg-opacity-10 border-success">
+            <h6 class="card-title fw-semibold mb-0 small text-success">
+                <i class="fas fa-check-circle me-2"></i>Registered in Compliance Inventory
+                <span class="badge bg-success ms-1">{{ registered_count }}</span>
             </h6>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead>
-                        <tr class="border-secondary">
+            <div class="table-responsive" style="max-height:280px;overflow-y:auto;">
+                <table class="table table-hover table-sm align-middle mb-0">
+                    <thead class="table-light sticky-top">
+                        <tr>
                             <th class="ps-3">Name</th>
                             <th>Protocol</th>
-                            <th>Risk Level</th>
+                            <th>Risk</th>
                             <th>Status</th>
                             <th>Registered</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for agent in registered_clawbots %}
-                        <tr class="border-secondary">
-                            <td class="ps-3 fw-semibold">{{ agent.name }}</td>
+                        <tr>
+                            <td class="ps-3 fw-semibold small">{{ agent.name }}</td>
                             <td><span class="badge bg-secondary">{{ agent.protocol.upper() }}</span></td>
                             <td>
                                 <span class="badge
@@ -355,13 +331,9 @@
                                     {{ agent.risk_level.value if agent.risk_level else 'UNKNOWN' }}
                                 </span>
                             </td>
-                            <td>
-                                <span class="badge bg-success">
-                                    <i class="fas fa-check me-1"></i>{{ agent.status or 'active' }}
-                                </span>
-                            </td>
+                            <td><span class="badge bg-success-subtle text-success border border-success">Active</span></td>
                             <td class="text-muted small">
-                                {{ agent.discovered_at.strftime('%Y-%m-%d %H:%M') if agent.discovered_at else '—' }}
+                                {{ agent.discovered_at.strftime('%Y-%m-%d') if agent.discovered_at else '—' }}
                             </td>
                         </tr>
                         {% endfor %}
@@ -372,13 +344,13 @@
     </div>
     {% endif %}
 
-</div>
+</div><!-- /.container-fluid -->
 
 <!-- Register Modal -->
 <div class="modal fade" id="registerModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header border-secondary">
+            <div class="modal-header">
                 <h5 class="modal-title fw-semibold">
                     <i class="fas fa-plus-circle text-success me-2"></i>Register Clawbot
                 </h5>
@@ -393,7 +365,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Endpoint / IP <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="endpoint" id="reg-endpoint" required placeholder="e.g. http://robot:11311 or mqtt://broker:1883">
+                            <input type="text" class="form-control" name="endpoint" id="reg-endpoint" required placeholder="e.g. http://robot:11311">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Communication Protocol</label>
@@ -409,9 +381,9 @@
                             <label class="form-label fw-semibold">Robot Type</label>
                             <select class="form-select" name="clawbot_type" id="reg-type">
                                 <option value="surgical_robot">Surgical Assistance Robot</option>
-                                <option value="lab_robot">Laboratory Specimen Handler</option>
-                                <option value="medication_robot">Medication Dispenser Robot</option>
-                                <option value="patient_assist_robot">Patient Assistance Robot</option>
+                                <option value="lab_robot">Lab Specimen Handler</option>
+                                <option value="medication_robot">Medication Dispenser</option>
+                                <option value="patient_assist_robot">Patient Assistance</option>
                                 <option value="rehab_robot">Rehabilitation Robot</option>
                                 <option value="mqtt_robot">MQTT Telemetry Robot</option>
                                 <option value="ros_robot">ROS Robot</option>
@@ -420,7 +392,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Location / Department</label>
-                            <input type="text" class="form-control" name="location" id="reg-location" placeholder="e.g. OR-Suite-12, Central-Pharmacy">
+                            <input type="text" class="form-control" name="location" id="reg-location" placeholder="e.g. OR-Suite-12">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">PHI Access</label>
@@ -430,12 +402,12 @@
                             </select>
                         </div>
                     </div>
-                    <div class="alert alert-warning mt-3 mb-0">
+                    <div class="alert alert-warning mt-3 mb-0 py-2">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        Registering a Clawbot will add it to the compliance inventory and trigger HIPAA, FDA SaMD, and HITRUST framework evaluations.
+                        <small>Registering will add to the compliance inventory and trigger HIPAA, FDA SaMD, and HITRUST evaluations.</small>
                     </div>
                 </div>
-                <div class="modal-footer border-secondary">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success">
                         <i class="fas fa-check me-2"></i>Register Clawbot
@@ -450,21 +422,19 @@
 <div class="modal fade" id="detailModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header border-secondary">
+            <div class="modal-header">
                 <h5 class="modal-title fw-semibold">
                     <i class="fas fa-robot text-warning me-2"></i>Clawbot Details
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="detailModalBody">
-                <!-- Populated by JS -->
-            </div>
+            <div class="modal-body" id="detailModalBody"></div>
         </div>
     </div>
 </div>
 
 <script>
-// ----- Risk chart -----
+// Risk chart
 const riskCtx = document.getElementById('riskChart');
 if (riskCtx) {
     new Chart(riskCtx, {
@@ -472,26 +442,20 @@ if (riskCtx) {
         data: {
             labels: ['Critical', 'High', 'Medium', 'Low'],
             datasets: [{
-                data: [
-                    {{ risk_summary.CRITICAL or 0 }},
-                    {{ risk_summary.HIGH or 0 }},
-                    {{ risk_summary.MEDIUM or 0 }},
-                    {{ risk_summary.LOW or 0 }}
-                ],
-                backgroundColor: ['#dc3545', '#ffc107', '#0d6efd', '#198754'],
+                data: [{{ risk_summary.CRITICAL or 0 }}, {{ risk_summary.HIGH or 0 }}, {{ risk_summary.MEDIUM or 0 }}, {{ risk_summary.LOW or 0 }}],
+                backgroundColor: ['#dc3545','#ffc107','#0d6efd','#198754'],
                 borderWidth: 0
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             cutout: '65%'
         }
     });
 }
 
-// ----- Protocol chart -----
+// Protocol chart
 const protoCtx = document.getElementById('protocolChart');
 if (protoCtx) {
     const protoLabels = [{% for k in protocol_counts %}'{{ k.upper() }}'{% if not loop.last %},{% endif %}{% endfor %}];
@@ -500,25 +464,20 @@ if (protoCtx) {
         type: 'bar',
         data: {
             labels: protoLabels,
-            datasets: [{
-                data: protoData,
-                backgroundColor: '#0dcaf0',
-                borderRadius: 6
-            }]
+            datasets: [{ data: protoData, backgroundColor: '#0dcaf0', borderRadius: 4 }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                x: { grid: { color: '#dee2e6' }, ticks: { color: '#6c757d' } },
+                x: { grid: { color: '#dee2e6' }, ticks: { color: '#6c757d', font: { size: 10 } } },
                 y: { grid: { color: '#dee2e6' }, ticks: { color: '#6c757d', stepSize: 1 } }
             }
         }
     });
 }
 
-// ----- Table search -----
+// Table search
 document.getElementById('clawbotSearch').addEventListener('input', function () {
     const q = this.value.toLowerCase();
     document.querySelectorAll('#clawbotTable tbody tr').forEach(row => {
@@ -526,7 +485,7 @@ document.getElementById('clawbotSearch').addEventListener('input', function () {
     });
 });
 
-// ----- Pre-fill register modal from discovered row -----
+// Pre-fill register modal from row
 const registerModal = document.getElementById('registerModal');
 registerModal.addEventListener('show.bs.modal', function (event) {
     const btn = event.relatedTarget;
@@ -539,7 +498,7 @@ registerModal.addEventListener('show.bs.modal', function (event) {
     document.getElementById('reg-phi').value      = btn.dataset.phi      || 'false';
 });
 
-// ----- Detail modal -----
+// Detail modal — populate
 const detailModal = document.getElementById('detailModal');
 detailModal.addEventListener('show.bs.modal', function (event) {
     const btn  = event.relatedTarget;
@@ -548,78 +507,67 @@ detailModal.addEventListener('show.bs.modal', function (event) {
     const risk = JSON.parse(btn.dataset.risk || '{}');
     const meta = bot.metadata || {};
     const safety = meta.safety || {};
-
     const riskColor = {CRITICAL:'danger', HIGH:'warning', MEDIUM:'primary', LOW:'success'}[risk.risk_level] || 'secondary';
 
-    let factorsHtml = (risk.risk_factors || []).map(f =>
-        `<li class="text-muted small"><i class="fas fa-exclamation-circle text-warning me-2"></i>${f}</li>`
+    const factorsHtml = (risk.risk_factors || []).map(f =>
+        `<li class="text-muted small"><i class="fas fa-exclamation-circle text-warning me-1"></i>${f}</li>`
     ).join('') || '<li class="text-muted small">No risk factors identified.</li>';
 
-    let complianceHtml = (meta.compliance_flags || []).map(f =>
+    const complianceHtml = (meta.compliance_flags || []).map(f =>
         `<span class="badge bg-secondary me-1 mb-1">${f}</span>`
     ).join('') || '<span class="text-muted small">None</span>';
 
-    let capabilitiesHtml = '';
-    const caps = ['degrees_of_freedom', 'payload_kg', 'force_sensing', 'vision_system',
-                  'barcode_scanner', 'speech_interface', 'temperature_monitoring'];
-    caps.forEach(cap => {
-        if (meta[cap] !== undefined) {
-            capabilitiesHtml += `
-                <div class="col-6 col-md-4">
-                    <div class="text-muted small text-uppercase">${cap.replace(/_/g,' ')}</div>
-                    <div class="fw-semibold">${meta[cap]}</div>
-                </div>`;
-        }
-    });
+    const caps = ['degrees_of_freedom','payload_kg','force_sensing','vision_system','barcode_scanner','speech_interface','temperature_monitoring'];
+    const capHtml = caps.filter(c => meta[c] !== undefined).map(c =>
+        `<div class="col-6 col-md-4"><div class="text-muted small text-uppercase">${c.replace(/_/g,' ')}</div><div class="fw-semibold small">${meta[c]}</div></div>`
+    ).join('') || '<div class="col-12 text-muted small">No capability data available.</div>';
 
     document.getElementById('detailModalBody').innerHTML = `
-        <div class="row g-4">
+        <div class="row g-3">
             <div class="col-md-6">
-                <h6 class="fw-semibold text-warning mb-3">Identity</h6>
-                <dl class="row mb-0">
-                    <dt class="col-5 text-muted">Name</dt>       <dd class="col-7">${bot.name || '—'}</dd>
-                    <dt class="col-5 text-muted">Type</dt>        <dd class="col-7">${(meta.clawbot_type || '').replace(/_/g,' ')}</dd>
-                    <dt class="col-5 text-muted">Model</dt>       <dd class="col-7">${meta.robot_model || '—'}</dd>
-                    <dt class="col-5 text-muted">Firmware</dt>    <dd class="col-7">${meta.firmware_version || '—'}</dd>
-                    <dt class="col-5 text-muted">Protocol</dt>    <dd class="col-7"><span class="badge bg-secondary">${(bot.protocol||'').toUpperCase()}</span></dd>
-                    <dt class="col-5 text-muted">Endpoint</dt>    <dd class="col-7 font-monospace small">${bot.endpoint || '—'}</dd>
-                    <dt class="col-5 text-muted">Location</dt>    <dd class="col-7">${meta.location || meta.department || '—'}</dd>
-                    <dt class="col-5 text-muted">PHI Access</dt>  <dd class="col-7">${meta.phi_access ? '<span class="badge bg-danger">YES</span>' : '<span class="badge bg-secondary">No</span>'}</dd>
-                    <dt class="col-5 text-muted">Encryption</dt>  <dd class="col-7">${meta.encryption || '—'}</dd>
+                <h6 class="fw-semibold mb-2">Identity</h6>
+                <dl class="row mb-0 small">
+                    <dt class="col-5 text-muted">Name</dt>      <dd class="col-7">${bot.name || '—'}</dd>
+                    <dt class="col-5 text-muted">Type</dt>       <dd class="col-7">${(meta.clawbot_type||'').replace(/_/g,' ')}</dd>
+                    <dt class="col-5 text-muted">Model</dt>      <dd class="col-7">${meta.robot_model || '—'}</dd>
+                    <dt class="col-5 text-muted">Firmware</dt>   <dd class="col-7">${meta.firmware_version || '—'}</dd>
+                    <dt class="col-5 text-muted">Protocol</dt>   <dd class="col-7"><span class="badge bg-secondary">${(bot.protocol||'').toUpperCase()}</span></dd>
+                    <dt class="col-5 text-muted">Endpoint</dt>   <dd class="col-7 font-monospace text-break" style="font-size:0.75rem;">${bot.endpoint || '—'}</dd>
+                    <dt class="col-5 text-muted">Location</dt>   <dd class="col-7">${meta.location || meta.department || '—'}</dd>
+                    <dt class="col-5 text-muted">PHI Access</dt> <dd class="col-7">${meta.phi_access ? '<span class="badge bg-danger">YES</span>' : '<span class="badge bg-secondary">No</span>'}</dd>
                 </dl>
             </div>
             <div class="col-md-6">
-                <h6 class="fw-semibold text-warning mb-3">Risk Assessment</h6>
+                <h6 class="fw-semibold mb-2">Risk Assessment</h6>
                 <div class="d-flex align-items-center gap-3 mb-3">
                     <div class="display-6 fw-bold text-${riskColor}">${risk.risk_score}</div>
                     <div>
-                        <span class="badge bg-${riskColor} px-3 py-2 fs-6">${risk.risk_level}</span>
+                        <span class="badge bg-${riskColor} px-3 py-2">${risk.risk_level}</span>
                         <div class="text-muted small mt-1">Risk Score / 100</div>
                     </div>
                 </div>
                 <ul class="list-unstyled mb-0">${factorsHtml}</ul>
             </div>
             <div class="col-md-6">
-                <h6 class="fw-semibold text-info mb-3">Safety Systems</h6>
+                <h6 class="fw-semibold mb-2">Safety Systems</h6>
                 <div class="d-flex flex-wrap gap-2">
-                    ${safety.collision_detection !== undefined ? `<span class="badge ${safety.collision_detection ? 'bg-success' : 'bg-danger'}"><i class="fas fa-shield-alt me-1"></i>Collision Detection: ${safety.collision_detection ? 'ON' : 'OFF'}</span>` : ''}
-                    ${safety.force_limiting !== undefined ? `<span class="badge ${safety.force_limiting ? 'bg-success' : 'bg-danger'}"><i class="fas fa-hand-paper me-1"></i>Force Limiting: ${safety.force_limiting ? 'ON' : 'OFF'}</span>` : ''}
-                    ${safety.sil_level ? `<span class="badge bg-dark border border-secondary">${safety.sil_level}</span>` : ''}
-                    ${safety.drug_verification ? `<span class="badge bg-success"><i class="fas fa-pills me-1"></i>Drug Verification</span>` : ''}
+                    ${safety.collision_detection !== undefined ? `<span class="badge ${safety.collision_detection ? 'bg-success':'bg-danger'}"><i class="fas fa-shield-alt me-1"></i>Collision: ${safety.collision_detection ? 'ON':'OFF'}</span>` : ''}
+                    ${safety.force_limiting !== undefined ? `<span class="badge ${safety.force_limiting ? 'bg-success':'bg-danger'}"><i class="fas fa-hand-paper me-1"></i>Force Limit: ${safety.force_limiting ? 'ON':'OFF'}</span>` : ''}
+                    ${safety.sil_level ? `<span class="badge bg-secondary">${safety.sil_level}</span>` : ''}
+                    ${safety.drug_verification ? `<span class="badge bg-success"><i class="fas fa-pills me-1"></i>Drug Verify</span>` : ''}
                     ${safety.emergency_stop ? `<span class="badge bg-warning text-dark"><i class="fas fa-stop-circle me-1"></i>E-Stop</span>` : ''}
                 </div>
             </div>
             <div class="col-md-6">
-                <h6 class="fw-semibold text-success mb-3">Physical Capabilities</h6>
-                <div class="row g-2">${capabilitiesHtml || '<div class="col-12 text-muted small">No capability data available.</div>'}</div>
+                <h6 class="fw-semibold mb-2">Capabilities</h6>
+                <div class="row g-2">${capHtml}</div>
             </div>
             <div class="col-12">
-                <h6 class="fw-semibold text-primary mb-2">Compliance Flags</h6>
+                <h6 class="fw-semibold mb-1">Compliance Flags</h6>
                 <div>${complianceHtml}</div>
             </div>
             <div class="col-12">
-                <h6 class="fw-semibold text-muted mb-2">Discovery Method</h6>
-                <span class="badge bg-dark border border-secondary">${meta.discovery_method || 'unknown'}</span>
+                <span class="badge bg-secondary">${meta.discovery_method || 'unknown'}</span>
                 <span class="text-muted small ms-2">${meta.discovery_timestamp ? new Date(meta.discovery_timestamp).toLocaleString() : ''}</span>
             </div>
         </div>
