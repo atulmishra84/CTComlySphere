@@ -6,7 +6,7 @@ packages = ["c-ares", "glibcLocales", "grpc", "openssl", "pkg-config", "postgres
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
+run = ["gunicorn", "--bind=0.0.0.0:5000", "--reuse-port", "--workers=2", "main:app"]
 
 [workflows]
 runButton = "Project"
