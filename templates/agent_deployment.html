@@ -41,7 +41,7 @@
     ] %}
     {% for key, label, icon, color in cards %}
     <div class="col-xl col-sm-6">
-      <div class="card bg-dark border-{{ color }} h-100">
+      <div class="card border-{{ color }} h-100">
         <div class="card-body d-flex align-items-center gap-3">
           <div class="rounded-circle bg-{{ color }} bg-opacity-15 p-3">
             <i class="fas {{ icon }} fa-lg text-{{ color }}"></i>
@@ -57,7 +57,7 @@
   </div>
 
   <!-- How it works -->
-  <div class="card bg-dark border-secondary mb-4">
+  <div class="card border-secondary mb-4">
     <div class="card-header border-secondary py-3">
       <h6 class="card-title fw-semibold mb-0">
         <i class="fas fa-info-circle text-info me-2"></i>How Collector Agents Work
@@ -85,7 +85,7 @@
   </div>
 
   <!-- Download / Quick-Start Card -->
-  <div class="card bg-dark border-primary mb-4">
+  <div class="card border-primary mb-4">
     <div class="card-header border-primary py-3 d-flex justify-content-between align-items-center">
       <h6 class="card-title fw-semibold mb-0">
         <i class="fas fa-download text-primary me-2"></i>Quick-Start Guide
@@ -162,7 +162,7 @@ services:
   </div>
 
   <!-- Agents Table -->
-  <div class="card bg-dark border-secondary">
+  <div class="card border-secondary">
     <div class="card-header border-secondary py-3 d-flex justify-content-between align-items-center">
       <h6 class="card-title fw-semibold mb-0">
         <i class="fas fa-list text-primary me-2"></i>Deployed Agents
@@ -266,7 +266,7 @@ services:
 <!-- Create Token Modal -->
 <div class="modal fade" id="createModal" tabindex="-1">
   <div class="modal-dialog">
-    <div class="modal-content bg-dark border-secondary">
+    <div class="modal-content">
       <div class="modal-header border-secondary">
         <h5 class="modal-title fw-semibold"><i class="fas fa-plus-circle text-primary me-2"></i>New Collector Agent Token</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -276,15 +276,15 @@ services:
           <div class="row g-3">
             <div class="col-12">
               <label class="form-label fw-semibold">Customer Name <span class="text-danger">*</span></label>
-              <input type="text" class="form-control bg-dark text-white border-secondary" name="customer_name" required placeholder="e.g. Mercy General Hospital">
+              <input type="text" class="form-control" name="customer_name" required placeholder="e.g. Mercy General Hospital">
             </div>
             <div class="col-12">
               <label class="form-label fw-semibold">Environment Label</label>
-              <input type="text" class="form-control bg-dark text-white border-secondary" name="environment_label" placeholder="e.g. Production Network, Lab Segment">
+              <input type="text" class="form-control" name="environment_label" placeholder="e.g. Production Network, Lab Segment">
             </div>
             <div class="col-12">
               <label class="form-label fw-semibold">Scan Interval (minutes)</label>
-              <select class="form-select bg-dark text-white border-secondary" name="scan_interval_minutes">
+              <select class="form-select" name="scan_interval_minutes">
                 <option value="15">15 minutes</option>
                 <option value="30">30 minutes</option>
                 <option value="60" selected>1 hour</option>
@@ -323,7 +323,7 @@ services:
 <!-- View Token Modal -->
 <div class="modal fade" id="tokenModal" tabindex="-1">
   <div class="modal-dialog">
-    <div class="modal-content bg-dark border-warning">
+    <div class="modal-content">
       <div class="modal-header border-warning">
         <h5 class="modal-title fw-semibold"><i class="fas fa-key text-warning me-2"></i>API Token</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>

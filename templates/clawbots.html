@@ -46,7 +46,7 @@
     <!-- Summary Cards -->
     <div class="row g-3 mb-4">
         <div class="col-xl-3 col-sm-6">
-            <div class="card bg-dark border-warning h-100">
+            <div class="card border-warning h-100">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="rounded-circle bg-warning bg-opacity-15 p-3">
                         <i class="fas fa-robot fa-lg text-warning"></i>
@@ -59,7 +59,7 @@
             </div>
         </div>
         <div class="col-xl-3 col-sm-6">
-            <div class="card bg-dark border-success h-100">
+            <div class="card border-success h-100">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="rounded-circle bg-success bg-opacity-15 p-3">
                         <i class="fas fa-check-circle fa-lg text-success"></i>
@@ -72,7 +72,7 @@
             </div>
         </div>
         <div class="col-xl-3 col-sm-6">
-            <div class="card bg-dark border-danger h-100">
+            <div class="card border-danger h-100">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="rounded-circle bg-danger bg-opacity-15 p-3">
                         <i class="fas fa-exclamation-triangle fa-lg text-danger"></i>
@@ -85,7 +85,7 @@
             </div>
         </div>
         <div class="col-xl-3 col-sm-6">
-            <div class="card bg-dark border-info h-100">
+            <div class="card border-info h-100">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="rounded-circle bg-info bg-opacity-15 p-3">
                         <i class="fas fa-network-wired fa-lg text-info"></i>
@@ -102,7 +102,7 @@
     <div class="row g-4 mb-4">
         <!-- Risk Distribution -->
         <div class="col-lg-4">
-            <div class="card bg-dark border-secondary h-100">
+            <div class="card border-secondary h-100">
                 <div class="card-header border-secondary py-3">
                     <h6 class="card-title fw-semibold mb-0">
                         <i class="fas fa-shield-alt text-warning me-2"></i>Risk Distribution
@@ -129,7 +129,7 @@
 
         <!-- Protocol Breakdown -->
         <div class="col-lg-4">
-            <div class="card bg-dark border-secondary h-100">
+            <div class="card border-secondary h-100">
                 <div class="card-header border-secondary py-3">
                     <h6 class="card-title fw-semibold mb-0">
                         <i class="fas fa-plug text-info me-2"></i>Communication Protocols
@@ -158,7 +158,7 @@
 
         <!-- Clawbot Types -->
         <div class="col-lg-4">
-            <div class="card bg-dark border-secondary h-100">
+            <div class="card border-secondary h-100">
                 <div class="card-header border-secondary py-3">
                     <h6 class="card-title fw-semibold mb-0">
                         <i class="fas fa-tags text-success me-2"></i>Robot Types Detected
@@ -196,7 +196,7 @@
     </div>
 
     <!-- Discovered Clawbots Table -->
-    <div class="card bg-dark border-secondary mb-4">
+    <div class="card border-secondary mb-4">
         <div class="card-header border-secondary py-3 d-flex justify-content-between align-items-center">
             <h6 class="card-title fw-semibold mb-0">
                 <i class="fas fa-list text-warning me-2"></i>Discovered Clawbots
@@ -322,7 +322,7 @@
 
     <!-- Registered Clawbots -->
     {% if registered_clawbots %}
-    <div class="card bg-dark border-success mb-4">
+    <div class="card border-success mb-4">
         <div class="card-header border-success py-3">
             <h6 class="card-title fw-semibold mb-0">
                 <i class="fas fa-check-circle text-success me-2"></i>Registered Clawbots in Compliance Inventory
@@ -377,7 +377,7 @@
 <!-- Register Modal -->
 <div class="modal fade" id="registerModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark border-secondary">
+        <div class="modal-content">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title fw-semibold">
                     <i class="fas fa-plus-circle text-success me-2"></i>Register Clawbot
@@ -389,15 +389,15 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Robot Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control bg-dark text-white border-secondary" name="name" id="reg-name" required placeholder="e.g. clawbot-surgical-or12">
+                            <input type="text" class="form-control" name="name" id="reg-name" required placeholder="e.g. clawbot-surgical-or12">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Endpoint / IP <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control bg-dark text-white border-secondary" name="endpoint" id="reg-endpoint" required placeholder="e.g. http://robot:11311 or mqtt://broker:1883">
+                            <input type="text" class="form-control" name="endpoint" id="reg-endpoint" required placeholder="e.g. http://robot:11311 or mqtt://broker:1883">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Communication Protocol</label>
-                            <select class="form-select bg-dark text-white border-secondary" name="protocol" id="reg-protocol">
+                            <select class="form-select" name="protocol" id="reg-protocol">
                                 <option value="ros">ROS (Robot Operating System)</option>
                                 <option value="mqtt">MQTT Telemetry</option>
                                 <option value="rest_api">REST API</option>
@@ -407,7 +407,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Robot Type</label>
-                            <select class="form-select bg-dark text-white border-secondary" name="clawbot_type" id="reg-type">
+                            <select class="form-select" name="clawbot_type" id="reg-type">
                                 <option value="surgical_robot">Surgical Assistance Robot</option>
                                 <option value="lab_robot">Laboratory Specimen Handler</option>
                                 <option value="medication_robot">Medication Dispenser Robot</option>
@@ -420,11 +420,11 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Location / Department</label>
-                            <input type="text" class="form-control bg-dark text-white border-secondary" name="location" id="reg-location" placeholder="e.g. OR-Suite-12, Central-Pharmacy">
+                            <input type="text" class="form-control" name="location" id="reg-location" placeholder="e.g. OR-Suite-12, Central-Pharmacy">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">PHI Access</label>
-                            <select class="form-select bg-dark text-white border-secondary" name="phi_access" id="reg-phi">
+                            <select class="form-select" name="phi_access" id="reg-phi">
                                 <option value="false">No PHI Access</option>
                                 <option value="true">Has PHI Access</option>
                             </select>
@@ -449,7 +449,7 @@
 <!-- Detail Modal -->
 <div class="modal fade" id="detailModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
-        <div class="modal-content bg-dark border-secondary">
+        <div class="modal-content">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title fw-semibold">
                     <i class="fas fa-robot text-warning me-2"></i>Clawbot Details
