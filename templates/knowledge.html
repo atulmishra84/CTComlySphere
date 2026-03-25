@@ -1,0 +1,739 @@
+{% extends "base.html" %}
+{% block title %}Knowledge Base - CT ComplySphere{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+        <div>
+            <h1 class="h4 fw-bold mb-1">
+                <i class="fas fa-book-open text-primary me-2"></i>Knowledge Base
+            </h1>
+            <p class="text-muted small mb-0">
+                Complete reference guide — platform components, deployment guides, prerequisites, permissions, and roadmap.
+            </p>
+        </div>
+        <span class="badge bg-primary px-3 py-2">
+            <i class="fas fa-shield-alt me-1"></i>CT ComplySphere v2.0
+        </span>
+    </div>
+
+    <!-- Quick Nav Pills -->
+    <div class="card mb-4 border-0 bg-light">
+        <div class="card-body py-3">
+            <div class="d-flex flex-wrap gap-2">
+                <a href="#overview"       class="btn btn-sm btn-outline-primary"><i class="fas fa-info-circle me-1"></i>Overview</a>
+                <a href="#components"     class="btn btn-sm btn-outline-secondary"><i class="fas fa-cubes me-1"></i>Components</a>
+                <a href="#challenges"     class="btn btn-sm btn-outline-danger"><i class="fas fa-fire me-1"></i>Challenges Solved</a>
+                <a href="#deployment"     class="btn btn-sm btn-outline-success"><i class="fas fa-cloud me-1"></i>Deployment Guides</a>
+                <a href="#prerequisites"  class="btn btn-sm btn-outline-warning"><i class="fas fa-list-check me-1"></i>Prerequisites</a>
+                <a href="#permissions"    class="btn btn-sm btn-outline-info"><i class="fas fa-key me-1"></i>Permissions</a>
+                <a href="#enhancements"   class="btn btn-sm btn-outline-dark"><i class="fas fa-rocket me-1"></i>Future Roadmap</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── OVERVIEW ─────────────────────────────────────────────────────── -->
+    <div id="overview" class="card mb-4">
+        <div class="card-header py-2 bg-primary bg-opacity-10 border-primary">
+            <h5 class="fw-bold mb-0 text-primary">
+                <i class="fas fa-info-circle me-2"></i>What Is CT ComplySphere?
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-8">
+                    <p class="mb-3">
+                        <strong>CT ComplySphere Visibility &amp; Governance Platform</strong> is an enterprise-grade, AI-agent discovery, compliance, and governance system built for healthcare and regulated industries. It automatically discovers, classifies, scans, and evaluates every AI system operating in your environment — visible or hidden — against major regulatory frameworks.
+                    </p>
+                    <p class="mb-3">
+                        Whether your AI agents run in Kubernetes clusters, Docker containers, REST APIs, robotic systems (Clawbots), or shadow deployments your team doesn't know about, CT ComplySphere finds them, assesses their risk, and provides step-by-step remediation playbooks to achieve compliance.
+                    </p>
+                    <p class="mb-0 text-muted small">
+                        Compliance frameworks covered: <strong>HIPAA · HITRUST CSF · FDA SaMD · GDPR · SOC 2 Type II</strong>
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex gap-3 px-0">
+                            <i class="fas fa-search text-primary mt-1"></i>
+                            <div><strong>Auto-Discovery</strong><br><small class="text-muted">Finds AI agents across all protocols and environments</small></div>
+                        </div>
+                        <div class="list-group-item d-flex gap-3 px-0">
+                            <i class="fas fa-shield-alt text-success mt-1"></i>
+                            <div><strong>Compliance Scoring</strong><br><small class="text-muted">Evaluates against 5 major healthcare frameworks</small></div>
+                        </div>
+                        <div class="list-group-item d-flex gap-3 px-0">
+                            <i class="fas fa-ghost text-danger mt-1"></i>
+                            <div><strong>Shadow AI Detection</strong><br><small class="text-muted">Uncovers unauthorized AI deployments</small></div>
+                        </div>
+                        <div class="list-group-item d-flex gap-3 px-0">
+                            <i class="fas fa-robot text-warning mt-1"></i>
+                            <div><strong>Robotic AI (Clawbot) Support</strong><br><small class="text-muted">ROS, MQTT, VEX robotic systems included</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── COMPONENTS ────────────────────────────────────────────────────── -->
+    <div id="components" class="card mb-4">
+        <div class="card-header py-2 bg-secondary bg-opacity-10">
+            <h5 class="fw-bold mb-0">
+                <i class="fas fa-cubes me-2 text-secondary"></i>Platform Components &amp; Architecture
+            </h5>
+        </div>
+        <div class="card-body pb-1">
+            <div class="row g-3">
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="card border-primary h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-primary"><i class="fas fa-radar me-2"></i>Discovery Engine</h6>
+                            <p class="small text-muted mb-2">Continuously scans your network and infrastructure to detect all AI agents.</p>
+                            <ul class="small mb-0 ps-3">
+                                <li>Kubernetes pod &amp; service discovery</li>
+                                <li>Docker container scanning</li>
+                                <li>REST / gRPC / WebSocket / GraphQL probing</li>
+                                <li>MQTT broker agent detection</li>
+                                <li>MCP (Model Context Protocol) scanner</li>
+                                <li>Cloud service enumeration (AWS/Azure/GCP)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="card border-success h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-success"><i class="fas fa-balance-scale me-2"></i>Compliance Engine</h6>
+                            <p class="small text-muted mb-2">Evaluates every discovered agent against regulatory frameworks with scored reports.</p>
+                            <ul class="small mb-0 ps-3">
+                                <li>HIPAA Technical &amp; Administrative Safeguards</li>
+                                <li>HITRUST CSF Control Mapping</li>
+                                <li>FDA SaMD (Software as Medical Device)</li>
+                                <li>GDPR Article 22 / Data Processing</li>
+                                <li>SOC 2 Type II Trust Criteria</li>
+                                <li>Configurable scoring thresholds per org</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="card border-danger h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-danger"><i class="fas fa-ghost me-2"></i>Shadow AI Detection</h6>
+                            <p class="small text-muted mb-2">Identifies unauthorized, rogue, or unregistered AI deployments that bypass governance.</p>
+                            <ul class="small mb-0 ps-3">
+                                <li>Behavioral anomaly fingerprinting</li>
+                                <li>Network traffic pattern analysis</li>
+                                <li>Unregistered model endpoint detection</li>
+                                <li>PHI exposure identification</li>
+                                <li>Risk-ranked shadow agent inventory</li>
+                                <li>One-click remediation escalation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="card border-warning h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-warning"><i class="fas fa-robot me-2"></i>Clawbot / Robotic AI Module</h6>
+                            <p class="small text-muted mb-2">Dedicated detection and registration for physical robotic AI systems in healthcare.</p>
+                            <ul class="small mb-0 ps-3">
+                                <li>ROS (Robot Operating System) network scan</li>
+                                <li>MQTT telemetry broker detection</li>
+                                <li>VEX Robotics controller discovery</li>
+                                <li>Safety system validation (SIL, collision, force)</li>
+                                <li>PHI access risk scoring for robots</li>
+                                <li>FDA SaMD compliance check for surgical robots</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="card border-info h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-info"><i class="fas fa-chart-line me-2"></i>Analytics &amp; Risk Engine</h6>
+                            <p class="small text-muted mb-2">Predictive scoring and trend analysis for proactive risk management.</p>
+                            <ul class="small mb-0 ps-3">
+                                <li>Weighted vulnerability risk scoring</li>
+                                <li>Trend forecasting (30/60/90-day windows)</li>
+                                <li>PHI exposure heatmaps</li>
+                                <li>Compliance score drift alerts</li>
+                                <li>Protocol vulnerability comparison</li>
+                                <li>Executive summary dashboards</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="card border-secondary h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-secondary"><i class="fas fa-book me-2"></i>Remediation Playbooks</h6>
+                            <p class="small text-muted mb-2">Structured, step-by-step remediation guides mapped to each compliance finding.</p>
+                            <ul class="small mb-0 ps-3">
+                                <li>Framework-specific playbook library</li>
+                                <li>Automated playbook generation from scan findings</li>
+                                <li>Assignable tasks with due dates</li>
+                                <li>Playbook versioning and duplication</li>
+                                <li>Progress tracking and audit trail</li>
+                                <li>Integration with ticketing systems (roadmap)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="card border-primary h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-primary"><i class="fas fa-satellite-dish me-2"></i>Collector Agent System</h6>
+                            <p class="small text-muted mb-2">Deployable lightweight agents that send telemetry from remote or air-gapped environments.</p>
+                            <ul class="small mb-0 ps-3">
+                                <li>Python-based collector package (pip install)</li>
+                                <li>Token-authenticated secure registration</li>
+                                <li>Periodic heartbeat and agent reporting</li>
+                                <li>Environment labeling (prod/staging/dev)</li>
+                                <li>Works behind corporate firewalls / NAT</li>
+                                <li>Auto-revokable via platform console</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="card border-success h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-success"><i class="fas fa-cloud me-2"></i>Multi-Cloud Manager</h6>
+                            <p class="small text-muted mb-2">Unified view of AI deployments across all major cloud providers.</p>
+                            <ul class="small mb-0 ps-3">
+                                <li>AWS: SageMaker, Bedrock, Lambda, EKS</li>
+                                <li>Azure: ML Studio, AKS, Container Instances</li>
+                                <li>GCP: Vertex AI, GKE, Cloud Run</li>
+                                <li>Cross-cloud compliance gap analysis</li>
+                                <li>Cloud-native IAM policy review</li>
+                                <li>Cost &amp; risk optimization recommendations</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-4">
+                    <div class="card border-warning h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-warning"><i class="fas fa-user-shield me-2"></i>Audit &amp; Governance Trail</h6>
+                            <p class="small text-muted mb-2">Immutable audit logging for every compliance action and security event.</p>
+                            <ul class="small mb-0 ps-3">
+                                <li>Tamper-evident audit log records</li>
+                                <li>User action tracking (who changed what)</li>
+                                <li>Compliance evaluation history</li>
+                                <li>Scan result diffs over time</li>
+                                <li>Export to PDF / CSV for auditors</li>
+                                <li>SIEM-compatible event streaming (roadmap)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── CHALLENGES SOLVED ─────────────────────────────────────────────── -->
+    <div id="challenges" class="card mb-4">
+        <div class="card-header py-2 bg-danger bg-opacity-10 border-danger">
+            <h5 class="fw-bold mb-0 text-danger">
+                <i class="fas fa-fire me-2"></i>Challenges This Platform Solves
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% set challenges = [
+                    ('fas fa-eye-slash', 'warning', 'Invisible AI Sprawl', 'Healthcare organizations often have dozens of AI models deployed across departments with no central inventory — CT ComplySphere auto-discovers every one, even those deployed without IT approval.'),
+                    ('fas fa-ghost', 'danger', 'Shadow AI &amp; Rogue Models', 'Employees and vendors deploy AI tools outside formal governance. These unregistered models process PHI without controls. The platform detects and flags them automatically.'),
+                    ('fas fa-file-medical', 'primary', 'HIPAA Compliance Gaps', 'Most organizations struggle to prove their AI systems meet HIPAA Technical and Administrative safeguards. CT ComplySphere generates framework-mapped evidence automatically.'),
+                    ('fas fa-robot', 'warning', 'Uncontrolled Surgical &amp; Lab Robots', 'Robotic AI systems (surgical assistants, medication dispensers) are rarely included in IT governance. The Clawbot module provides FDA SaMD compliance checks specific to these systems.'),
+                    ('fas fa-cloud-upload-alt', 'info', 'Multi-Cloud Blind Spots', 'AI agents deployed across AWS, Azure, and GCP create fragmented visibility. The platform provides a single pane of glass across all cloud providers.'),
+                    ('fas fa-exclamation-triangle', 'danger', 'Late Breach Detection', 'Without continuous monitoring, PHI exposures from AI systems go undetected for months. Webhook-based continuous scanning catches risks in real time.'),
+                    ('fas fa-tasks', 'success', 'No Remediation Workflow', 'Finding a compliance gap is only half the job. Playbooks turn every finding into an actionable, assignable task with due dates and audit evidence.'),
+                    ('fas fa-network-wired', 'secondary', 'Protocol &amp; Stack Fragmentation', 'Healthcare AI runs on REST, gRPC, MQTT, WebSocket, Kubernetes, Docker, and more. CT ComplySphere scans all of these without requiring separate tools.'),
+                    ('fas fa-user-slash', 'danger', 'No PHI Exposure Tracking', 'Identifying which AI agents can access Protected Health Information is critical for breach risk. The platform automatically detects and scores PHI exposure per agent.'),
+                    ('fas fa-gavel', 'primary', 'Audit Readiness', 'During HIPAA or HITRUST audits, organizations scramble for evidence. The platform&apos;s audit trail and compliance reports are audit-ready on demand.')
+                ] %}
+                {% for icon, color, title, desc in challenges %}
+                <div class="col-md-6">
+                    <div class="d-flex gap-3 p-3 border rounded h-100">
+                        <div class="flex-shrink-0">
+                            <span class="rounded-circle bg-{{ color }} bg-opacity-10 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                                <i class="{{ icon }} text-{{ color }}"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h6 class="fw-semibold mb-1">{{ title }}</h6>
+                            <p class="small text-muted mb-0">{{ desc }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── DEPLOYMENT GUIDES ─────────────────────────────────────────────── -->
+    <div id="deployment" class="card mb-4">
+        <div class="card-header py-2 bg-success bg-opacity-10 border-success">
+            <h5 class="fw-bold mb-0 text-success">
+                <i class="fas fa-cloud me-2"></i>Deployment Guides
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <!-- Deployment Tabs -->
+            <ul class="nav nav-tabs px-3 pt-3" id="deployTabs">
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#dep-onprem"><i class="fas fa-server me-1"></i>On-Premises</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dep-aws"><i class="fab fa-aws me-1"></i>AWS</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dep-azure"><i class="fab fa-microsoft me-1"></i>Azure</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dep-gcp"><i class="fab fa-google me-1"></i>GCP</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dep-multi"><i class="fas fa-globe me-1"></i>Multi-Cloud</a></li>
+            </ul>
+            <div class="tab-content p-3">
+
+                <!-- On-Premises -->
+                <div class="tab-pane fade show active" id="dep-onprem">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-server text-secondary me-2"></i>On-Premises Deployment</h6>
+                            <p class="small text-muted mb-3">Ideal for hospitals and enterprises with strict data residency requirements, air-gapped networks, or internal security policies that prohibit cloud egress of PHI metadata.</p>
+                            <div class="alert alert-warning py-2 small">
+                                <i class="fas fa-lock me-2"></i><strong>Recommended</strong> for healthcare organizations with PHI data and regulatory data-residency mandates.
+                            </div>
+                            <h6 class="fw-semibold mt-3 mb-2">Deployment Steps</h6>
+                            <ol class="small text-muted ps-3">
+                                <li class="mb-1">Provision a Linux server (Ubuntu 22.04 LTS recommended, RHEL 8+ supported)</li>
+                                <li class="mb-1">Install Docker Engine + Docker Compose, or a Kubernetes distribution (k3s / RKE2)</li>
+                                <li class="mb-1">Pull the CT ComplySphere platform image from your private registry</li>
+                                <li class="mb-1">Configure <code>DATABASE_URL</code> to point to your internal PostgreSQL instance</li>
+                                <li class="mb-1">Set <code>SESSION_SECRET</code> and all required environment variables</li>
+                                <li class="mb-1">Configure reverse proxy (Nginx / HAProxy) with TLS termination</li>
+                                <li class="mb-1">Open internal network ports (see network prerequisites)</li>
+                                <li class="mb-1">Deploy collector agents on target subnets for distributed scanning</li>
+                                <li class="mb-1">Run database migrations: <code>flask db upgrade</code></li>
+                                <li class="mb-1">Start the platform: <code>gunicorn main:app --bind 0.0.0.0:5000</code></li>
+                            </ol>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0 mb-3">
+                                <div class="card-body py-3">
+                                    <h6 class="fw-semibold mb-2">Minimum Hardware Requirements</h6>
+                                    <table class="table table-sm mb-0 small">
+                                        <tbody>
+                                            <tr><td class="text-muted fw-medium">CPU</td><td>4 vCPU (8 recommended)</td></tr>
+                                            <tr><td class="text-muted fw-medium">RAM</td><td>8 GB (16 GB for large environments)</td></tr>
+                                            <tr><td class="text-muted fw-medium">Storage</td><td>100 GB SSD (NVMe preferred)</td></tr>
+                                            <tr><td class="text-muted fw-medium">OS</td><td>Ubuntu 22.04 / RHEL 8 / Debian 11</td></tr>
+                                            <tr><td class="text-muted fw-medium">Network</td><td>1 Gbps internal, read access to target subnets</td></tr>
+                                            <tr><td class="text-muted fw-medium">PostgreSQL</td><td>v14+ (can be co-located or separate)</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="card bg-light border-0">
+                                <div class="card-body py-3">
+                                    <h6 class="fw-semibold mb-2">Network Ports to Open</h6>
+                                    <table class="table table-sm mb-0 small">
+                                        <tbody>
+                                            <tr><td><code>5000</code></td><td>Platform web UI (internal)</td></tr>
+                                            <tr><td><code>443</code></td><td>HTTPS via reverse proxy (external)</td></tr>
+                                            <tr><td><code>5432</code></td><td>PostgreSQL (internal only)</td></tr>
+                                            <tr><td><code>6443</code></td><td>Kubernetes API (if scanning K8s)</td></tr>
+                                            <tr><td><code>2375/2376</code></td><td>Docker daemon (if scanning Docker)</td></tr>
+                                            <tr><td><code>1883/8883</code></td><td>MQTT broker (if scanning Clawbots)</td></tr>
+                                            <tr><td><code>11311</code></td><td>ROS Master (if scanning ROS robots)</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AWS -->
+                <div class="tab-pane fade" id="dep-aws">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3"><i class="fab fa-aws text-warning me-2"></i>AWS Deployment</h6>
+                            <p class="small text-muted mb-3">Deploy CT ComplySphere on AWS using ECS Fargate (recommended) or EC2 with EKS. Use RDS PostgreSQL for managed database, ALB for load balancing, and ACM for TLS certificates.</p>
+                            <h6 class="fw-semibold mt-3 mb-2">Recommended Architecture</h6>
+                            <ul class="small text-muted ps-3">
+                                <li class="mb-1"><strong>Compute:</strong> ECS Fargate (serverless containers) or EC2 t3.large+</li>
+                                <li class="mb-1"><strong>Database:</strong> Amazon RDS PostgreSQL (Multi-AZ for HA)</li>
+                                <li class="mb-1"><strong>Load Balancer:</strong> Application Load Balancer (ALB) with HTTPS listener</li>
+                                <li class="mb-1"><strong>TLS:</strong> AWS Certificate Manager (ACM) — free managed certs</li>
+                                <li class="mb-1"><strong>Secrets:</strong> AWS Secrets Manager for <code>SESSION_SECRET</code>, <code>DATABASE_URL</code></li>
+                                <li class="mb-1"><strong>Container Registry:</strong> Amazon ECR for platform image</li>
+                                <li class="mb-1"><strong>Monitoring:</strong> CloudWatch Logs + Container Insights</li>
+                                <li class="mb-1"><strong>Network:</strong> VPC with private subnets for app/db, public for ALB</li>
+                                <li class="mb-1"><strong>Scanning:</strong> Deploy collector agents on EC2 worker nodes via SSM</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0 mb-3">
+                                <div class="card-body py-3">
+                                    <h6 class="fw-semibold mb-2">AWS IAM Permissions Required</h6>
+                                    <div class="small text-muted">
+                                        <p class="mb-1 fw-medium text-dark">For ECS Task Role:</p>
+                                        <ul class="ps-3 mb-2">
+                                            <li><code>secretsmanager:GetSecretValue</code></li>
+                                            <li><code>rds-db:connect</code></li>
+                                            <li><code>logs:CreateLogStream</code>, <code>logs:PutLogEvents</code></li>
+                                        </ul>
+                                        <p class="mb-1 fw-medium text-dark">For AI Discovery (Optional):</p>
+                                        <ul class="ps-3 mb-2">
+                                            <li><code>eks:DescribeCluster</code>, <code>eks:ListClusters</code></li>
+                                            <li><code>sagemaker:ListEndpoints</code>, <code>sagemaker:DescribeEndpoint</code></li>
+                                            <li><code>lambda:ListFunctions</code></li>
+                                            <li><code>ec2:DescribeInstances</code>, <code>ec2:DescribeSecurityGroups</code></li>
+                                            <li><code>bedrock:ListFoundationModels</code></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info py-2 small">
+                                <i class="fas fa-info-circle me-2"></i>Use <strong>HIPAA-eligible services only</strong>. Ensure your AWS account has a signed BAA with Amazon before storing PHI metadata.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Azure -->
+                <div class="tab-pane fade" id="dep-azure">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3"><i class="fab fa-microsoft text-primary me-2"></i>Azure Deployment</h6>
+                            <p class="small text-muted mb-3">Deploy on Azure using Azure Container Apps (recommended) or AKS. Use Azure Database for PostgreSQL, Azure Application Gateway for TLS, and Key Vault for secrets management.</p>
+                            <h6 class="fw-semibold mt-3 mb-2">Recommended Architecture</h6>
+                            <ul class="small text-muted ps-3">
+                                <li class="mb-1"><strong>Compute:</strong> Azure Container Apps or AKS (Standard D2s_v3+)</li>
+                                <li class="mb-1"><strong>Database:</strong> Azure Database for PostgreSQL — Flexible Server</li>
+                                <li class="mb-1"><strong>Load Balancer:</strong> Azure Application Gateway with WAF v2</li>
+                                <li class="mb-1"><strong>TLS:</strong> Azure-managed certificates or Let's Encrypt via cert-manager</li>
+                                <li class="mb-1"><strong>Secrets:</strong> Azure Key Vault with Managed Identity access</li>
+                                <li class="mb-1"><strong>Container Registry:</strong> Azure Container Registry (ACR)</li>
+                                <li class="mb-1"><strong>Monitoring:</strong> Azure Monitor + Log Analytics Workspace</li>
+                                <li class="mb-1"><strong>Network:</strong> VNet with private endpoints for DB and Key Vault</li>
+                                <li class="mb-1"><strong>Scanning:</strong> Collector agents via Azure Arc for hybrid environments</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0 mb-3">
+                                <div class="card-body py-3">
+                                    <h6 class="fw-semibold mb-2">Azure RBAC Roles Required</h6>
+                                    <div class="small text-muted">
+                                        <p class="mb-1 fw-medium text-dark">Platform Service Principal:</p>
+                                        <ul class="ps-3 mb-2">
+                                            <li><code>Key Vault Secrets User</code> — read secrets</li>
+                                            <li><code>AcrPull</code> — pull container images</li>
+                                            <li><code>Monitoring Metrics Publisher</code> — emit metrics</li>
+                                        </ul>
+                                        <p class="mb-1 fw-medium text-dark">For AI Discovery (Optional):</p>
+                                        <ul class="ps-3 mb-2">
+                                            <li><code>Reader</code> on ML Workspace</li>
+                                            <li><code>Azure Kubernetes Service Cluster User</code></li>
+                                            <li><code>Container Instance Contributor</code> (read-only)</li>
+                                            <li><code>Cognitive Services Reader</code></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-primary py-2 small">
+                                <i class="fas fa-info-circle me-2"></i>Use Azure <strong>Government Cloud (Azure Gov)</strong> for US federal healthcare customers to ensure FedRAMP / HIPAA compliance.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GCP -->
+                <div class="tab-pane fade" id="dep-gcp">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3"><i class="fab fa-google text-danger me-2"></i>Google Cloud Deployment</h6>
+                            <p class="small text-muted mb-3">Deploy on GCP using Cloud Run (recommended for simplicity) or GKE Autopilot. Use Cloud SQL for PostgreSQL, Cloud Load Balancing for TLS, and Secret Manager for credentials.</p>
+                            <h6 class="fw-semibold mt-3 mb-2">Recommended Architecture</h6>
+                            <ul class="small text-muted ps-3">
+                                <li class="mb-1"><strong>Compute:</strong> Cloud Run (fully managed) or GKE Autopilot</li>
+                                <li class="mb-1"><strong>Database:</strong> Cloud SQL for PostgreSQL (HA with failover replica)</li>
+                                <li class="mb-1"><strong>Load Balancer:</strong> Google Cloud Load Balancing with managed SSL</li>
+                                <li class="mb-1"><strong>TLS:</strong> Google-managed SSL certificates</li>
+                                <li class="mb-1"><strong>Secrets:</strong> Secret Manager with Workload Identity</li>
+                                <li class="mb-1"><strong>Container Registry:</strong> Artifact Registry</li>
+                                <li class="mb-1"><strong>Monitoring:</strong> Cloud Monitoring + Cloud Logging</li>
+                                <li class="mb-1"><strong>Network:</strong> VPC with Private Google Access enabled</li>
+                                <li class="mb-1"><strong>Scanning:</strong> Collector agents via Cloud Run Jobs or GCE</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0 mb-3">
+                                <div class="card-body py-3">
+                                    <h6 class="fw-semibold mb-2">GCP IAM Roles Required</h6>
+                                    <div class="small text-muted">
+                                        <p class="mb-1 fw-medium text-dark">Platform Service Account:</p>
+                                        <ul class="ps-3 mb-2">
+                                            <li><code>roles/secretmanager.secretAccessor</code></li>
+                                            <li><code>roles/cloudsql.client</code></li>
+                                            <li><code>roles/logging.logWriter</code></li>
+                                            <li><code>roles/monitoring.metricWriter</code></li>
+                                        </ul>
+                                        <p class="mb-1 fw-medium text-dark">For AI Discovery (Optional):</p>
+                                        <ul class="ps-3 mb-2">
+                                            <li><code>roles/aiplatform.viewer</code> — Vertex AI</li>
+                                            <li><code>roles/container.clusterViewer</code> — GKE</li>
+                                            <li><code>roles/run.viewer</code> — Cloud Run services</li>
+                                            <li><code>roles/compute.viewer</code> — GCE instances</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-success py-2 small">
+                                <i class="fas fa-info-circle me-2"></i>Use <strong>VPC Service Controls</strong> to restrict data perimeter and meet HIPAA requirements on GCP.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Multi-Cloud -->
+                <div class="tab-pane fade" id="dep-multi">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-globe text-info me-2"></i>Multi-Cloud Deployment</h6>
+                            <p class="small text-muted mb-3">For organizations running AI workloads across two or more cloud providers simultaneously. CT ComplySphere acts as the central governance plane with collector agents deployed per-cloud.</p>
+                            <h6 class="fw-semibold mb-2">Reference Architecture</h6>
+                            <ol class="small text-muted ps-3">
+                                <li class="mb-2"><strong>Central Platform Instance</strong> — Deploy the CT ComplySphere core on one primary cloud or on-premises. This is the authoritative governance hub.</li>
+                                <li class="mb-2"><strong>Per-Cloud Collector Agents</strong> — Deploy a lightweight collector agent in each cloud environment (AWS VPC, Azure VNet, GCP VPC). Agents register with the central platform via HTTPS and send telemetry securely.</li>
+                                <li class="mb-2"><strong>Cross-Cloud Network</strong> — Use Transit Gateway (AWS), VNet Peering (Azure), or Cloud VPN to enable agents to reach the central instance, or use the public internet with TLS + token auth.</li>
+                                <li class="mb-2"><strong>Unified Database</strong> — All findings land in a single PostgreSQL instance (managed or self-hosted). Use multi-region replicas for resilience.</li>
+                                <li class="mb-2"><strong>Federated IAM</strong> — Each cloud uses its own service account / IAM role with least-privilege read access for AI service discovery.</li>
+                            </ol>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="card border-info mb-3">
+                                <div class="card-header py-2 bg-info bg-opacity-10">
+                                    <h6 class="fw-semibold mb-0 small text-info"><i class="fas fa-check-circle me-2"></i>Multi-Cloud Checklist</h6>
+                                </div>
+                                <div class="card-body py-2">
+                                    <ul class="list-unstyled small mb-0">
+                                        {% for item in [
+                                            'Central platform reachable from all clouds (HTTPS / 443)',
+                                            'Collector agents deployed per-cloud region',
+                                            'TLS certificates installed on central platform',
+                                            'Per-cloud IAM read roles configured',
+                                            'Network firewall rules allow agent egress to platform',
+                                            'Token rotation policy set for collector agents',
+                                            'Single PostgreSQL instance (or replicated)',
+                                            'DNS resolvable hostname for platform URL',
+                                            'Monitoring alerts for agent heartbeat failures',
+                                            'Backup and DR plan for central platform'
+                                        ] %}
+                                        <li class="mb-1"><i class="fas fa-check text-success me-2"></i>{{ item }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── PREREQUISITES ─────────────────────────────────────────────────── -->
+    <div id="prerequisites" class="card mb-4">
+        <div class="card-header py-2 bg-warning bg-opacity-10 border-warning">
+            <h5 class="fw-bold mb-0 text-warning">
+                <i class="fas fa-list-check me-2"></i>Prerequisites Before Deployment
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <h6 class="fw-semibold border-bottom pb-2 mb-3"><i class="fas fa-cogs text-secondary me-2"></i>Software &amp; Runtime</h6>
+                    <ul class="small text-muted ps-3">
+                        <li class="mb-1">Python <strong>3.10+</strong> (3.11 recommended)</li>
+                        <li class="mb-1">PostgreSQL <strong>14+</strong></li>
+                        <li class="mb-1">Docker Engine <strong>24+</strong> (optional for container scanning)</li>
+                        <li class="mb-1">Kubernetes <strong>1.26+</strong> (optional for K8s scanning)</li>
+                        <li class="mb-1">Nginx or HAProxy for reverse proxy + TLS</li>
+                        <li class="mb-1">gunicorn <strong>21+</strong> for production serving</li>
+                        <li class="mb-1">pip packages: Flask, SQLAlchemy, psycopg2, etc. (see requirements.txt)</li>
+                        <li class="mb-1">OpenSSL for TLS certificate generation</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="fw-semibold border-bottom pb-2 mb-3"><i class="fas fa-network-wired text-info me-2"></i>Network &amp; Infrastructure</h6>
+                    <ul class="small text-muted ps-3">
+                        <li class="mb-1">Network read-access to target subnets hosting AI agents</li>
+                        <li class="mb-1">DNS resolution for target hostnames</li>
+                        <li class="mb-1">Outbound HTTPS (port 443) for cloud API calls</li>
+                        <li class="mb-1">Static IP or DNS hostname for platform URL</li>
+                        <li class="mb-1">TLS certificate (self-signed for internal, CA-signed for external)</li>
+                        <li class="mb-1">Firewall rules allowing probe traffic to AI agent ports</li>
+                        <li class="mb-1">NTP time sync across all nodes (critical for audit timestamps)</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="fw-semibold border-bottom pb-2 mb-3"><i class="fas fa-user-cog text-primary me-2"></i>Organizational Requirements</h6>
+                    <ul class="small text-muted ps-3">
+                        <li class="mb-1">Designated <strong>Platform Administrator</strong> account</li>
+                        <li class="mb-1">Inventory list of known AI systems / endpoints (optional but helpful)</li>
+                        <li class="mb-1">Cloud provider service account credentials (for cloud scanning)</li>
+                        <li class="mb-1">Kubernetes kubeconfig with read permissions (for K8s scanning)</li>
+                        <li class="mb-1">Docker daemon socket access (for Docker scanning)</li>
+                        <li class="mb-1">MQTT broker credentials (for Clawbot scanning)</li>
+                        <li class="mb-1">ROS Master URI (for robotic system discovery)</li>
+                        <li class="mb-1">Security team approval for network scan scope</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="alert alert-warning mt-3 mb-0 py-2 small">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Healthcare environments:</strong> Ensure all scanning activity is approved by your HIPAA Security Officer and is scoped to avoid triggering IDS/IPS alerts on clinical networks.
+            </div>
+        </div>
+    </div>
+
+    <!-- ── PERMISSIONS ───────────────────────────────────────────────────── -->
+    <div id="permissions" class="card mb-4">
+        <div class="card-header py-2 bg-info bg-opacity-10 border-info">
+            <h5 class="fw-bold mb-0 text-info">
+                <i class="fas fa-key me-2"></i>Required Permissions Matrix
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3" style="min-width:180px;">Capability / Feature</th>
+                            <th style="min-width:140px;">On-Premises</th>
+                            <th style="min-width:140px;">AWS</th>
+                            <th style="min-width:140px;">Azure</th>
+                            <th style="min-width:140px;">GCP</th>
+                            <th class="pe-3">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set perm_rows = [
+                            ('Platform Web UI Access', 'HTTPS port 443', 'ALB listener', 'App Gateway', 'Cloud LB', 'TLS required in all environments'),
+                            ('PostgreSQL Database', 'DB user: SELECT/INSERT/UPDATE', 'rds-db:connect', 'Flexible Server login', 'cloudsql.client', 'Least-privilege DB role recommended'),
+                            ('Kubernetes Scanning', 'kubeconfig: pods/services/get', 'eks:DescribeCluster', 'AKS Cluster User', 'container.clusterViewer', 'Read-only access only'),
+                            ('Docker Scanning', 'docker.sock read (group docker)', 'EC2 instance IAM', 'VM identity', 'GCE service account', 'Unix socket or TCP access needed'),
+                            ('AWS AI Discovery', '—', 'sagemaker:List*, ec2:Describe*', '—', '—', 'Read-only; no sagemaker:Create*'),
+                            ('Azure AI Discovery', '—', '—', 'Reader on ML Workspace', '—', 'Reader role on resource group'),
+                            ('GCP AI Discovery', '—', '—', '—', 'aiplatform.viewer, run.viewer', 'Project-level viewer or per-service'),
+                            ('Secret Management', 'File / env var', 'secretsmanager:GetSecretValue', 'Key Vault Secrets User', 'secretmanager.secretAccessor', 'Never hardcode credentials'),
+                            ('Collector Agent Registration', 'Token via platform UI', 'Token via SSM Parameter', 'Token via Key Vault', 'Token via Secret Manager', 'Tokens are revocable per agent'),
+                            ('Audit Log Access', 'Linux file / DB read', 'CloudWatch Logs read', 'Log Analytics read', 'Cloud Logging read', 'Log retention min 1 year for HIPAA'),
+                            ('MQTT / Clawbot Scan', 'MQTT broker credentials', 'EC2 network access', 'VNet access', 'VPC access', 'Read-only subscribe permissions on broker'),
+                            ('ROS Robot Discovery', 'ROS_MASTER_URI access', 'EC2 in same VPC', 'VNet subnet access', 'VPC subnet access', 'Port 11311 must be reachable'),
+                        ] %}
+                        {% for cap, onprem, aws, azure, gcp, notes in perm_rows %}
+                        <tr>
+                            <td class="ps-3 fw-medium small">{{ cap }}</td>
+                            <td><span class="small text-muted">{{ onprem }}</span></td>
+                            <td><span class="small text-muted">{{ aws }}</span></td>
+                            <td><span class="small text-muted">{{ azure }}</span></td>
+                            <td><span class="small text-muted">{{ gcp }}</span></td>
+                            <td class="pe-3"><span class="small text-muted fst-italic">{{ notes }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-3 pb-3 pt-2">
+                <div class="alert alert-danger py-2 small mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    <strong>Principle of Least Privilege:</strong> Always grant the minimum permissions required. Never use root, Owner, or global admin roles for the platform service account. Rotate credentials every 90 days minimum.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── FUTURE ENHANCEMENTS ───────────────────────────────────────────── -->
+    <div id="enhancements" class="card mb-4">
+        <div class="card-header py-2 bg-dark bg-opacity-10">
+            <h5 class="fw-bold mb-0">
+                <i class="fas fa-rocket me-2 text-dark"></i>Future Roadmap &amp; Enhancements
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% set roadmap = [
+                    ('fas fa-brain', 'primary', 'Q2 2025', 'LLM &amp; GenAI Model Governance', 'Deep integration with OpenAI, Anthropic, Cohere, and Hugging Face model APIs. Automated risk scoring for prompt injection, data leakage, and hallucination risks specific to GenAI systems.'),
+                    ('fas fa-ticket-alt', 'success', 'Q2 2025', 'Jira / ServiceNow Integration', 'Automatically create and assign remediation tickets in Jira or ServiceNow when compliance failures are detected. Two-way sync keeps the platform updated as tickets are resolved.'),
+                    ('fas fa-bell', 'warning', 'Q3 2025', 'Real-Time Alerting &amp; SIEM Integration', 'Push compliance alerts to Splunk, Microsoft Sentinel, AWS Security Hub, and PagerDuty. Configurable alert thresholds per framework and severity level.'),
+                    ('fas fa-fingerprint', 'danger', 'Q3 2025', 'AI Behavioral Fingerprinting', 'ML-powered behavioral baseline for each discovered AI agent. Detect anomalies like sudden PHI access spikes, unusual API call patterns, or new protocol usage that deviate from the baseline.'),
+                    ('fas fa-shield-virus', 'info', 'Q3 2025', 'Automated VAPT for AI Endpoints', 'Scheduled vulnerability assessment and penetration testing (VAPT) against AI REST and gRPC endpoints — including OWASP Top 10 for APIs and LLM-specific attack vectors.'),
+                    ('fas fa-mobile-alt', 'secondary', 'Q4 2025', 'Mobile Compliance App', 'iOS and Android app for compliance officers to review scan results, approve remediation playbooks, and receive push notifications for critical findings on the go.'),
+                    ('fas fa-file-pdf', 'success', 'Q4 2025', 'Automated Regulatory Reports', 'One-click generation of audit-ready PDF reports formatted to the exact structure required by HIPAA auditors, HITRUST assessors, and FDA reviewers.'),
+                    ('fas fa-users-cog', 'primary', 'Q1 2026', 'Multi-Tenant Customer Portal', 'White-label multi-tenant architecture for MSPs and compliance consultancies. Each customer gets isolated data, custom branding, and their own compliance dashboard.'),
+                    ('fas fa-vr-cardboard', 'warning', 'Q2 2026', 'Digital Twin AI Risk Simulation', 'Simulate what would happen to compliance scores if a new AI agent were deployed — before it goes live. Run "what-if" scenarios for procurement decisions.'),
+                    ('fas fa-globe-americas', 'info', 'Q3 2026', 'International Framework Support', 'Extend compliance coverage to include ISO 27001, NIST AI RMF, EU AI Act, UK DTIR, and Singapore PDPA frameworks for global healthcare enterprises.')
+                ] %}
+                {% for icon, color, quarter, title, desc in roadmap %}
+                <div class="col-md-6 col-xl-4">
+                    <div class="card border-0 bg-light h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start gap-3">
+                                <span class="rounded-circle bg-{{ color }} bg-opacity-15 d-flex align-items-center justify-content-center flex-shrink-0" style="width:38px;height:38px;">
+                                    <i class="{{ icon }} text-{{ color }} fa-sm"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                        <h6 class="fw-bold mb-0 small">{{ title }}</h6>
+                                        <span class="badge bg-{{ color }} bg-opacity-75" style="font-size:0.65rem;">{{ quarter }}</span>
+                                    </div>
+                                    <p class="small text-muted mb-0">{{ desc }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Note -->
+    <div class="card border-0 bg-primary bg-opacity-5 mb-3">
+        <div class="card-body py-3 text-center">
+            <p class="mb-1 small text-muted">
+                <i class="fas fa-envelope me-2"></i>Have questions about deployment or licensing?
+                Contact the CT ComplySphere team for a tailored deployment assessment.
+            </p>
+            <span class="badge bg-primary px-3 py-2">
+                <i class="fas fa-shield-alt me-1"></i>CT ComplySphere — Healthcare AI Governance Platform
+            </span>
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+});
+</script>
+{% endblock %}

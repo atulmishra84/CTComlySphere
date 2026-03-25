@@ -2146,6 +2146,11 @@ def collector_agents_list():
     return jsonify({'agents': result, 'total': len(result)})
 
 
+@app.route('/knowledge')
+def knowledge():
+    return render_template('knowledge.html')
+
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('404.html'), 404
