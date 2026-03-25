@@ -91,29 +91,40 @@
         </div>
     </div>
 
-    <!-- Charts + Types row — side by side, compact -->
+    <!-- Charts + Types row — fixed-height, consistent cards -->
     <div class="row g-3 mb-4">
+
         <!-- Risk Distribution -->
-        <div class="col-lg-4">
-            <div class="card h-100">
-                <div class="card-header py-2">
+        <div class="col-md-4">
+            <div class="card" style="height:310px;">
+                <div class="card-header py-2 border-bottom">
                     <h6 class="card-title fw-semibold mb-0 small">
                         <i class="fas fa-shield-alt text-warning me-2"></i>Risk Distribution
                     </h6>
                 </div>
-                <div class="card-body py-2">
-                    <div style="height:140px;">
-                        <canvas id="riskChart"></canvas>
+                <div class="card-body d-flex flex-column p-0" style="overflow:hidden;">
+                    <div class="px-3 pt-2" style="height:150px;flex-shrink:0;">
+                        <canvas id="riskChart" style="display:block;width:100%;height:100%;"></canvas>
                     </div>
-                    <div class="mt-2">
+                    <div class="px-3 pb-2 pt-1" style="flex:1;overflow-y:auto;">
                         {% for level, count in risk_summary.items() %}
-                        <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="rounded-circle d-inline-block flex-shrink-0"
+                                    style="width:10px;height:10px;background:
+                                    {% if level == 'CRITICAL' %}#dc3545
+                                    {% elif level == 'HIGH' %}#ffc107
+                                    {% elif level == 'MEDIUM' %}#0d6efd
+                                    {% else %}#198754{% endif %};"></span>
+                                <span class="small fw-medium">{{ level | capitalize }}</span>
+                            </div>
                             <span class="badge
                                 {% if level == 'CRITICAL' %}bg-danger
                                 {% elif level == 'HIGH' %}bg-warning text-dark
                                 {% elif level == 'MEDIUM' %}bg-primary
-                                {% else %}bg-success{% endif %}">{{ level }}</span>
-                            <span class="text-muted small">{{ count }} robot{{ 's' if count != 1 else '' }}</span>
+                                {% else %}bg-success{% endif %}">
+                                {{ count }}
+                            </span>
                         </div>
                         {% endfor %}
                     </div>
@@ -121,64 +132,91 @@
             </div>
         </div>
 
-        <!-- Protocol Breakdown -->
-        <div class="col-lg-4">
-            <div class="card h-100">
-                <div class="card-header py-2">
+        <!-- Communication Protocols -->
+        <div class="col-md-4">
+            <div class="card" style="height:310px;">
+                <div class="card-header py-2 border-bottom">
                     <h6 class="card-title fw-semibold mb-0 small">
-                        <i class="fas fa-plug text-info me-2"></i>Protocols
+                        <i class="fas fa-plug text-info me-2"></i>Communication Protocols
                     </h6>
                 </div>
-                <div class="card-body py-2">
+                <div class="card-body d-flex flex-column p-0" style="overflow:hidden;">
                     {% if protocol_counts %}
-                    <div style="height:140px;">
-                        <canvas id="protocolChart"></canvas>
+                    <div class="px-3 pt-2" style="height:150px;flex-shrink:0;">
+                        <canvas id="protocolChart" style="display:block;width:100%;height:100%;"></canvas>
                     </div>
-                    <div class="mt-2">
+                    <div class="px-3 pb-2 pt-1" style="flex:1;overflow-y:auto;">
                         {% for proto, count in protocol_counts.items() %}
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="small fw-medium">{{ proto.replace('_', ' ').upper() }}</span>
-                            <span class="badge bg-secondary">{{ count }}</span>
+                        <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fas fa-circle text-info" style="font-size:0.5rem;"></i>
+                                <span class="small fw-medium">{{ proto.replace('_', ' ').title() }}</span>
+                            </div>
+                            <span class="badge bg-info text-dark">{{ count }}</span>
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted small mb-0">No data yet — run a scan.</p>
+                    <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-plug fa-2x mb-2 opacity-25 d-block"></i>
+                            <small>No protocol data — run a scan.</small>
+                        </div>
+                    </div>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Robot Types -->
-        <div class="col-lg-4">
-            <div class="card h-100">
-                <div class="card-header py-2">
+        <!-- Robot Types Detected -->
+        <div class="col-md-4">
+            <div class="card" style="height:310px;">
+                <div class="card-header py-2 border-bottom">
                     <h6 class="card-title fw-semibold mb-0 small">
-                        <i class="fas fa-tags text-success me-2"></i>Robot Types
+                        <i class="fas fa-tags text-success me-2"></i>Robot Types Detected
                     </h6>
                 </div>
-                <div class="card-body py-2" style="overflow-y:auto;max-height:260px;">
+                <div class="card-body p-0 d-flex flex-column" style="overflow:hidden;">
                     {% if type_counts %}
-                    {% for ctype, count in type_counts.items() %}
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="small text-truncate me-2">
-                            {% if 'surgical' in ctype %}<i class="fas fa-scalpel text-danger me-1"></i>
-                            {% elif 'lab' in ctype or 'specimen' in ctype %}<i class="fas fa-vial text-warning me-1"></i>
-                            {% elif 'medication' in ctype or 'med' in ctype %}<i class="fas fa-pills text-info me-1"></i>
-                            {% elif 'patient' in ctype %}<i class="fas fa-user-injured text-primary me-1"></i>
-                            {% elif 'rehab' in ctype %}<i class="fas fa-dumbbell text-success me-1"></i>
-                            {% else %}<i class="fas fa-robot text-secondary me-1"></i>{% endif %}
-                            {{ ctype.replace('_', ' ') | capitalize }}
+                    <div style="flex:1;overflow-y:auto;">
+                        {% for ctype, count in type_counts.items() %}
+                        {% set total = type_counts.values() | sum %}
+                        {% set pct = ((count / total) * 100) | round(0) | int %}
+                        <div class="px-3 py-2 border-bottom border-light">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div class="d-flex align-items-center gap-2 small fw-medium text-truncate me-2">
+                                    {% if 'surgical' in ctype %}<i class="fas fa-scalpel text-danger fa-fw"></i>
+                                    {% elif 'lab' in ctype or 'specimen' in ctype %}<i class="fas fa-vial text-warning fa-fw"></i>
+                                    {% elif 'medication' in ctype or 'med' in ctype %}<i class="fas fa-pills text-info fa-fw"></i>
+                                    {% elif 'patient' in ctype %}<i class="fas fa-user-injured text-primary fa-fw"></i>
+                                    {% elif 'rehab' in ctype %}<i class="fas fa-dumbbell text-success fa-fw"></i>
+                                    {% elif 'ros' in ctype %}<i class="fas fa-cog text-secondary fa-fw"></i>
+                                    {% elif 'mqtt' in ctype %}<i class="fas fa-broadcast-tower text-warning fa-fw"></i>
+                                    {% elif 'vex' in ctype %}<i class="fas fa-microchip text-purple fa-fw" style="color:#7c3aed;"></i>
+                                    {% else %}<i class="fas fa-robot text-secondary fa-fw"></i>{% endif %}
+                                    <span class="text-truncate">{{ ctype.replace('_', ' ') | title }}</span>
+                                </div>
+                                <span class="badge bg-success flex-shrink-0">{{ count }}</span>
+                            </div>
+                            <div class="progress" style="height:4px;">
+                                <div class="progress-bar bg-success" role="progressbar"
+                                     style="width:{{ pct }}%;" aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
                         </div>
-                        <span class="badge bg-secondary flex-shrink-0">{{ count }}</span>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                     {% else %}
-                    <p class="text-muted small mb-0">No type data yet.</p>
+                    <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-robot fa-2x mb-2 opacity-25 d-block"></i>
+                            <small>No robot types detected yet.</small>
+                        </div>
+                    </div>
                     {% endif %}
                 </div>
             </div>
         </div>
+
     </div>
 
     <!-- Discovered Clawbots Table — fixed height, compact columns -->
