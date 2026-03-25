@@ -3,17 +3,29 @@
 
 {% block head %}
 <style>
-.metric-card { background: linear-gradient(135deg, #1a1f2e 0%, #141824 100%); border: 1px solid #2a3144; border-radius: 12px; }
-.risk-up   { color: #dc3545; }
-.risk-down { color: #198754; }
-.risk-flat { color: #6c757d; }
-.agent-risk-bar { height: 6px; border-radius: 3px; background: #2a3144; overflow: hidden; }
+.metric-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    transition: box-shadow .2s;
+}
+.metric-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+.risk-up   { color: #dc2626; }
+.risk-down { color: #059669; }
+.risk-flat { color: #6b7280; }
+.agent-risk-bar { height: 6px; border-radius: 3px; background: #e2e8f0; overflow: hidden; }
 .agent-risk-bar-fill { height: 100%; border-radius: 3px; }
 .slope-badge { font-size: .7rem; font-family: monospace; }
-.section-card { background: #141824; border: 1px solid #2a3144; border-radius: 12px; }
-.anomaly-row { border-left: 3px solid #dc3545; }
-.drift-row   { border-left: 3px solid #ffc107; }
-.heatmap-cell { border-radius: 6px; padding: .5rem; text-align: center; min-width: 110px; }
+.section-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.anomaly-row { border-left: 3px solid #dc2626; }
+.drift-row   { border-left: 3px solid #d97706; }
+.heatmap-cell { border-radius: 8px; padding: .6rem .75rem; text-align: center; min-width: 120px; border: 1px solid #e2e8f0; }
 .forecast-label { font-size: .75rem; }
 </style>
 {% endblock %}
@@ -380,16 +392,16 @@
     },
     options: {
       responsive: true,
-      plugins: { legend: { labels: { color: '#adb5bd', font: { size: 11 } } } },
+      plugins: { legend: { labels: { color: '#374151', font: { size: 11 } } } },
       scales: {
         x: {
-          ticks: { color: '#6c757d', maxTicksLimit: 12, font: { size: 10 } },
-          grid: { color: 'rgba(255,255,255,0.04)' }
+          ticks: { color: '#6b7280', maxTicksLimit: 12, font: { size: 10 } },
+          grid: { color: 'rgba(0,0,0,0.06)' }
         },
         y: {
           min: 0, max: 100,
-          ticks: { color: '#6c757d', font: { size: 10 } },
-          grid: { color: 'rgba(255,255,255,0.06)' }
+          ticks: { color: '#6b7280', font: { size: 10 } },
+          grid: { color: 'rgba(0,0,0,0.08)' }
         }
       }
     }
@@ -424,9 +436,9 @@
       plugins: { legend: { display: false } },
       scales: {
         x: { min: 0, max: 100,
-             ticks: { color: '#6c757d', font: { size: 10 } },
-             grid: { color: 'rgba(255,255,255,0.06)' } },
-        y: { ticks: { color: '#adb5bd', font: { size: 11 } }, grid: { display: false } }
+             ticks: { color: '#6b7280', font: { size: 10 } },
+             grid: { color: 'rgba(0,0,0,0.08)' } },
+        y: { ticks: { color: '#374151', font: { size: 11 } }, grid: { display: false } }
       }
     }
   });
