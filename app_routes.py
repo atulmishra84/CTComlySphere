@@ -991,33 +991,36 @@ def api_enrich_agent_metadata(agent_id):
 def api_enrich_all_agents():
     """
     Batch metadata enrichment — re-enriches all known AI agents.
+    Uses a short 1-second network probe timeout per agent to avoid blocking.
     Returns a summary of how many were updated.
     """
     try:
         from scanners.metadata_extractor import MetadataExtractor
-        extractor = MetadataExtractor(timeout=5)
+        # Use a very short timeout in batch mode so the request completes quickly
+        extractor = MetadataExtractor(timeout=1)
 
         agents = AIAgent.query.all()
         enriched_count = 0
         errors = []
 
+        TYPED_FIELDS = [
+            'model_family', 'model_size', 'capabilities', 'agent_framework',
+            'autonomy_level', 'tool_access', 'authentication_method',
+            'version', 'deployment_method',
+        ]
+
         for agent in agents:
             try:
                 agent_data = {
-                    'name':          agent.name,
-                    'type':          agent.type,
-                    'protocol':      agent.protocol,
-                    'endpoint':      agent.endpoint,
+                    'name':           agent.name,
+                    'type':           agent.type,
+                    'protocol':       agent.protocol,
+                    'endpoint':       agent.endpoint,
                     'agent_metadata': agent.agent_metadata or {},
                 }
                 enriched = extractor.extract(agent_data)
 
-                typed_fields = [
-                    'model_family', 'model_size', 'capabilities', 'agent_framework',
-                    'autonomy_level', 'tool_access', 'authentication_method',
-                    'version', 'deployment_method',
-                ]
-                for field in typed_fields:
+                for field in TYPED_FIELDS:
                     if field in enriched and not getattr(agent, field, None):
                         try:
                             setattr(agent, field, enriched[field])
@@ -1032,7 +1035,7 @@ def api_enrich_all_agents():
 
                 enriched_count += 1
             except Exception as e:
-                errors.append({'agent_id': agent.id, 'name': agent.name, 'error': str(e)})
+                errors.append({'agent_id': agent.id, 'name': agent.name, 'error': str(e)[:120]})
 
         db.session.commit()
 

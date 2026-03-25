@@ -243,11 +243,22 @@ class MetadataExtractor:
         if not REQUESTS_AVAILABLE or not endpoint.startswith('http'):
             return {}
 
+        # Quick connectivity check — skip all probing if host is unreachable
+        host = self._extract_host(endpoint)
+        port = self._extract_port(endpoint) or (443 if endpoint.startswith('https') else 80)
+        if not _port_open(host, port, timeout=min(self.timeout, 1.0)):
+            return {'uses_tls': endpoint.startswith('https://'), 'reachable': False}
+
         out = {}
         base = self._base_url(endpoint)
         headers_collected = {}
 
-        for path in WELL_KNOWN_PROBE_PATHS:
+        # In short-timeout (batch) mode, only probe the most informative paths
+        probe_paths = WELL_KNOWN_PROBE_PATHS if self.timeout >= 3 else [
+            '/v1/models', '/api/tags', '/health', '/healthz', '/version', '/info'
+        ]
+
+        for path in probe_paths:
             url = base + path
             try:
                 resp = requests.get(url, timeout=self.timeout,
