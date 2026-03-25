@@ -144,7 +144,7 @@ services:
         <!-- env vars -->
         <div class="col-md-6">
           <h6 class="fw-semibold mb-2"><i class="fas fa-sliders text-secondary me-2"></i>Configuration Variables</h6>
-          <table class="table table-dark table-sm mb-0">
+          <table class="table table-sm mb-0">
             <thead><tr><th>Variable</th><th>Description</th><th>Default</th></tr></thead>
             <tbody>
               <tr><td class="font-monospace text-warning">PLATFORM_URL</td><td>Your CT ComplySphere URL</td><td class="text-danger">required</td></tr>
@@ -172,7 +172,7 @@ services:
     </div>
     <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-dark table-hover align-middle mb-0" id="agentTable">
+        <table class="table table-hover align-middle mb-0" id="agentTable">
           <thead>
             <tr class="border-secondary">
               <th class="ps-3">Customer / Environment</th>
@@ -269,7 +269,7 @@ services:
     <div class="modal-content">
       <div class="modal-header border-secondary">
         <h5 class="modal-title fw-semibold"><i class="fas fa-plus-circle text-primary me-2"></i>New Collector Agent Token</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form method="POST" action="{{ url_for('agent_deployment_create') }}">
         <div class="modal-body">
@@ -326,7 +326,7 @@ services:
     <div class="modal-content">
       <div class="modal-header border-warning">
         <h5 class="modal-title fw-semibold"><i class="fas fa-key text-warning me-2"></i>API Token</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <p class="text-muted small mb-2" id="tokenModalLabel"></p>
