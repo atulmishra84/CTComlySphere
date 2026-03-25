@@ -1,0 +1,16 @@
+.git
+.gitignore
+.local/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.env
+*.log
+node_modules/
+.pythonlibs/
+instance/
+.replit
+replit.nix
+pyproject.toml
