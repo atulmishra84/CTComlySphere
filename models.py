@@ -787,3 +787,48 @@ class DeployedAgent(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# ── Framework Configuration & Control Points ──────────────────────────────────
+
+class FrameworkConfig(db.Model):
+    """Compliance framework registry with enable/disable support"""
+    __tablename__ = 'framework_config'
+
+    id           = db.Column(db.Integer, primary_key=True)
+    code         = db.Column(db.String(80), unique=True, nullable=False)
+    display_name = db.Column(db.String(200), nullable=False)
+    version      = db.Column(db.String(50))
+    description  = db.Column(db.Text)
+    category     = db.Column(db.String(50))   # healthcare | security | privacy | ai_governance
+    is_enabled   = db.Column(db.Boolean, default=True)
+    is_custom    = db.Column(db.Boolean, default=False)
+    icon         = db.Column(db.String(60))
+    color        = db.Column(db.String(30))
+    website_url  = db.Column(db.String(500))
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at   = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    controls = db.relationship('ControlPoint', backref='framework', lazy=True,
+                               cascade='all, delete-orphan',
+                               order_by='ControlPoint.category, ControlPoint.control_id')
+
+
+class ControlPoint(db.Model):
+    """Individual control point within a compliance framework"""
+    __tablename__ = 'control_point'
+
+    id                      = db.Column(db.Integer, primary_key=True)
+    framework_id            = db.Column(db.Integer, db.ForeignKey('framework_config.id'), nullable=False)
+    control_id              = db.Column(db.String(120), nullable=False)
+    title                   = db.Column(db.String(400), nullable=False)
+    description             = db.Column(db.Text)
+    category                = db.Column(db.String(120))
+    is_required             = db.Column(db.Boolean, default=True)
+    is_enabled              = db.Column(db.Boolean, default=True)
+    implementation_guidance = db.Column(db.Text)
+    effective_date          = db.Column(db.String(30))
+    last_updated            = db.Column(db.String(30))
+    created_at              = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('framework_id', 'control_id', name='uq_framework_control'),)

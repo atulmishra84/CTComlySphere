@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+{% block title %}Framework Controls — CT ComplySphere{% endblock %}
+
+{% block head %}
+<style>
+/* ── Layout ── */
+.fw-sidebar { width: 260px; min-width: 260px; }
+.fw-main    { flex: 1; min-width: 0; }
+
+/* Framework card in left panel */
+.fw-card {
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all .18s ease;
+    background: #fff;
+}
+.fw-card:hover  { border-color: #dee2e6; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.fw-card.active { border-color: var(--bs-primary); background: #f0f4ff; }
+.fw-card.disabled-fw { opacity: .6; }
+
+/* Control rows */
+.ctrl-row {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    transition: box-shadow .15s;
+}
+.ctrl-row:hover { box-shadow: 0 2px 6px rgba(0,0,0,.07); }
+.ctrl-row.disabled-ctrl { background: #f8f9fa; opacity: .75; }
+
+/* Category badge strip */
+.cat-strip {
+    background: linear-gradient(90deg,#f8f9fa 0%,#fff 100%);
+    border-left: 4px solid var(--bs-primary);
+    border-radius: 0 6px 6px 0;
+    padding: 6px 12px;
+    margin: 18px 0 8px;
+    font-weight: 600;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #495057;
+}
+
+/* Toggle switch */
+.form-check-input[type=checkbox].ctrl-toggle {
+    width: 36px; height: 20px; cursor: pointer;
+}
+
+/* Stat pills at top */
+.stat-pill {
+    background: #f8f9fa;
+    border-radius: 30px;
+    padding: 6px 16px;
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+/* Empty state */
+.empty-ctrl { padding: 48px 0; text-align: center; color: #adb5bd; }
+
+/* Category color map */
+.cat-healthcare { border-left-color: #0d6efd !important; }
+.cat-security   { border-left-color: #198754 !important; }
+.cat-privacy    { border-left-color: #ffc107 !important; }
+.cat-ai_governance { border-left-color: #6f42c1 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-3">
+
+  <!-- ── Page Header ───────────────────────────────────────────────── -->
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+      <h4 class="fw-bold mb-0"><i class="fas fa-layer-group text-primary me-2"></i>Compliance Framework Controls</h4>
+      <p class="text-muted mb-0 small">Manage frameworks and enable or disable individual control points for your environment.</p>
+    </div>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addFrameworkModal">
+      <i class="fas fa-plus me-1"></i>Add Framework
+    </button>
+  </div>
+
+  {% if not frameworks %}
+  <div class="text-center py-5 text-muted">
+    <i class="fas fa-layer-group fa-3x mb-3 opacity-25"></i>
+    <h5>No frameworks yet</h5>
+    <p>Click "Add Framework" to get started.</p>
+  </div>
+  {% else %}
+
+  <div class="d-flex gap-3 align-items-start">
+
+    <!-- ── Left: Framework List ───────────────────────────────────── -->
+    <div class="fw-sidebar">
+
+      <!-- Category filter pills -->
+      <div class="d-flex flex-wrap gap-1 mb-2">
+        <a href="{{ url_for('frameworks_index') }}"
+           class="badge rounded-pill text-decoration-none {{ 'bg-primary' if not request.args.get('category') else 'bg-light text-dark border' }}">
+          All
+        </a>
+        {% for cat in categories %}
+        <a href="{{ url_for('frameworks_index', category=cat) }}"
+           class="badge rounded-pill text-decoration-none text-capitalize {{ 'bg-primary' if request.args.get('category') == cat else 'bg-light text-dark border' }}">
+          {{ cat.replace('_',' ') }}
+        </a>
+        {% endfor %}
+      </div>
+
+      {% set cat_filter = request.args.get('category') %}
+      {% for fw in frameworks %}
+        {% if not cat_filter or fw.category == cat_filter %}
+        <div class="fw-card p-2 mb-2 {{ 'active' if selected and fw.id == selected.id else '' }} {{ 'disabled-fw' if not fw.is_enabled else '' }}">
+          <a href="{{ url_for('frameworks_index', fw=fw.id, category=cat_filter or '') }}"
+             class="text-decoration-none d-flex align-items-start gap-2">
+            <div class="mt-1">
+              <span class="badge bg-{{ fw.color or 'secondary' }} rounded-circle p-2">
+                <i class="{{ fw.icon or 'fas fa-layer-group' }} fa-sm"></i>
+              </span>
+            </div>
+            <div style="min-width:0">
+              <div class="fw-semibold text-dark small lh-sm" style="word-break:break-word;">{{ fw.display_name }}</div>
+              <div class="text-muted" style="font-size:.7rem;">{{ fw.version or 'Latest' }}</div>
+              <div class="mt-1">
+                {% set enabled_c = fw.controls | selectattr('is_enabled') | list | length %}
+                {% set total_c = fw.controls | length %}
+                <span class="badge bg-{{ fw.color or 'secondary' }} bg-opacity-10 text-{{ fw.color or 'secondary' }}" style="font-size:.65rem;">
+                  {{ enabled_c }}/{{ total_c }} controls on
+                </span>
+                {% if not fw.is_enabled %}
+                <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size:.65rem;">disabled</span>
+                {% endif %}
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <!-- ── Right: Control Points ──────────────────────────────────── -->
+    {% if selected %}
+    <div class="fw-main">
+
+      <!-- Framework header -->
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
+            <div class="d-flex align-items-center gap-3">
+              <span class="rounded-circle bg-{{ selected.color or 'secondary' }} bg-opacity-10 p-3 text-{{ selected.color or 'secondary' }}" style="font-size:1.4rem;">
+                <i class="{{ selected.icon or 'fas fa-layer-group' }}"></i>
+              </span>
+              <div>
+                <h5 class="fw-bold mb-0">{{ selected.display_name }}</h5>
+                <div class="text-muted small">
+                  {{ selected.version or 'Latest' }}
+                  {% if selected.website_url %}
+                  &nbsp;·&nbsp;
+                  <a href="{{ selected.website_url }}" target="_blank" class="text-primary">
+                    Official Docs <i class="fas fa-external-link-alt fa-xs"></i>
+                  </a>
+                  {% endif %}
+                </div>
+                {% if selected.description %}
+                <div class="text-muted small mt-1" style="max-width:560px;">{{ selected.description }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="d-flex gap-2 align-items-start">
+              {% set e_count = selected.controls | selectattr('is_enabled') | list | length %}
+              {% set t_count = selected.controls | length %}
+              <span class="stat-pill text-success"><i class="fas fa-check-circle me-1"></i>{{ e_count }} enabled</span>
+              <span class="stat-pill text-secondary"><i class="fas fa-ban me-1"></i>{{ t_count - e_count }} off</span>
+              <span class="stat-pill text-danger"><i class="fas fa-exclamation me-1"></i>{{ selected.controls | selectattr('is_required') | list | length }} required</span>
+
+              <form method="POST" action="{{ url_for('framework_toggle', fw_id=selected.id) }}" class="mb-0">
+                <button class="btn btn-sm {{ 'btn-outline-success' if not selected.is_enabled else 'btn-outline-secondary' }}">
+                  <i class="fas fa-{{ 'toggle-on' if not selected.is_enabled else 'toggle-off' }} me-1"></i>
+                  {{ 'Enable' if not selected.is_enabled else 'Disable' }} Framework
+                </button>
+              </form>
+
+              <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addControlModal">
+                <i class="fas fa-plus me-1"></i>Add Control
+              </button>
+
+              {% if selected.is_custom %}
+              <form method="POST" action="{{ url_for('framework_delete', fw_id=selected.id) }}"
+                    onsubmit="return confirm('Delete this framework and all its controls?')">
+                <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls grouped by category -->
+      {% if selected.controls %}
+        {% set ns = namespace(current_cat='') %}
+        {% for ctrl in selected.controls %}
+
+          {% if ctrl.category != ns.current_cat %}
+            {% set ns.current_cat = ctrl.category %}
+            <div class="cat-strip cat-{{ selected.category }}">
+              <i class="fas fa-folder-open me-2"></i>{{ ctrl.category }}
+            </div>
+          {% endif %}
+
+          <div class="ctrl-row p-3 mb-2 {{ 'disabled-ctrl' if not ctrl.is_enabled else '' }}">
+            <div class="d-flex align-items-start gap-3">
+
+              <!-- Toggle -->
+              <form method="POST"
+                    action="{{ url_for('control_toggle', fw_id=selected.id, ctrl_id=ctrl.id) }}"
+                    class="mt-1 flex-shrink-0">
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input ctrl-toggle" type="checkbox"
+                         {{ 'checked' if ctrl.is_enabled else '' }}
+                         onchange="this.form.submit()" title="Toggle control">
+                </div>
+              </form>
+
+              <!-- Content -->
+              <div style="flex:1;min-width:0;">
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                  <code class="text-{{ selected.color or 'secondary' }} fw-bold small">{{ ctrl.control_id }}</code>
+                  <span class="fw-semibold text-dark small">{{ ctrl.title }}</span>
+                  {% if ctrl.is_required %}
+                  <span class="badge bg-danger bg-opacity-10 text-danger" style="font-size:.65rem;">Required</span>
+                  {% else %}
+                  <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size:.65rem;">Recommended</span>
+                  {% endif %}
+                  {% if not ctrl.is_enabled %}
+                  <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size:.65rem;">Disabled</span>
+                  {% endif %}
+                </div>
+
+                {% if ctrl.description %}
+                <div class="text-muted small mb-1">{{ ctrl.description }}</div>
+                {% endif %}
+
+                {% if ctrl.implementation_guidance %}
+                <div class="bg-light rounded px-3 py-2 small text-secondary mt-1">
+                  <i class="fas fa-lightbulb text-warning me-1"></i>
+                  <strong>Guidance:</strong> {{ ctrl.implementation_guidance }}
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-3 mt-2 text-muted" style="font-size:.7rem;">
+                  {% if ctrl.effective_date %}
+                  <span><i class="fas fa-calendar-check me-1"></i>Effective: {{ ctrl.effective_date }}</span>
+                  {% endif %}
+                  {% if ctrl.last_updated %}
+                  <span><i class="fas fa-sync-alt me-1"></i>Updated: {{ ctrl.last_updated }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Delete -->
+              <form method="POST"
+                    action="{{ url_for('control_delete', fw_id=selected.id, ctrl_id=ctrl.id) }}"
+                    class="flex-shrink-0"
+                    onsubmit="return confirm('Delete this control point?')">
+                <button class="btn btn-link text-danger p-0" title="Delete control">
+                  <i class="fas fa-times-circle"></i>
+                </button>
+              </form>
+
+            </div>
+          </div>
+
+        {% endfor %}
+
+      {% else %}
+        <div class="empty-ctrl">
+          <i class="fas fa-inbox fa-2x mb-3"></i>
+          <h6>No control points yet</h6>
+          <p class="small">Click <strong>Add Control</strong> to add the first one.</p>
+        </div>
+      {% endif %}
+
+    </div><!-- /.fw-main -->
+    {% endif %}
+
+  </div><!-- /.d-flex -->
+  {% endif %}
+
+</div><!-- /.container-fluid -->
+
+
+<!-- ── Add Framework Modal ──────────────────────────────────────────── -->
+<div class="modal fade" id="addFrameworkModal" tabindex="-1">
+  <div class="modal-dialog modal-md">
+    <form method="POST" action="{{ url_for('frameworks_add') }}">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-plus-circle text-primary me-2"></i>Add Framework</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">Code <span class="text-danger">*</span></label>
+              <input type="text" name="code" class="form-control form-control-sm" placeholder="e.g. ISO27001" required>
+              <div class="form-text">Short unique identifier</div>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label fw-semibold small">Display Name <span class="text-danger">*</span></label>
+              <input type="text" name="display_name" class="form-control form-control-sm" placeholder="e.g. ISO/IEC 27001:2022" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Version / Edition</label>
+              <input type="text" name="version" class="form-control form-control-sm" placeholder="e.g. 2022 Edition">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Category</label>
+              <select name="category" class="form-select form-select-sm">
+                <option value="security">Security</option>
+                <option value="healthcare">Healthcare</option>
+                <option value="privacy">Privacy</option>
+                <option value="ai_governance">AI Governance</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold small">Description</label>
+              <textarea name="description" class="form-control form-control-sm" rows="2"
+                        placeholder="Brief description of the framework…"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Add Framework</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ── Add Control Point Modal ──────────────────────────────────────── -->
+{% if selected %}
+<div class="modal fade" id="addControlModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <form method="POST" action="{{ url_for('control_add', fw_id=selected.id) }}">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="fas fa-plus-circle text-primary me-2"></i>
+            Add Control — <span class="text-primary">{{ selected.display_name }}</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">Control ID <span class="text-danger">*</span></label>
+              <input type="text" name="control_id" class="form-control form-control-sm"
+                     placeholder="e.g. §164.312(a)(1)" required>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label fw-semibold small">Title <span class="text-danger">*</span></label>
+              <input type="text" name="title" class="form-control form-control-sm"
+                     placeholder="Short control title" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Category</label>
+              <input type="text" name="category" class="form-control form-control-sm"
+                     placeholder="e.g. Technical Safeguards">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold small">Effective Date</label>
+              <input type="text" name="effective_date" class="form-control form-control-sm" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold small">Last Updated</label>
+              <input type="text" name="last_updated" class="form-control form-control-sm" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold small">Description</label>
+              <textarea name="description" class="form-control form-control-sm" rows="2"
+                        placeholder="What this control requires…"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold small">Implementation Guidance</label>
+              <textarea name="guidance" class="form-control form-control-sm" rows="2"
+                        placeholder="How to implement this control in practice…"></textarea>
+            </div>
+            <div class="col-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_required" id="reqCheck" checked>
+                <label class="form-check-label small" for="reqCheck">Required control (not merely recommended)</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Add Control</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

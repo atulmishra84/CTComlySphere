@@ -2146,6 +2146,245 @@ def collector_agents_list():
     return jsonify({'agents': result, 'total': len(result)})
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# FRAMEWORK CONTROLS  (/frameworks)
+# ─────────────────────────────────────────────────────────────────────────────
+from models import FrameworkConfig, ControlPoint
+
+_FRAMEWORK_SEED = [
+    {
+        "code": "HIPAA", "display_name": "HIPAA / HITECH", "version": "2013 Omnibus Rule",
+        "category": "healthcare", "icon": "fas fa-hospital", "color": "primary",
+        "website_url": "https://www.hhs.gov/hipaa",
+        "description": "Health Insurance Portability and Accountability Act — defines national standards for protecting health information.",
+        "controls": [
+            ("§164.308(a)(1)", "Risk Analysis & Management", "Administrative Safeguards", "Conduct accurate risk analysis of PHI confidentiality, integrity, availability.", True, "Perform annual risk analysis; document findings and mitigation plans.", "2013-01-25", "2024-01-01"),
+            ("§164.308(a)(3)", "Workforce Authorization & Supervision", "Administrative Safeguards", "Implement procedures for authorization and supervision of workforce members.", True, "Define role-based access; conduct background checks.", "2013-01-25", "2024-01-01"),
+            ("§164.308(a)(4)", "Information Access Management", "Administrative Safeguards", "Implement policies for granting access to PHI.", True, "Establish minimum-necessary access controls per job function.", "2013-01-25", "2024-01-01"),
+            ("§164.308(a)(5)", "Security Awareness Training", "Administrative Safeguards", "Implement security training program for all workforce members.", True, "Annual security training; phishing simulations.", "2013-01-25", "2024-01-01"),
+            ("§164.308(a)(6)", "Security Incident Procedures", "Administrative Safeguards", "Implement policies for identifying and responding to security incidents.", True, "Incident response plan with 72-hour breach notification.", "2013-01-25", "2024-01-01"),
+            ("§164.310(a)(1)", "Facility Access Controls", "Physical Safeguards", "Limit physical access to electronic information systems.", True, "Badge access, CCTV, visitor logs for data centers.", "2013-01-25", "2024-01-01"),
+            ("§164.310(d)(1)", "Device and Media Controls", "Physical Safeguards", "Govern receipt and removal of hardware/software containing PHI.", True, "Track all media; encrypted disposal; sanitization procedures.", "2013-01-25", "2024-01-01"),
+            ("§164.312(a)(1)", "Access Control", "Technical Safeguards", "Assign unique names/numbers to identify and track user identity.", True, "Unique user IDs; MFA enforcement; automatic account lockout.", "2013-01-25", "2024-01-01"),
+            ("§164.312(a)(2)(iv)", "Encryption & Decryption", "Technical Safeguards", "Implement encryption and decryption mechanism for PHI.", True, "AES-256 at rest; TLS 1.2+ in transit.", "2013-01-25", "2024-01-01"),
+            ("§164.312(b)", "Audit Controls", "Technical Safeguards", "Implement hardware, software, and procedural mechanisms to record activity.", True, "Centralized SIEM; 90-day log retention minimum.", "2013-01-25", "2024-01-01"),
+            ("§164.312(c)(1)", "Integrity Controls", "Technical Safeguards", "Protect electronic PHI from improper alteration or destruction.", True, "Checksums, digital signatures, immutable audit logs.", "2013-01-25", "2024-01-01"),
+            ("§164.312(e)(1)", "Transmission Security", "Technical Safeguards", "Guard against unauthorized access to ePHI in transit.", True, "TLS 1.2+ for all PHI transmissions; no plain-text transfer.", "2013-01-25", "2024-01-01"),
+        ]
+    },
+    {
+        "code": "HITRUST_CSF", "display_name": "HITRUST CSF", "version": "v11.3.0 (2024)",
+        "category": "healthcare", "icon": "fas fa-shield-virus", "color": "success",
+        "website_url": "https://hitrustalliance.net",
+        "description": "HITRUST Common Security Framework — the most widely adopted healthcare security framework integrating HIPAA, NIST, ISO, and PCI.",
+        "controls": [
+            ("01.a", "Access Control Policy", "Access Control", "Establish and communicate access control policy.", True, "Documented IAM policy reviewed annually.", "2024-01-01", "2024-06-01"),
+            ("01.b", "User Registration & De-provisioning", "Access Control", "Formal user registration and de-provisioning process.", True, "Automated provisioning/de-provisioning tied to HR lifecycle.", "2024-01-01", "2024-06-01"),
+            ("01.d", "User Password Management", "Access Control", "Manage passwords using a formal process.", True, "Password complexity; 90-day rotation; breached-password detection.", "2024-01-01", "2024-06-01"),
+            ("01.q", "User Authentication for External Connections", "Access Control", "Use appropriate authentication methods for remote access.", True, "MFA required for all VPN and remote desktop sessions.", "2024-01-01", "2024-06-01"),
+            ("06.d", "Data Leakage Prevention", "Compliance", "Prevent unauthorized disclosure of data.", True, "DLP tools monitoring email, endpoints, and cloud storage.", "2024-01-01", "2024-06-01"),
+            ("07.a", "Mobile Computing Policy", "Mobile Computing", "Policy and supporting security measures for mobile computing.", True, "MDM enrollment required; remote wipe capability.", "2024-01-01", "2024-06-01"),
+            ("09.aa", "Monitoring System Use", "Audit Logging", "Procedures to monitor use of information processing facilities.", True, "SIEM with real-time alerting; quarterly log review.", "2024-01-01", "2024-06-01"),
+            ("09.ab", "Protection of Log Information", "Audit Logging", "Protect logging facilities and log information from tampering.", True, "Logs forwarded to immutable storage; integrity checks.", "2024-01-01", "2024-06-01"),
+            ("10.b", "Secure System Engineering", "Systems Development", "Security engineering principles applied in information systems.", True, "Secure SDLC; threat modeling; code review gates.", "2024-01-01", "2024-06-01"),
+            ("10.h", "Control of Operational Software", "Systems Development", "Procedures to control software on operational systems.", True, "Application whitelisting; signed software deployment.", "2024-01-01", "2024-06-01"),
+            ("11.a", "Reporting Information Security Weaknesses", "Incident Management", "Report security weaknesses observed or suspected.", True, "Vulnerability disclosure policy; internal reporting channel.", "2024-01-01", "2024-06-01"),
+            ("11.b", "Management of Information Security Incidents", "Incident Management", "Responsibilities and procedures to handle security incidents effectively.", True, "CSIRT with defined playbooks; post-incident review process.", "2024-01-01", "2024-06-01"),
+        ]
+    },
+    {
+        "code": "FDA_SAMD", "display_name": "FDA SaMD Guidance", "version": "2023 AI/ML Action Plan",
+        "category": "healthcare", "icon": "fas fa-pills", "color": "danger",
+        "website_url": "https://www.fda.gov/medical-devices/software-medical-device-samd",
+        "description": "FDA Software as a Medical Device — regulatory requirements for AI/ML-based medical device software.",
+        "controls": [
+            ("21CFR820.30", "Design Controls", "Quality System", "Establish design controls for software devices.", True, "Design history file; design validation and verification.", "2023-01-01", "2024-01-01"),
+            ("21CFR820.70", "Production & Process Controls", "Quality System", "Establish and maintain production process controls.", True, "Automated CI/CD with quality gates; release approval workflow.", "2023-01-01", "2024-01-01"),
+            ("21CFR11", "Electronic Records & Signatures", "Compliance", "Electronic records meet the same trustworthiness as paper records.", True, "Audit trails; unique user IDs; time-stamped electronic signatures.", "2023-01-01", "2024-01-01"),
+            ("IEC62304-5.1", "Software Development Planning", "Software Lifecycle", "Plan the software development activities.", True, "Software development plan covering safety classification.", "2023-01-01", "2024-01-01"),
+            ("IEC62304-5.2", "Software Requirements Analysis", "Software Lifecycle", "Establish and document software requirements.", True, "Traceable requirements linked to risk analysis (ISO 14971).", "2023-01-01", "2024-01-01"),
+            ("IEC62304-8", "Software Configuration Management", "Software Lifecycle", "Identify, control, and track software items.", True, "Version control; change management; release baselines.", "2023-01-01", "2024-01-01"),
+            ("ISO14971-4", "Risk Analysis", "Risk Management", "Identify hazards and estimate risks.", True, "FMEA/FMECA for AI model failure modes; hazard log.", "2023-01-01", "2024-01-01"),
+            ("ISO14971-7", "Risk Evaluation & Control", "Risk Management", "Evaluate and implement risk controls.", True, "Residual risk acceptance; benefit-risk analysis documented.", "2023-01-01", "2024-01-01"),
+            ("AI-ML-OOD", "Out-of-Distribution Detection", "AI/ML Controls", "Detect inputs outside the training distribution.", True, "OOD monitoring dashboards; model drift alerts.", "2023-06-01", "2024-06-01"),
+            ("AI-ML-BIAS", "Algorithmic Bias Monitoring", "AI/ML Controls", "Monitor model outputs for demographic bias.", True, "Fairness metrics tracked per subgroup; quarterly bias audit.", "2023-06-01", "2024-06-01"),
+            ("AI-ML-XPLAIN", "Explainability Requirements", "AI/ML Controls", "Provide explainability for AI-assisted clinical decisions.", True, "SHAP/LIME explanations surfaced to clinicians at decision point.", "2023-06-01", "2024-06-01"),
+        ]
+    },
+    {
+        "code": "GDPR", "display_name": "GDPR", "version": "Regulation (EU) 2016/679",
+        "category": "privacy", "icon": "fas fa-user-shield", "color": "warning",
+        "website_url": "https://gdpr.eu",
+        "description": "General Data Protection Regulation — EU law on data protection and privacy for all individuals within the EU and EEA.",
+        "controls": [
+            ("Art.5", "Principles of Processing", "Lawfulness", "Data must be processed lawfully, fairly, and transparently.", True, "Document lawful basis for each processing activity in a ROPA.", "2018-05-25", "2024-01-01"),
+            ("Art.6", "Lawful Basis for Processing", "Lawfulness", "Establish a valid lawful basis before processing personal data.", True, "Consent management platform; legitimate interest assessments.", "2018-05-25", "2024-01-01"),
+            ("Art.17", "Right to Erasure", "Data Subject Rights", "Individuals may request deletion of their personal data.", True, "Automated erasure workflow; 30-day SLA for deletion requests.", "2018-05-25", "2024-01-01"),
+            ("Art.20", "Right to Data Portability", "Data Subject Rights", "Individuals may receive their data in a machine-readable format.", True, "Export API providing structured JSON/CSV of personal data.", "2018-05-25", "2024-01-01"),
+            ("Art.25", "Data Protection by Design", "Privacy Engineering", "Implement data protection from the outset of system design.", True, "Privacy impact review required for all new features.", "2018-05-25", "2024-01-01"),
+            ("Art.32", "Security of Processing", "Security", "Implement appropriate technical and organisational security measures.", True, "Encryption, pseudonymisation, access controls, DR testing.", "2018-05-25", "2024-01-01"),
+            ("Art.33", "Breach Notification to Authority", "Incident Management", "Notify supervisory authority of personal data breaches within 72 hours.", True, "Automated breach detection triggers DPO notification workflow.", "2018-05-25", "2024-01-01"),
+            ("Art.35", "Data Protection Impact Assessment", "Privacy Engineering", "Conduct DPIA for high-risk processing activities.", True, "DPIA templates; mandatory for AI processing of health data.", "2018-05-25", "2024-01-01"),
+            ("Art.37", "Data Protection Officer", "Governance", "Designate a DPO where required.", True, "DPO appointed; contact details published; DSAR process documented.", "2018-05-25", "2024-01-01"),
+            ("Art.44", "International Data Transfers", "Data Transfers", "Transfers outside EEA require adequate safeguards.", True, "Standard Contractual Clauses or adequacy decision in place.", "2018-05-25", "2024-01-01"),
+        ]
+    },
+    {
+        "code": "SOC2_TYPE_II", "display_name": "SOC 2 Type II", "version": "AICPA TSC 2017",
+        "category": "security", "icon": "fas fa-certificate", "color": "info",
+        "website_url": "https://www.aicpa.org/soc2",
+        "description": "Service Organization Control 2 — attestation of security controls over a 12-month observation period.",
+        "controls": [
+            ("CC1.1", "Control Environment — Integrity & Ethics", "Common Criteria", "Commitment to integrity and ethical values.", True, "Code of conduct; ethics hotline; annual attestation by employees.", "2017-01-01", "2024-01-01"),
+            ("CC2.1", "Information & Communication", "Common Criteria", "Use quality information to support internal controls.", True, "Internal reporting dashboards; risk committee meetings.", "2017-01-01", "2024-01-01"),
+            ("CC3.1", "Risk Assessment — Objectives", "Common Criteria", "Specify objectives to identify and assess risks.", True, "Annual enterprise risk assessment; risk register maintained.", "2017-01-01", "2024-01-01"),
+            ("CC6.1", "Logical & Physical Access Controls", "Common Criteria", "Restrict logical access to systems with protected information.", True, "SSO with MFA; quarterly access reviews; PAM for privileged accounts.", "2017-01-01", "2024-01-01"),
+            ("CC6.6", "Logical Access — External Threats", "Common Criteria", "Restrict access from outside the boundaries of the system.", True, "WAF, DDoS protection, IDS/IPS monitoring.", "2017-01-01", "2024-01-01"),
+            ("CC7.1", "System Operations — Baseline Configuration", "Common Criteria", "Detect and monitor for new vulnerabilities.", True, "CIS benchmarks; automated vulnerability scanning; patch SLAs.", "2017-01-01", "2024-01-01"),
+            ("CC7.2", "System Operations — Anomaly Detection", "Common Criteria", "Monitor system components for anomalies.", True, "SIEM rules; behavioral analytics; 24×7 SOC alerting.", "2017-01-01", "2024-01-01"),
+            ("CC8.1", "Change Management", "Common Criteria", "Manage changes to infrastructure and software.", True, "CAB process; peer code review; automated regression testing.", "2017-01-01", "2024-01-01"),
+            ("A1.1", "Availability — Performance Monitoring", "Availability", "Monitor system availability and capacity.", True, "Uptime monitoring; SLA reporting; capacity planning reviews.", "2017-01-01", "2024-01-01"),
+            ("C1.1", "Confidentiality — Classification", "Confidentiality", "Identify and classify confidential information.", True, "Data classification policy; DLP controls on confidential tier.", "2017-01-01", "2024-01-01"),
+        ]
+    },
+    {
+        "code": "NIST_AI_RMF", "display_name": "NIST AI RMF", "version": "1.0 (2023)",
+        "category": "ai_governance", "icon": "fas fa-brain", "color": "secondary",
+        "website_url": "https://airc.nist.gov/RMF",
+        "description": "NIST AI Risk Management Framework — voluntary guidance to better manage risks to individuals, organizations, and society associated with AI.",
+        "controls": [
+            ("GOVERN-1.1", "AI Risk Policy", "GOVERN", "Policies, processes, and practices for AI risk management exist and are followed.", True, "AI risk policy ratified by board; embedded in SDLC.", "2023-01-26", "2024-01-01"),
+            ("GOVERN-2.1", "Accountability Structures", "GOVERN", "Roles and responsibilities for AI risk management are defined.", True, "AI governance committee with executive sponsorship.", "2023-01-26", "2024-01-01"),
+            ("MAP-1.1", "Context Establishment", "MAP", "Context for the AI system is established.", True, "AI system cards documenting purpose, users, and risk profile.", "2023-01-26", "2024-01-01"),
+            ("MAP-2.1", "AI Risk Categorization", "MAP", "Scientific, technical, and societal risks are identified.", True, "Tiered risk classification (Critical / High / Medium / Low).", "2023-01-26", "2024-01-01"),
+            ("MEASURE-1.1", "Metrics for AI Risks", "MEASURE", "Approaches and metrics to measure AI risks are established.", True, "KRIs tracked quarterly; fairness and accuracy baselines defined.", "2023-01-26", "2024-01-01"),
+            ("MEASURE-2.5", "Bias Testing", "MEASURE", "AI system to be deployed in real-world contexts is demonstrated to be fair.", True, "Pre-deployment bias testing across protected characteristics.", "2023-01-26", "2024-01-01"),
+            ("MANAGE-1.1", "Risk Treatment Plans", "MANAGE", "Responses to identified AI risks are managed.", True, "Risk treatment plans reviewed quarterly; owners assigned.", "2023-01-26", "2024-01-01"),
+            ("MANAGE-4.1", "Incident Response", "MANAGE", "Post-deployment AI incidents are documented and analysed.", True, "AI incident log; root-cause analysis; corrective action tracking.", "2023-01-26", "2024-01-01"),
+        ]
+    },
+]
+
+def _seed_frameworks_if_empty():
+    """Auto-seed built-in frameworks on first visit."""
+    if FrameworkConfig.query.count() > 0:
+        return
+    for fw in _FRAMEWORK_SEED:
+        controls = fw.pop("controls")
+        f = FrameworkConfig(**fw)
+        db.session.add(f)
+        db.session.flush()
+        for ctrl in controls:
+            cid, title, cat, desc, req, guidance, eff, upd = ctrl
+            db.session.add(ControlPoint(
+                framework_id=f.id, control_id=cid, title=title,
+                category=cat, description=desc, is_required=req,
+                implementation_guidance=guidance, effective_date=eff,
+                last_updated=upd
+            ))
+        fw["controls"] = controls  # restore for subsequent calls
+    db.session.commit()
+
+
+@app.route('/frameworks')
+def frameworks_index():
+    _seed_frameworks_if_empty()
+    frameworks = FrameworkConfig.query.order_by(FrameworkConfig.category, FrameworkConfig.display_name).all()
+    selected_id = request.args.get('fw', type=int)
+    selected = next((f for f in frameworks if f.id == selected_id), frameworks[0] if frameworks else None)
+    categories = sorted({f.category for f in frameworks})
+    return render_template('frameworks.html', frameworks=frameworks,
+                           selected=selected, categories=categories)
+
+
+@app.route('/frameworks/add', methods=['POST'])
+def frameworks_add():
+    code = request.form.get('code', '').strip().upper()
+    name = request.form.get('display_name', '').strip()
+    if not code or not name:
+        flash('Code and name are required.', 'warning')
+        return redirect(url_for('frameworks_index'))
+    if FrameworkConfig.query.filter_by(code=code).first():
+        flash(f'Framework "{code}" already exists.', 'warning')
+        return redirect(url_for('frameworks_index'))
+    f = FrameworkConfig(
+        code=code, display_name=name,
+        version=request.form.get('version', '').strip() or None,
+        description=request.form.get('description', '').strip() or None,
+        category=request.form.get('category', 'security'),
+        icon='fas fa-layer-group', color='secondary', is_custom=True
+    )
+    db.session.add(f)
+    db.session.commit()
+    flash(f'Framework "{name}" added successfully.', 'success')
+    return redirect(url_for('frameworks_index', fw=f.id))
+
+
+@app.route('/frameworks/<int:fw_id>/toggle', methods=['POST'])
+def framework_toggle(fw_id):
+    f = FrameworkConfig.query.get_or_404(fw_id)
+    f.is_enabled = not f.is_enabled
+    db.session.commit()
+    status = 'enabled' if f.is_enabled else 'disabled'
+    flash(f'Framework "{f.display_name}" {status}.', 'success')
+    return redirect(url_for('frameworks_index', fw=fw_id))
+
+
+@app.route('/frameworks/<int:fw_id>/delete', methods=['POST'])
+def framework_delete(fw_id):
+    f = FrameworkConfig.query.get_or_404(fw_id)
+    if not f.is_custom:
+        flash('Built-in frameworks cannot be deleted.', 'warning')
+        return redirect(url_for('frameworks_index', fw=fw_id))
+    db.session.delete(f)
+    db.session.commit()
+    flash(f'Framework "{f.display_name}" deleted.', 'success')
+    return redirect(url_for('frameworks_index'))
+
+
+@app.route('/frameworks/<int:fw_id>/controls/add', methods=['POST'])
+def control_add(fw_id):
+    FrameworkConfig.query.get_or_404(fw_id)
+    ctrl_id = request.form.get('control_id', '').strip()
+    title   = request.form.get('title', '').strip()
+    if not ctrl_id or not title:
+        flash('Control ID and title are required.', 'warning')
+        return redirect(url_for('frameworks_index', fw=fw_id))
+    if ControlPoint.query.filter_by(framework_id=fw_id, control_id=ctrl_id).first():
+        flash(f'Control "{ctrl_id}" already exists in this framework.', 'warning')
+        return redirect(url_for('frameworks_index', fw=fw_id))
+    cp = ControlPoint(
+        framework_id=fw_id, control_id=ctrl_id, title=title,
+        category=request.form.get('category', '').strip() or 'General',
+        description=request.form.get('description', '').strip() or None,
+        implementation_guidance=request.form.get('guidance', '').strip() or None,
+        is_required=request.form.get('is_required') == 'on',
+        effective_date=request.form.get('effective_date', '').strip() or None,
+        last_updated=request.form.get('last_updated', '').strip() or None,
+    )
+    db.session.add(cp)
+    db.session.commit()
+    flash(f'Control "{ctrl_id}" added.', 'success')
+    return redirect(url_for('frameworks_index', fw=fw_id))
+
+
+@app.route('/frameworks/<int:fw_id>/controls/<int:ctrl_id>/toggle', methods=['POST'])
+def control_toggle(fw_id, ctrl_id):
+    cp = ControlPoint.query.filter_by(id=ctrl_id, framework_id=fw_id).first_or_404()
+    cp.is_enabled = not cp.is_enabled
+    db.session.commit()
+    return redirect(url_for('frameworks_index', fw=fw_id))
+
+
+@app.route('/frameworks/<int:fw_id>/controls/<int:ctrl_id>/delete', methods=['POST'])
+def control_delete(fw_id, ctrl_id):
+    cp = ControlPoint.query.filter_by(id=ctrl_id, framework_id=fw_id).first_or_404()
+    db.session.delete(cp)
+    db.session.commit()
+    flash(f'Control "{cp.control_id}" deleted.', 'success')
+    return redirect(url_for('frameworks_index', fw=fw_id))
+
+
 @app.route('/knowledge')
 def knowledge():
     return render_template('knowledge.html')
