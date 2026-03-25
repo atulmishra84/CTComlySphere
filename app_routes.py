@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from app import app, db
-from models import AIAgent, ScanResult, ComplianceEvaluation, RiskLevel, ComplianceFramework, InventoryStatus, AIAgentInventory, RegistrationPlaybook, AgentRegistration, PlaybookExecution, RemediationWorkflow, RemediationExecution, RemediationActionExecution
+from models import AIAgent, ScanResult, ComplianceEvaluation, RiskLevel, ComplianceFramework, InventoryStatus, AIAgentInventory, RegistrationPlaybook, AgentRegistration, PlaybookExecution, RemediationWorkflow, RemediationExecution, RemediationActionExecution, ComplianceRule
 from datetime import datetime, timedelta
 # ProtocolScanner imported later to avoid import-time failures
 import random
@@ -2453,6 +2453,240 @@ def control_delete(fw_id, ctrl_id):
 @app.route('/knowledge')
 def knowledge():
     return render_template('knowledge.html')
+
+
+# ---------------------------------------------------------------------------
+# Predictive Analytics
+# ---------------------------------------------------------------------------
+
+@app.route('/predictive-analytics')
+def predictive_analytics():
+    """Proactive risk mitigation dashboard powered by the predictive engine."""
+    try:
+        from engines.predictive_engine import (
+            compute_risk_trend, compute_30day_forecast, compute_at_risk_agents,
+            compute_compliance_drift, compute_risk_by_provider,
+            compute_risk_by_agent_type, compute_anomalies, compute_summary_metrics
+        )
+        trend = compute_risk_trend(db, ScanResult, days=60)
+        forecast = compute_30day_forecast(trend)
+        at_risk = compute_at_risk_agents(db, AIAgent, ScanResult)
+        drifting = compute_compliance_drift(db, AIAgent, ComplianceEvaluation)
+        by_provider = compute_risk_by_provider(db, AIAgent, ScanResult)
+        by_type = compute_risk_by_agent_type(db, AIAgent, ScanResult)
+        anomalies = compute_anomalies(db, AIAgent, ScanResult)
+        metrics = compute_summary_metrics(db, AIAgent, ScanResult, ComplianceEvaluation)
+    except Exception as e:
+        logger.error(f"Predictive analytics error: {e}")
+        trend, forecast, at_risk, drifting = [], [], [], []
+        by_provider, by_type, anomalies = [], [], []
+        metrics = {'total_agents': 0, 'avg_risk': 0, 'risk_change': 0,
+                   'avg_compliance': 0, 'critical_agents': 0, 'risk_direction': 'flat'}
+
+    return render_template(
+        'predictive_analytics.html',
+        trend=trend,
+        forecast=forecast,
+        at_risk=at_risk,
+        drifting=drifting,
+        by_provider=by_provider,
+        by_type=by_type,
+        anomalies=anomalies,
+        metrics=metrics
+    )
+
+
+# ---------------------------------------------------------------------------
+# Compliance Rule Builder
+# ---------------------------------------------------------------------------
+
+RULE_FIELDS = [
+    {'value': 'ai_type',           'label': 'Agent Type',         'type': 'select',
+     'options': ['TRADITIONAL_ML','GENAI','AGENTIC_AI','COMPUTER_VISION','NLP',
+                 'RECOMMENDATION','PREDICTIVE_ANALYTICS','AUTONOMOUS_SYSTEM',
+                 'CONVERSATIONAL_AI','MULTIMODAL_AI','CLAWBOT']},
+    {'value': 'cloud_provider',    'label': 'Cloud Provider',     'type': 'select',
+     'options': ['aws','azure','gcp','on-premise','unknown']},
+    {'value': 'protocol',          'label': 'Protocol',           'type': 'select',
+     'options': ['REST','Docker','Kubernetes','gRPC','WebSocket','MQTT','GraphQL','MCP']},
+    {'value': 'risk_level',        'label': 'Risk Level (latest scan)', 'type': 'select',
+     'options': ['LOW','MEDIUM','HIGH','CRITICAL']},
+    {'value': 'phi_exposure',      'label': 'PHI Exposure Detected', 'type': 'bool',
+     'options': ['true','false']},
+    {'value': 'risk_score',        'label': 'Risk Score',         'type': 'number', 'options': []},
+    {'value': 'compliance_score',  'label': 'Compliance Score',   'type': 'number', 'options': []},
+    {'value': 'vulnerabilities',   'label': 'Vulnerability Count','type': 'number', 'options': []},
+    {'value': 'deployment_env',    'label': 'Deployment Environment', 'type': 'select',
+     'options': ['production','staging','development']},
+    {'value': 'autonomy_level',    'label': 'Autonomy Level',     'type': 'select',
+     'options': ['low','medium','high','full']},
+]
+
+RULE_OPERATORS = {
+    'select': [('equals','Equals'), ('not_equals','Not Equals')],
+    'bool':   [('equals','Is')],
+    'number': [('gt','Greater Than'), ('lt','Less Than'), ('gte','≥'), ('lte','≤'), ('equals','Equals')],
+}
+
+
+def _evaluate_rule(rule, agent, latest_scan, latest_eval):
+    """Evaluate a rule's conditions against a single agent. Returns True if all/any match."""
+    conditions = rule.conditions or []
+    logic = rule.condition_logic or 'AND'
+    results = []
+    for cond in conditions:
+        field = cond.get('field', '')
+        op = cond.get('operator', 'equals')
+        val = cond.get('value', '')
+        # Resolve field value from agent + latest scan/eval
+        if field == 'ai_type':
+            actual = agent.ai_type.value if agent.ai_type else ''
+        elif field == 'cloud_provider':
+            actual = (agent.cloud_provider or '').lower()
+            val = val.lower()
+        elif field == 'protocol':
+            actual = agent.protocol or ''
+        elif field == 'risk_level':
+            actual = latest_scan.risk_level.value if latest_scan and latest_scan.risk_level else ''
+        elif field == 'phi_exposure':
+            actual = 'true' if (latest_scan and latest_scan.phi_exposure_detected) else 'false'
+        elif field == 'risk_score':
+            actual = latest_scan.risk_score if latest_scan else 0
+            try: val = float(val)
+            except: val = 0
+        elif field == 'compliance_score':
+            actual = latest_eval.compliance_score if latest_eval else 0
+            try: val = float(val)
+            except: val = 0
+        elif field == 'vulnerabilities':
+            actual = latest_scan.vulnerabilities_found if latest_scan else 0
+            try: val = float(val)
+            except: val = 0
+        elif field == 'deployment_env':
+            actual = (agent.deployment_environment or '').lower()
+            val = val.lower()
+        elif field == 'autonomy_level':
+            actual = (agent.autonomy_level or '').lower()
+            val = val.lower()
+        else:
+            results.append(False)
+            continue
+
+        if op == 'equals':
+            results.append(str(actual) == str(val))
+        elif op == 'not_equals':
+            results.append(str(actual) != str(val))
+        elif op == 'gt':
+            try: results.append(float(actual) > float(val))
+            except: results.append(False)
+        elif op == 'lt':
+            try: results.append(float(actual) < float(val))
+            except: results.append(False)
+        elif op == 'gte':
+            try: results.append(float(actual) >= float(val))
+            except: results.append(False)
+        elif op == 'lte':
+            try: results.append(float(actual) <= float(val))
+            except: results.append(False)
+        else:
+            results.append(False)
+
+    if not results:
+        return False
+    return all(results) if logic == 'AND' else any(results)
+
+
+@app.route('/compliance/rules')
+def compliance_rules():
+    rules = ComplianceRule.query.order_by(ComplianceRule.created_at.desc()).all()
+    return render_template('compliance_rules.html', rules=rules,
+                           rule_fields=RULE_FIELDS, rule_operators=RULE_OPERATORS)
+
+
+@app.route('/compliance/rules/create', methods=['POST'])
+def compliance_rules_create():
+    try:
+        name = request.form.get('name', '').strip()
+        if not name:
+            flash('Rule name is required.', 'danger')
+            return redirect(url_for('compliance_rules'))
+
+        conditions_raw = request.form.get('conditions_json', '[]')
+        try:
+            conditions = json.loads(conditions_raw)
+        except Exception:
+            conditions = []
+
+        frameworks_raw = request.form.getlist('frameworks')
+
+        rule = ComplianceRule(
+            name=name,
+            description=request.form.get('description', '').strip(),
+            condition_logic=request.form.get('condition_logic', 'AND'),
+            conditions=conditions,
+            severity=request.form.get('severity', 'MEDIUM'),
+            action_type=request.form.get('action_type', 'FLAG'),
+            action_message=request.form.get('action_message', '').strip(),
+            frameworks=frameworks_raw,
+            is_active=True
+        )
+        db.session.add(rule)
+        db.session.commit()
+        flash(f'Rule "{name}" created successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Create rule error: {e}")
+        flash('Failed to create rule.', 'danger')
+    return redirect(url_for('compliance_rules'))
+
+
+@app.route('/compliance/rules/<int:rule_id>/toggle', methods=['POST'])
+def compliance_rule_toggle(rule_id):
+    rule = ComplianceRule.query.get_or_404(rule_id)
+    rule.is_active = not rule.is_active
+    db.session.commit()
+    state = 'enabled' if rule.is_active else 'disabled'
+    flash(f'Rule "{rule.name}" {state}.', 'info')
+    return redirect(url_for('compliance_rules'))
+
+
+@app.route('/compliance/rules/<int:rule_id>/delete', methods=['POST'])
+def compliance_rule_delete(rule_id):
+    rule = ComplianceRule.query.get_or_404(rule_id)
+    name = rule.name
+    db.session.delete(rule)
+    db.session.commit()
+    flash(f'Rule "{name}" deleted.', 'success')
+    return redirect(url_for('compliance_rules'))
+
+
+@app.route('/compliance/rules/<int:rule_id>/run', methods=['POST'])
+def compliance_rule_run(rule_id):
+    """Test/run a rule against all agents and return a JSON summary."""
+    rule = ComplianceRule.query.get_or_404(rule_id)
+    agents = AIAgent.query.all()
+    matches = []
+    for agent in agents:
+        latest_scan = ScanResult.query.filter_by(
+            ai_agent_id=agent.id
+        ).order_by(ScanResult.created_at.desc()).first()
+        latest_eval = ComplianceEvaluation.query.filter_by(
+            ai_agent_id=agent.id
+        ).order_by(ComplianceEvaluation.evaluated_at.desc()).first()
+        if _evaluate_rule(rule, agent, latest_scan, latest_eval):
+            matches.append({
+                'id': agent.id,
+                'name': agent.name,
+                'type': agent.type,
+                'cloud_provider': agent.cloud_provider or 'N/A',
+                'risk_score': round(latest_scan.risk_score, 1) if latest_scan else 0,
+                'compliance_score': round(latest_eval.compliance_score, 1) if latest_eval else 0,
+            })
+    rule.match_count = len(matches)
+    rule.last_run_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify({'rule_id': rule_id, 'rule_name': rule.name,
+                    'match_count': len(matches), 'matches': matches})
 
 
 @app.errorhandler(404)

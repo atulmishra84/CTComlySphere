@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+{% block title %}Predictive Analytics - CT ComplySphere{% endblock %}
+
+{% block head %}
+<style>
+.metric-card { background: linear-gradient(135deg, #1a1f2e 0%, #141824 100%); border: 1px solid #2a3144; border-radius: 12px; }
+.risk-up   { color: #dc3545; }
+.risk-down { color: #198754; }
+.risk-flat { color: #6c757d; }
+.agent-risk-bar { height: 6px; border-radius: 3px; background: #2a3144; overflow: hidden; }
+.agent-risk-bar-fill { height: 100%; border-radius: 3px; }
+.slope-badge { font-size: .7rem; font-family: monospace; }
+.section-card { background: #141824; border: 1px solid #2a3144; border-radius: 12px; }
+.anomaly-row { border-left: 3px solid #dc3545; }
+.drift-row   { border-left: 3px solid #ffc107; }
+.heatmap-cell { border-radius: 6px; padding: .5rem; text-align: center; min-width: 110px; }
+.forecast-label { font-size: .75rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- Header -->
+  <div class="row mb-4 align-items-center">
+    <div class="col">
+      <h1 class="h2 mb-1"><i class="fas fa-brain me-2 text-primary"></i>Predictive Risk Analytics</h1>
+      <p class="text-muted mb-0">Proactive risk mitigation powered by real scan data — forecasts, drift detection, and anomaly alerts.</p>
+    </div>
+    <div class="col-auto">
+      <a href="{{ url_for('analytics') }}" class="btn btn-outline-secondary me-2">
+        <i class="fas fa-chart-bar me-2"></i>Standard Analytics
+      </a>
+      <button class="btn btn-outline-primary" onclick="location.reload()">
+        <i class="fas fa-sync me-1"></i>Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="metric-card p-3 h-100">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small mb-1">Total Agents</div>
+            <div class="h3 mb-0">{{ metrics.total_agents }}</div>
+          </div>
+          <i class="fas fa-robot fa-2x text-primary opacity-50"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="metric-card p-3 h-100">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small mb-1">Avg Risk Score</div>
+            <div class="h3 mb-0 {% if metrics.avg_risk >= 75 %}text-danger{% elif metrics.avg_risk >= 50 %}text-warning{% else %}text-success{% endif %}">
+              {{ metrics.avg_risk }}
+            </div>
+            <div class="small risk-{{ metrics.risk_direction }}">
+              {% if metrics.risk_direction == 'up' %}<i class="fas fa-arrow-up me-1"></i>+{% elif metrics.risk_direction == 'down' %}<i class="fas fa-arrow-down me-1"></i>{% endif %}
+              {{ metrics.risk_change | abs }}pts vs last 30d
+            </div>
+          </div>
+          <i class="fas fa-shield-alt fa-2x {% if metrics.avg_risk >= 75 %}text-danger{% elif metrics.avg_risk >= 50 %}text-warning{% else %}text-success{% endif %} opacity-50"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="metric-card p-3 h-100">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small mb-1">Avg Compliance</div>
+            <div class="h3 mb-0 {% if metrics.avg_compliance >= 80 %}text-success{% elif metrics.avg_compliance >= 60 %}text-warning{% else %}text-danger{% endif %}">
+              {{ metrics.avg_compliance }}%
+            </div>
+          </div>
+          <i class="fas fa-clipboard-check fa-2x text-info opacity-50"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="metric-card p-3 h-100">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small mb-1">Critical-Risk Agents</div>
+            <div class="h3 mb-0 {% if metrics.critical_agents > 0 %}text-danger{% else %}text-success{% endif %}">
+              {{ metrics.critical_agents }}
+            </div>
+          </div>
+          <i class="fas fa-exclamation-triangle fa-2x text-danger opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div class="row g-3 mb-4">
+
+    <!-- Risk Trend + 30-day Forecast -->
+    <div class="col-lg-8">
+      <div class="section-card p-3 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="mb-0"><i class="fas fa-chart-line me-2 text-primary"></i>Risk Score Trend &amp; 30-Day Forecast</h6>
+          <div>
+            <span class="badge bg-primary me-1">— Actual</span>
+            <span class="badge bg-warning text-dark">- - Forecast</span>
+          </div>
+        </div>
+        <canvas id="trendChart" height="220"></canvas>
+      </div>
+    </div>
+
+    <!-- Risk by Cloud Provider -->
+    <div class="col-lg-4">
+      <div class="section-card p-3 h-100">
+        <h6 class="mb-3"><i class="fas fa-cloud me-2 text-info"></i>Risk by Cloud Provider</h6>
+        {% if by_provider %}
+        <canvas id="providerChart" height="220"></canvas>
+        {% else %}
+        <p class="text-muted small fst-italic">No cloud provider data yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- At-risk Agents + Compliance Drift -->
+  <div class="row g-3 mb-4">
+
+    <!-- At-risk agents -->
+    <div class="col-lg-6">
+      <div class="section-card p-3 h-100">
+        <h6 class="mb-3"><i class="fas fa-arrow-trend-up me-2 text-danger"></i>Agents Trending Toward High Risk</h6>
+        {% if at_risk %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead><tr>
+              <th>Agent</th><th>Risk Score</th><th>Trend</th><th>Level</th>
+            </tr></thead>
+            <tbody>
+            {% for item in at_risk %}
+            <tr>
+              <td>
+                <a href="/agents/{{ item.agent.id }}" class="text-decoration-none">{{ item.agent.name[:30] }}</a>
+                <div class="text-muted" style="font-size:.7rem">{{ item.agent.cloud_provider or '—' }}</div>
+              </td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="agent-risk-bar flex-grow-1">
+                    <div class="agent-risk-bar-fill bg-{% if item.latest_risk >= 75 %}danger{% elif item.latest_risk >= 50 %}warning{% else %}success{% endif %}"
+                         style="width:{{ [item.latest_risk,100]|min }}%"></div>
+                  </div>
+                  <small>{{ item.latest_risk }}</small>
+                </div>
+              </td>
+              <td>
+                {% if item.slope > 0 %}
+                  <span class="badge bg-danger slope-badge"><i class="fas fa-arrow-up me-1"></i>+{{ item.slope }}</span>
+                {% elif item.slope < 0 %}
+                  <span class="badge bg-success slope-badge"><i class="fas fa-arrow-down me-1"></i>{{ item.slope }}</span>
+                {% else %}
+                  <span class="badge bg-secondary slope-badge">Stable</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge bg-{% if item.risk_level == 'CRITICAL' %}danger{% elif item.risk_level == 'HIGH' %}warning text-dark{% elif item.risk_level == 'MEDIUM' %}info text-dark{% else %}success{% endif %}">
+                  {{ item.risk_level }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted small fst-italic">No at-risk trends detected.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Compliance drift -->
+    <div class="col-lg-6">
+      <div class="section-card p-3 h-100">
+        <h6 class="mb-3"><i class="fas fa-arrow-trend-down me-2 text-warning"></i>Compliance Score Drift</h6>
+        {% if drifting %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead><tr>
+              <th>Agent</th><th>Current Score</th><th>Drift</th><th>Framework</th>
+            </tr></thead>
+            <tbody>
+            {% for item in drifting %}
+            <tr class="drift-row">
+              <td>
+                <a href="/agents/{{ item.agent.id }}" class="text-decoration-none">{{ item.agent.name[:30] }}</a>
+              </td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="agent-risk-bar flex-grow-1">
+                    <div class="agent-risk-bar-fill bg-{% if item.latest_score >= 80 %}success{% elif item.latest_score >= 60 %}warning{% else %}danger{% endif %}"
+                         style="width:{{ [item.latest_score,100]|min }}%"></div>
+                  </div>
+                  <small>{{ item.latest_score }}%</small>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-warning text-dark slope-badge">
+                  <i class="fas fa-arrow-down me-1"></i>{{ item.slope }}
+                </span>
+              </td>
+              <td><span class="badge bg-secondary" style="font-size:.65rem">{{ item.framework.replace('_',' ') }}</span></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted small fst-italic">No compliance drift detected. All agents are stable.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk by Agent Type + Anomalies -->
+  <div class="row g-3 mb-4">
+
+    <!-- Risk by Agent Type heatmap -->
+    <div class="col-lg-5">
+      <div class="section-card p-3 h-100">
+        <h6 class="mb-3"><i class="fas fa-th me-2 text-purple" style="color:#7c3aed"></i>Risk Heatmap by Agent Type</h6>
+        {% if by_type %}
+        <div class="d-flex flex-wrap gap-2">
+          {% for item in by_type %}
+          {% set pct = item.avg_risk %}
+          {% set r = ((pct/100)*220)|int %}
+          {% set g = ((1 - pct/100)*160)|int %}
+          <div class="heatmap-cell" style="background: rgba({{ r }},{{ g }},50,0.25); border: 1px solid rgba({{ r }},{{ g }},50,0.5);">
+            <div class="fw-semibold" style="font-size:.75rem">{{ item.ai_type }}</div>
+            <div class="h5 mb-0 {% if pct >= 75 %}text-danger{% elif pct >= 50 %}text-warning{% else %}text-success{% endif %}">
+              {{ pct }}
+            </div>
+            <div style="font-size:.65rem" class="text-muted">avg risk</div>
+            <div style="font-size:.65rem" class="text-muted">{{ item.scan_count }} scans</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted small fst-italic">Scan some agents to see the risk heatmap.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Anomaly detections -->
+    <div class="col-lg-7">
+      <div class="section-card p-3 h-100">
+        <h6 class="mb-3"><i class="fas fa-bell me-2 text-danger"></i>Anomaly Alerts — Sudden Risk Spikes</h6>
+        {% if anomalies %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead><tr>
+              <th>Agent</th><th>Risk Score</th><th>Avg Baseline</th><th>Z-Score</th><th>Detected</th>
+            </tr></thead>
+            <tbody>
+            {% for a in anomalies %}
+            <tr class="anomaly-row">
+              <td><a href="/agents/{{ a.agent.id }}" class="text-decoration-none">{{ a.agent.name[:28] }}</a></td>
+              <td><span class="badge bg-danger">{{ a.risk_score }}</span></td>
+              <td>{{ a.mean_risk }}</td>
+              <td><span class="badge bg-warning text-dark">σ {{ a.z_score }}</span></td>
+              <td class="text-muted small">{{ a.detected_at.strftime('%b %d %H:%M') if a.detected_at else '—' }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+          <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+          <p class="text-muted mb-0">No anomalies detected in the last 7 days.</p>
+          <small class="text-muted">Agents with sudden risk spikes will appear here.</small>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Mitigation Recommendations -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="section-card p-3">
+        <h6 class="mb-3"><i class="fas fa-lightbulb me-2 text-warning"></i>Proactive Mitigation Recommendations</h6>
+        <div class="row g-3">
+          {% if metrics.critical_agents > 0 %}
+          <div class="col-md-4">
+            <div class="card border-danger">
+              <div class="card-body">
+                <h6 class="card-title text-danger"><i class="fas fa-exclamation-circle me-2"></i>Critical Agents Detected</h6>
+                <p class="card-text small">{{ metrics.critical_agents }} agent(s) are at critical risk. Prioritize immediate security review and consider initiating remediation workflows.</p>
+                <a href="{{ url_for('remediation.workflows') }}" class="btn btn-sm btn-outline-danger">View Remediation</a>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% if drifting %}
+          <div class="col-md-4">
+            <div class="card border-warning">
+              <div class="card-body">
+                <h6 class="card-title text-warning"><i class="fas fa-chart-line me-2"></i>Compliance Drift Detected</h6>
+                <p class="card-text small">{{ drifting | length }} agent(s) show declining compliance scores. Review framework controls and re-evaluate against HIPAA/GDPR requirements.</p>
+                <a href="{{ url_for('compliance_report') }}" class="btn btn-sm btn-outline-warning">Compliance Report</a>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% if anomalies %}
+          <div class="col-md-4">
+            <div class="card border-info">
+              <div class="card-body">
+                <h6 class="card-title text-info"><i class="fas fa-bell me-2"></i>Anomalous Risk Spikes</h6>
+                <p class="card-text small">{{ anomalies | length }} anomal{{ 'y' if anomalies | length == 1 else 'ies' }} found this week. Investigate root cause — may indicate new vulnerabilities or configuration changes.</p>
+                <a href="{{ url_for('ai_agents') }}" class="btn btn-sm btn-outline-info">View Agents</a>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% if not metrics.critical_agents and not drifting and not anomalies %}
+          <div class="col-12 text-center py-3">
+            <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
+            <p class="text-muted">No immediate risk mitigation actions required. Keep scanning regularly to maintain this posture.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+/* ---- Risk Trend + Forecast Chart ---- */
+(function() {
+  const trend    = {{ trend | tojson }};
+  const forecast = {{ forecast | tojson }};
+
+  const allDates  = trend.map(d => d.date).concat(forecast.map(d => d.date));
+  const actual    = trend.map(d => d.avg_risk);
+  const predicted = new Array(trend.length).fill(null).concat(forecast.map(d => d.predicted_risk));
+
+  const ctx = document.getElementById('trendChart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: allDates,
+      datasets: [
+        {
+          label: 'Actual Avg Risk',
+          data: actual.concat(new Array(forecast.length).fill(null)),
+          borderColor: '#0d6efd',
+          backgroundColor: 'rgba(13,110,253,0.08)',
+          pointRadius: 2,
+          tension: 0.3,
+          fill: true
+        },
+        {
+          label: '30-Day Forecast',
+          data: predicted,
+          borderColor: '#ffc107',
+          borderDash: [6,4],
+          pointRadius: 2,
+          tension: 0.3,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#adb5bd', font: { size: 11 } } } },
+      scales: {
+        x: {
+          ticks: { color: '#6c757d', maxTicksLimit: 12, font: { size: 10 } },
+          grid: { color: 'rgba(255,255,255,0.04)' }
+        },
+        y: {
+          min: 0, max: 100,
+          ticks: { color: '#6c757d', font: { size: 10 } },
+          grid: { color: 'rgba(255,255,255,0.06)' }
+        }
+      }
+    }
+  });
+})();
+
+/* ---- Risk by Provider Chart ---- */
+(function() {
+  const data = {{ by_provider | tojson }};
+  const ctx  = document.getElementById('providerChart');
+  if (!ctx || !data.length) return;
+  const colors = data.map(d => {
+    const r = d.avg_risk;
+    return r >= 75 ? '#dc3545' : r >= 50 ? '#ffc107' : '#198754';
+  });
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.provider),
+      datasets: [{
+        label: 'Avg Risk Score',
+        data: data.map(d => d.avg_risk),
+        backgroundColor: colors.map(c => c + '99'),
+        borderColor: colors,
+        borderWidth: 2,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { min: 0, max: 100,
+             ticks: { color: '#6c757d', font: { size: 10 } },
+             grid: { color: 'rgba(255,255,255,0.06)' } },
+        y: { ticks: { color: '#adb5bd', font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

@@ -832,3 +832,21 @@ class ControlPoint(db.Model):
     created_at              = db.Column(db.DateTime, default=datetime.utcnow)
 
     __table_args__ = (db.UniqueConstraint('framework_id', 'control_id', name='uq_framework_control'),)
+
+
+class ComplianceRule(db.Model):
+    """User-defined compliance rules evaluated against discovered agents."""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+    condition_logic = db.Column(db.String(10), default='AND')  # AND / OR
+    conditions = db.Column(JSON, default=list)          # [{field, operator, value}, ...]
+    severity = db.Column(db.String(20), default='MEDIUM')      # INFO LOW MEDIUM HIGH CRITICAL
+    action_type = db.Column(db.String(50), default='FLAG')     # FLAG ALERT REMEDIATE BLOCK
+    action_message = db.Column(db.Text)
+    frameworks = db.Column(JSON, default=list)                 # ['HIPAA', 'GDPR', ...]
+    match_count = db.Column(db.Integer, default=0)
+    last_run_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+
+{% block title %}Compliance Rule Builder - CT ComplySphere{% endblock %}
+
+{% block head %}
+<style>
+.rule-card { border-left: 4px solid #0d6efd; transition: box-shadow .2s; }
+.rule-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.35); }
+.severity-INFO     { border-left-color: #6c757d !important; }
+.severity-LOW      { border-left-color: #198754 !important; }
+.severity-MEDIUM   { border-left-color: #ffc107 !important; }
+.severity-HIGH     { border-left-color: #fd7e14 !important; }
+.severity-CRITICAL { border-left-color: #dc3545 !important; }
+.condition-row { background: #1a1f2e; border-radius: 8px; padding: 12px; margin-bottom: 8px; position: relative; }
+.logic-badge { font-size: .65rem; letter-spacing: .08em; }
+.match-results-table td, .match-results-table th { padding: .4rem .75rem; font-size: .85rem; }
+.builder-panel { background: #141824; border: 1px solid #2a3144; border-radius: 12px; padding: 1.5rem; }
+.empty-state { border: 2px dashed #2a3144; border-radius: 12px; padding: 3rem; text-align: center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- Header -->
+  <div class="row mb-4 align-items-center">
+    <div class="col">
+      <h1 class="h2 mb-1"><i class="fas fa-sliders-h me-2 text-primary"></i>Compliance Rule Builder</h1>
+      <p class="text-muted mb-0">Create and manage compliance rules that automatically evaluate your AI agents — no coding required.</p>
+    </div>
+    <div class="col-auto">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRuleModal">
+        <i class="fas fa-plus me-2"></i>New Rule
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats strip -->
+  <div class="row g-3 mb-4">
+    {% set active_count   = rules | selectattr('is_active') | list | length %}
+    {% set inactive_count = rules | rejectattr('is_active') | list | length %}
+    {% set critical_rules = rules | selectattr('severity', 'eq', 'CRITICAL') | list | length %}
+    <div class="col-6 col-md-3">
+      <div class="card text-center">
+        <div class="card-body py-3">
+          <div class="h3 mb-0 text-primary">{{ rules | length }}</div>
+          <small class="text-muted">Total Rules</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-center">
+        <div class="card-body py-3">
+          <div class="h3 mb-0 text-success">{{ active_count }}</div>
+          <small class="text-muted">Active</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-center">
+        <div class="card-body py-3">
+          <div class="h3 mb-0 text-secondary">{{ inactive_count }}</div>
+          <small class="text-muted">Inactive</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-center">
+        <div class="card-body py-3">
+          <div class="h3 mb-0 text-danger">{{ critical_rules }}</div>
+          <small class="text-muted">Critical Severity</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules list -->
+  {% if rules %}
+  <div class="row g-3">
+    {% for rule in rules %}
+    <div class="col-12">
+      <div class="card rule-card severity-{{ rule.severity }} {% if not rule.is_active %}opacity-60{% endif %}">
+        <div class="card-body">
+          <div class="row align-items-start">
+
+            <!-- Left: info -->
+            <div class="col-md-6">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <h5 class="mb-0">{{ rule.name }}</h5>
+                {% if rule.is_active %}
+                  <span class="badge bg-success">Active</span>
+                {% else %}
+                  <span class="badge bg-secondary">Inactive</span>
+                {% endif %}
+                <span class="badge
+                  {% if rule.severity == 'CRITICAL' %}bg-danger
+                  {% elif rule.severity == 'HIGH' %}bg-warning text-dark
+                  {% elif rule.severity == 'MEDIUM' %}bg-info text-dark
+                  {% elif rule.severity == 'LOW' %}bg-success
+                  {% else %}bg-secondary{% endif %}">
+                  {{ rule.severity }}
+                </span>
+                <span class="badge bg-primary">{{ rule.action_type }}</span>
+              </div>
+              {% if rule.description %}<p class="text-muted small mb-2">{{ rule.description }}</p>{% endif %}
+
+              <!-- Conditions -->
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                {% for cond in (rule.conditions or []) %}
+                  <span class="badge bg-dark border border-secondary font-monospace">
+                    {{ cond.field }} {{ cond.operator }} {{ cond.value }}
+                  </span>
+                  {% if not loop.last %}
+                    <span class="badge logic-badge bg-primary bg-opacity-25 text-primary">{{ rule.condition_logic }}</span>
+                  {% endif %}
+                {% else %}
+                  <span class="text-muted small fst-italic">No conditions defined</span>
+                {% endfor %}
+              </div>
+
+              {% if rule.frameworks %}
+              <div class="mt-2">
+                {% for fw in rule.frameworks %}
+                  <span class="badge bg-secondary me-1">{{ fw }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Right: stats + actions -->
+            <div class="col-md-3 text-md-center mt-3 mt-md-0">
+              <div class="small text-muted">Last Run</div>
+              <div class="fw-semibold">
+                {% if rule.last_run_at %}{{ rule.last_run_at.strftime('%b %d %H:%M') }}{% else %}Never{% endif %}
+              </div>
+              <div class="small text-muted mt-1">Matches</div>
+              <div class="h5 mb-0 {% if rule.match_count > 0 %}text-warning{% else %}text-muted{% endif %}">
+                {{ rule.match_count }}
+              </div>
+            </div>
+
+            <div class="col-md-3 mt-3 mt-md-0">
+              <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                <!-- Run -->
+                <button class="btn btn-sm btn-outline-primary"
+                        onclick="runRule({{ rule.id }}, '{{ rule.name | e }}')"
+                        title="Test rule against all agents">
+                  <i class="fas fa-play me-1"></i>Run
+                </button>
+                <!-- Toggle -->
+                <form method="post" action="{{ url_for('compliance_rule_toggle', rule_id=rule.id) }}" class="d-inline">
+                  <button class="btn btn-sm {% if rule.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
+                    <i class="fas fa-{% if rule.is_active %}pause{% else %}play-circle{% endif %} me-1"></i>
+                    {% if rule.is_active %}Disable{% else %}Enable{% endif %}
+                  </button>
+                </form>
+                <!-- Delete -->
+                <form method="post" action="{{ url_for('compliance_rule_delete', rule_id=rule.id) }}" class="d-inline"
+                      onsubmit="return confirm('Delete rule &quot;{{ rule.name | e }}&quot;?')">
+                  <button class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-sliders-h fa-3x text-muted mb-3"></i>
+    <h4 class="text-muted">No rules yet</h4>
+    <p class="text-muted">Click <strong>New Rule</strong> to define your first compliance rule.</p>
+    <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#createRuleModal">
+      <i class="fas fa-plus me-2"></i>Create First Rule
+    </button>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ============================================================
+     Run Results Modal
+     ============================================================ -->
+<div class="modal fade" id="runResultsModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-play-circle me-2 text-primary"></i>Rule Results: <span id="runRuleName"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="runResultsBody">
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div><p class="mt-2">Evaluating agents…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     Create Rule Modal
+     ============================================================ -->
+<div class="modal fade" id="createRuleModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-plus me-2 text-primary"></i>New Compliance Rule</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{{ url_for('compliance_rules_create') }}" id="createRuleForm">
+        <div class="modal-body">
+          <div class="row g-3">
+
+            <!-- Name + description -->
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">Rule Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control" placeholder="e.g. Flag unscanned GenAI on production" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Severity</label>
+              <select name="severity" class="form-select">
+                <option value="INFO">INFO</option>
+                <option value="LOW">LOW</option>
+                <option value="MEDIUM" selected>MEDIUM</option>
+                <option value="HIGH">HIGH</option>
+                <option value="CRITICAL">CRITICAL</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Description</label>
+              <input type="text" name="description" class="form-control" placeholder="Optional explanation of what this rule checks">
+            </div>
+
+            <!-- Conditions -->
+            <div class="col-12">
+              <div class="builder-panel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div>
+                    <span class="fw-semibold">Conditions</span>
+                    <span class="text-muted small ms-2">— Agents must match</span>
+                    <select name="condition_logic" id="conditionLogic" class="form-select form-select-sm d-inline-block ms-2" style="width:auto;">
+                      <option value="AND">ALL conditions (AND)</option>
+                      <option value="OR">ANY condition (OR)</option>
+                    </select>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline-primary" onclick="addConditionRow()">
+                    <i class="fas fa-plus me-1"></i>Add Condition
+                  </button>
+                </div>
+                <div id="conditionRows"></div>
+                <div id="noConditionsHint" class="text-muted small fst-italic">No conditions added yet — click "Add Condition" above.</div>
+              </div>
+              <input type="hidden" name="conditions_json" id="conditionsJson">
+            </div>
+
+            <!-- Action + message -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Action</label>
+              <select name="action_type" class="form-select">
+                <option value="FLAG">🚩 Flag Agent</option>
+                <option value="ALERT">🔔 Send Alert</option>
+                <option value="REMEDIATE">🛠 Trigger Remediation</option>
+                <option value="BLOCK">🚫 Block Deployment</option>
+              </select>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">Action Message</label>
+              <input type="text" name="action_message" class="form-control" placeholder="Message shown when rule triggers">
+            </div>
+
+            <!-- Frameworks -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Applicable Frameworks</label>
+              <div class="d-flex flex-wrap gap-2">
+                {% for fw in ['HIPAA','HITRUST_CSF','FDA_SAMD','GDPR','SOC2_TYPE_II','NIST_AI_RMF','OWASP_AI','MITRE_ATLAS'] %}
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="frameworks" value="{{ fw }}" id="fw_{{ fw }}">
+                  <label class="form-check-label small" for="fw_{{ fw }}">{{ fw.replace('_',' ') }}</label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" onclick="serializeConditions()">
+            <i class="fas fa-save me-2"></i>Save Rule
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* -----------------------------------------------------------------------
+   Field metadata from server
+   ----------------------------------------------------------------------- */
+const RULE_FIELDS = {{ rule_fields | tojson }};
+const RULE_OPERATORS = {{ rule_operators | tojson }};
+let conditionIndex = 0;
+
+function addConditionRow(defaults) {
+  defaults = defaults || {};
+  const idx = conditionIndex++;
+  document.getElementById('noConditionsHint').style.display = 'none';
+
+  const fieldOptions = RULE_FIELDS.map(f =>
+    `<option value="${f.value}" ${defaults.field === f.value ? 'selected' : ''}>${f.label}</option>`
+  ).join('');
+
+  const row = document.createElement('div');
+  row.className = 'condition-row d-flex gap-2 align-items-center flex-wrap';
+  row.id = `crow_${idx}`;
+  row.innerHTML = `
+    <select class="form-select form-select-sm" style="max-width:210px" onchange="updateOperators(${idx})" id="field_${idx}">
+      ${fieldOptions}
+    </select>
+    <select class="form-select form-select-sm" style="max-width:160px" id="op_${idx}"></select>
+    <div id="val_container_${idx}" style="min-width:160px"></div>
+    <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="removeCondition(${idx})">
+      <i class="fas fa-times"></i>
+    </button>`;
+  document.getElementById('conditionRows').appendChild(row);
+  updateOperators(idx, defaults.operator, defaults.value);
+}
+
+function updateOperators(idx, selOp, selVal) {
+  const fieldSel = document.getElementById(`field_${idx}`);
+  const fieldMeta = RULE_FIELDS.find(f => f.value === fieldSel.value) || {};
+  const ftype = fieldMeta.type || 'select';
+  const ops = RULE_OPERATORS[ftype] || RULE_OPERATORS['select'];
+
+  const opSel = document.getElementById(`op_${idx}`);
+  opSel.innerHTML = ops.map(([v,l]) =>
+    `<option value="${v}" ${selOp === v ? 'selected' : ''}>${l}</option>`
+  ).join('');
+
+  const vc = document.getElementById(`val_container_${idx}`);
+  if (ftype === 'select' || ftype === 'bool') {
+    const opts = (fieldMeta.options || []).map(o =>
+      `<option value="${o}" ${selVal === o ? 'selected' : ''}>${o}</option>`
+    ).join('');
+    vc.innerHTML = `<select class="form-select form-select-sm" id="val_${idx}">${opts}</select>`;
+  } else {
+    vc.innerHTML = `<input type="number" class="form-control form-control-sm" id="val_${idx}"
+                     value="${selVal || ''}" placeholder="value" step="0.1">`;
+  }
+}
+
+function removeCondition(idx) {
+  const row = document.getElementById(`crow_${idx}`);
+  if (row) row.remove();
+  if (document.getElementById('conditionRows').children.length === 0) {
+    document.getElementById('noConditionsHint').style.display = '';
+  }
+}
+
+function serializeConditions() {
+  const rows = document.querySelectorAll('.condition-row');
+  const conditions = [];
+  rows.forEach(row => {
+    const id = row.id.replace('crow_', '');
+    const field = document.getElementById(`field_${id}`)?.value;
+    const op    = document.getElementById(`op_${id}`)?.value;
+    const val   = document.getElementById(`val_${id}`)?.value;
+    if (field) conditions.push({ field, operator: op, value: val });
+  });
+  document.getElementById('conditionsJson').value = JSON.stringify(conditions);
+}
+
+/* -----------------------------------------------------------------------
+   Run rule
+   ----------------------------------------------------------------------- */
+function runRule(ruleId, ruleName) {
+  document.getElementById('runRuleName').textContent = ruleName;
+  document.getElementById('runResultsBody').innerHTML =
+    '<div class="text-center py-4"><div class="spinner-border text-primary"></div><p class="mt-2">Evaluating agents…</p></div>';
+  new bootstrap.Modal(document.getElementById('runResultsModal')).show();
+
+  fetch(`/compliance/rules/${ruleId}/run`, { method: 'POST',
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    let html = `<div class="d-flex align-items-center gap-3 mb-3">
+      <div class="h4 mb-0 ${data.match_count > 0 ? 'text-warning' : 'text-success'}">
+        <i class="fas fa-${data.match_count > 0 ? 'exclamation-triangle' : 'check-circle'} me-2"></i>
+        ${data.match_count} agent${data.match_count !== 1 ? 's' : ''} matched
+      </div>
+    </div>`;
+    if (data.matches.length) {
+      html += `<div class="table-responsive">
+        <table class="table table-sm table-hover match-results-table">
+          <thead><tr>
+            <th>Agent Name</th><th>Type</th><th>Cloud</th>
+            <th>Risk Score</th><th>Compliance Score</th>
+          </tr></thead><tbody>`;
+      data.matches.forEach(m => {
+        const riskClass = m.risk_score >= 75 ? 'danger' : m.risk_score >= 50 ? 'warning' : 'success';
+        html += `<tr>
+          <td><a href="/agents/${m.id}">${m.name}</a></td>
+          <td><span class="badge bg-dark">${m.type}</span></td>
+          <td>${m.cloud_provider}</td>
+          <td><span class="badge bg-${riskClass}">${m.risk_score}</span></td>
+          <td>${m.compliance_score}%</td>
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+    } else {
+      html += '<p class="text-muted fst-italic">No agents currently match this rule.</p>';
+    }
+    document.getElementById('runResultsBody').innerHTML = html;
+    // Refresh page to update match count
+    setTimeout(() => location.reload(), 3000);
+  })
+  .catch(() => {
+    document.getElementById('runResultsBody').innerHTML =
+      '<div class="alert alert-danger">Failed to evaluate rule. Please try again.</div>';
+  });
+}
+</script>
+{% endblock %}
