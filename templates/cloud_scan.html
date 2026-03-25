@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+{% block title %}Real Cloud Scan — CT ComplySphere{% endblock %}
+
+{% block head %}
+<style>
+/* Provider cards */
+.provider-card {
+    border-radius: 14px;
+    transition: transform .15s, box-shadow .15s;
+    border: 2px solid transparent;
+    cursor: default;
+}
+.provider-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.1); }
+.provider-card.configured  { border-color: #198754; }
+.provider-card.unconfigured{ border-color: #dee2e6; }
+
+.provider-icon { font-size: 2.4rem; }
+.aws-color    { color: #ff9900; }
+.azure-color  { color: #0078d4; }
+.gcp-color    { color: #4285f4; }
+
+/* Env-var hint list */
+.env-hint { background: #f8f9fa; border-radius: 6px; padding: 8px 12px; font-size: .78rem; }
+.env-hint code { background: #e9ecef; border-radius: 4px; padding: 1px 5px; font-size: .75rem; }
+
+/* Agent table */
+.agent-row-aws   { border-left: 3px solid #ff9900 !important; }
+.agent-row-azure { border-left: 3px solid #0078d4 !important; }
+.agent-row-gcp   { border-left: 3px solid #4285f4 !important; }
+
+/* Progress bar animation */
+@keyframes progress-pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+.progress-bar.animated { animation: progress-pulse 1.2s infinite; }
+
+/* Scan log box */
+#scanLog {
+    background:#0d1117; color:#c9d1d9; border-radius:8px;
+    font-family: monospace; font-size:.8rem;
+    height: 200px; overflow-y: auto; padding: 12px;
+}
+#scanLog .log-info    { color:#58a6ff; }
+#scanLog .log-success { color:#3fb950; }
+#scanLog .log-error   { color:#f85149; }
+#scanLog .log-warn    { color:#d29922; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-3">
+
+  <!-- ── Header ──────────────────────────────────────────────────────── -->
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+      <h4 class="fw-bold mb-0"><i class="fas fa-cloud-download-alt text-primary me-2"></i>Live Cloud Scan</h4>
+      <p class="text-muted mb-0 small">Connect your AWS, Azure, and GCP accounts to discover real AI agents running in your cloud.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('multi_cloud') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-server me-1"></i>Deployment View
+      </a>
+      <button class="btn btn-outline-info btn-sm" id="validateBtn" onclick="validateCreds()">
+        <i class="fas fa-check-circle me-1"></i>Validate Credentials
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Provider Status Cards ───────────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+    {% for p in providers %}
+    <div class="col-md-4">
+      <div class="card provider-card shadow-sm h-100 {{ 'configured' if p.configured else 'unconfigured' }}">
+        <div class="card-body">
+          <div class="d-flex align-items-start justify-content-between mb-2">
+            <div class="d-flex align-items-center gap-2">
+              <i class="{{ p.icon }} provider-icon {{ p.name.lower() }}-color"></i>
+              <div>
+                <h5 class="fw-bold mb-0">{{ p.name }}</h5>
+                <span class="badge {{ 'bg-success' if p.configured else 'bg-secondary' }}">
+                  <i class="fas fa-{{ 'check' if p.configured else 'times' }} me-1"></i>
+                  {{ p.label }}
+                </span>
+              </div>
+            </div>
+            <div class="form-check mt-1">
+              <input class="form-check-input provider-checkbox" type="checkbox"
+                     value="{{ p.name.lower() }}" id="chk_{{ p.name }}"
+                     {{ 'checked' if p.configured else '' }}>
+            </div>
+          </div>
+
+          {% if p.configured %}
+          <div class="alert alert-success py-1 px-2 mb-2 small">
+            <i class="fas fa-circle text-success me-1" style="font-size:.5rem;vertical-align:middle;"></i>
+            Credentials detected — ready to scan
+          </div>
+          {% else %}
+          <div class="alert alert-warning py-1 px-2 mb-2 small">
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            Set these environment variables to enable:
+          </div>
+          {% endif %}
+
+          <div class="env-hint">
+            <div class="fw-semibold mb-1 text-muted" style="font-size:.7rem;">REQUIRED ENV VARS</div>
+            {% for ev in p.env_vars %}
+            <div><code>{{ ev }}</code></div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ── Start Scan Panel ─────────────────────────────────────────────── -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row align-items-center g-3">
+        <div class="col-md-8">
+          <h6 class="fw-bold mb-1"><i class="fas fa-play-circle text-primary me-2"></i>Start a Live Scan</h6>
+          <p class="text-muted small mb-0">Select the cloud providers above (checked = included) then click Scan. The scan runs in the background — results populate automatically.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+          <button class="btn btn-primary" id="startScanBtn" onclick="startScan()">
+            <i class="fas fa-radar me-2"></i>Scan Selected Clouds
+          </button>
+        </div>
+      </div>
+
+      <!-- Progress section (hidden initially) -->
+      <div id="scanProgress" class="mt-3" style="display:none;">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small fw-semibold text-primary" id="scanProviderLabel">Initializing…</span>
+          <span class="small text-muted" id="scanPct">0%</span>
+        </div>
+        <div class="progress mb-2" style="height:8px;">
+          <div class="progress-bar bg-primary animated" id="scanBar" style="width:0%"></div>
+        </div>
+        <div id="scanLog"></div>
+      </div>
+
+      <!-- Scan result summary (shown after completion) -->
+      <div id="scanResult" class="mt-3" style="display:none;">
+        <div class="alert alert-success mb-0">
+          <i class="fas fa-check-circle me-2"></i>
+          Scan complete — <strong id="foundCount">0</strong> AI agents discovered,
+          <strong id="savedCount">0</strong> new agents saved to the platform.
+          <a href="{{ url_for('cloud_scan_index') }}" class="alert-link ms-2">Refresh to see results</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Validation Results (hidden until validate is clicked) ─────────── -->
+  <div id="validationPanel" class="card shadow-sm mb-4" style="display:none;">
+    <div class="card-header fw-semibold"><i class="fas fa-check-double me-2 text-info"></i>Credential Validation Results</div>
+    <div class="card-body" id="validationBody">
+      <div class="text-center py-3"><i class="fas fa-spinner fa-spin text-primary"></i> Validating…</div>
+    </div>
+  </div>
+
+  <!-- ── Recent Scans ─────────────────────────────────────────────────── -->
+  {% if recent_scans %}
+  <div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span class="fw-semibold"><i class="fas fa-history me-2 text-secondary"></i>Recent Scans</span>
+      <span class="badge bg-secondary">{{ recent_scans | length }}</span>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Scan ID</th><th>Started</th><th>Providers</th>
+              <th>Status</th><th>Found</th><th>Saved</th><th>Errors</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sc in recent_scans %}
+            <tr>
+              <td><code class="small">{{ sc.get('scan_id', sc.get('started_at','')[:8]) or '—' }}</code></td>
+              <td class="small text-muted">{{ sc.get('started_at','')[:19] }}</td>
+              <td>
+                {% for pv in (sc.get('providers') or []) %}
+                <span class="badge bg-light text-dark border me-1">{{ pv.upper() }}</span>
+                {% endfor %}
+              </td>
+              <td>
+                <span class="badge {{ 'bg-success' if sc.get('status')=='complete' else ('bg-warning text-dark' if sc.get('status')=='running' else 'bg-secondary') }}">
+                  {{ sc.get('status','—') }}
+                </span>
+              </td>
+              <td>{{ sc.get('agents_found', '—') }}</td>
+              <td>{{ sc.get('agents_saved', '—') }}</td>
+              <td>
+                {% if sc.get('errors') %}
+                <span class="text-danger small" title="{{ sc['errors'] | join('\n') }}">
+                  <i class="fas fa-exclamation-triangle"></i> {{ sc['errors'] | length }}
+                </span>
+                {% else %}<span class="text-success small"><i class="fas fa-check"></i></span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Discovered Cloud Agents ──────────────────────────────────────── -->
+  {% if cloud_agents %}
+  <div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span class="fw-semibold"><i class="fas fa-robot me-2 text-primary"></i>Cloud-Discovered AI Agents</span>
+      <div class="d-flex gap-2 align-items-center">
+        {% for pv, cnt in by_provider.items() %}
+        <span class="badge rounded-pill
+          {{ 'bg-warning text-dark' if pv=='aws' else ('bg-info text-white' if pv=='azure' else 'bg-primary') }}">
+          {{ pv.upper() }}: {{ cnt }}
+        </span>
+        {% endfor %}
+        <span class="badge bg-secondary">Total: {{ cloud_agents | length }}</span>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Cloud</th><th>Agent Name</th><th>Service</th>
+              <th>Type</th><th>Region</th><th>Protocol</th>
+              <th>Status</th><th>Discovered</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ag in cloud_agents %}
+            {% set meta = ag.agent_metadata or {} %}
+            <tr class="agent-row-{{ ag.cloud_provider or 'unknown' }}">
+              <td>
+                {% if ag.cloud_provider == 'aws' %}
+                  <i class="fab fa-aws aws-color"></i>
+                {% elif ag.cloud_provider == 'azure' %}
+                  <i class="fab fa-microsoft azure-color"></i>
+                {% elif ag.cloud_provider == 'gcp' %}
+                  <i class="fab fa-google gcp-color"></i>
+                {% else %}
+                  <i class="fas fa-cloud text-secondary"></i>
+                {% endif %}
+                <span class="ms-1 small text-muted">{{ (ag.cloud_provider or '').upper() }}</span>
+              </td>
+              <td>
+                <span class="fw-semibold small">{{ ag.name }}</span>
+                {% if ag.endpoint_url %}
+                <div class="text-muted" style="font-size:.68rem;word-break:break-all;">
+                  {{ ag.endpoint_url[:60] }}{% if ag.endpoint_url | length > 60 %}…{% endif %}
+                </div>
+                {% endif %}
+              </td>
+              <td><span class="badge bg-light text-dark border small">{{ meta.get('service','—') }}</span></td>
+              <td>
+                <span class="badge
+                  {{ 'bg-primary' if ag.agent_type and ag.agent_type.value in ['GENAI','CONVERSATIONAL_AI'] else
+                     ('bg-success' if ag.agent_type and ag.agent_type.value == 'TRADITIONAL_ML' else 'bg-secondary') }}
+                  small">
+                  {{ ag.agent_type.value if ag.agent_type else '—' }}
+                </span>
+              </td>
+              <td class="small text-muted">{{ ag.region or '—' }}</td>
+              <td class="small text-muted">{{ ag.protocol or '—' }}</td>
+              <td>
+                {% set st = meta.get('status','') %}
+                <span class="badge
+                  {{ 'bg-success' if st in ['Active','ACTIVE','InService','Succeeded','Running'] else
+                     ('bg-warning text-dark' if st in ['Pending','Creating','Updating'] else 'bg-secondary') }}
+                  small">
+                  {{ st or 'Unknown' }}
+                </span>
+              </td>
+              <td class="small text-muted">
+                {{ ag.discovered_at.strftime('%Y-%m-%d') if ag.discovered_at else '—' }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% elif not recent_scans %}
+  <!-- Empty state -->
+  <div class="card shadow-sm">
+    <div class="card-body text-center py-5">
+      <i class="fas fa-cloud fa-3x text-muted mb-3 opacity-25"></i>
+      <h5 class="text-muted">No cloud agents discovered yet</h5>
+      <p class="text-muted small mb-3">
+        Configure your cloud credentials using the environment variables shown above,<br>
+        then click <strong>Scan Selected Clouds</strong> to discover AI agents running in your accounts.
+      </p>
+      <div class="text-start mx-auto" style="max-width:460px;">
+        <div class="bg-dark text-light rounded p-3 font-monospace small">
+          <div class="text-warning"># AWS example</div>
+          <div>export AWS_ACCESS_KEY_ID=<span class="text-info">AKIA…</span></div>
+          <div>export AWS_SECRET_ACCESS_KEY=<span class="text-info">…</span></div>
+          <div>export AWS_DEFAULT_REGION=<span class="text-info">us-east-1</span></div>
+          <div class="mt-2 text-warning"># Azure example</div>
+          <div>export AZURE_TENANT_ID=<span class="text-info">…</span></div>
+          <div>export AZURE_CLIENT_ID=<span class="text-info">…</span></div>
+          <div>export AZURE_CLIENT_SECRET=<span class="text-info">…</span></div>
+          <div>export AZURE_SUBSCRIPTION_ID=<span class="text-info">…</span></div>
+          <div class="mt-2 text-warning"># GCP example</div>
+          <div>export GCP_SERVICE_ACCOUNT_JSON=<span class="text-info">'{"type":"service_account",…}'</span></div>
+          <div>export GCP_PROJECT_IDS=<span class="text-info">my-project-id</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div><!-- /.container-fluid -->
+
+<script>
+let _activeScanId = null;
+let _pollInterval = null;
+
+/* ── Start scan ─────────────────────────────────────────── */
+function startScan() {
+  const checked = [...document.querySelectorAll('.provider-checkbox:checked')]
+                    .map(cb => cb.value);
+  if (!checked.length) {
+    alert('Select at least one cloud provider.');
+    return;
+  }
+
+  document.getElementById('startScanBtn').disabled = true;
+  document.getElementById('scanProgress').style.display  = 'block';
+  document.getElementById('scanResult').style.display    = 'none';
+  const logEl = document.getElementById('scanLog');
+  logEl.innerHTML = '';
+  addLog('info', `Starting scan for: ${checked.map(p=>p.toUpperCase()).join(', ')}`);
+
+  const fd = new FormData();
+  checked.forEach(p => fd.append('providers', p));
+
+  fetch('{{ url_for("cloud_scan_start") }}', {
+    method: 'POST', body: fd,
+    headers: {'X-Requested-With': 'XMLHttpRequest'}
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.scan_id) {
+      _activeScanId = data.scan_id;
+      addLog('info', `Scan ID: ${data.scan_id} — polling for results…`);
+      _pollInterval = setInterval(() => pollStatus(data.scan_id), 2500);
+    } else {
+      addLog('error', data.error || 'Failed to start scan');
+      document.getElementById('startScanBtn').disabled = false;
+    }
+  })
+  .catch(err => { addLog('error', String(err)); document.getElementById('startScanBtn').disabled = false; });
+}
+
+/* ── Poll scan status ───────────────────────────────────── */
+function pollStatus(scanId) {
+  fetch(`{{ url_for("cloud_scan_status", scan_id="__ID__") }}`.replace('__ID__', scanId))
+  .then(r => r.json())
+  .then(st => {
+    const pct   = st.progress || 0;
+    const bar   = document.getElementById('scanBar');
+    const label = document.getElementById('scanProviderLabel');
+    const pctEl = document.getElementById('scanPct');
+    bar.style.width = pct + '%';
+    pctEl.textContent = pct + '%';
+    if (st.current_provider) {
+      label.textContent = `Scanning ${st.current_provider}…`;
+      addLog('info', `Scanning ${st.current_provider}…`);
+    }
+    if (st.errors && st.errors.length) {
+      st.errors.forEach(e => addLog('error', e));
+    }
+    if (st.status === 'complete') {
+      clearInterval(_pollInterval);
+      _pollInterval = null;
+      bar.classList.remove('animated');
+      label.textContent = 'Complete';
+      document.getElementById('foundCount').textContent = st.agents_found || 0;
+      document.getElementById('savedCount').textContent = st.agents_saved || 0;
+      document.getElementById('scanResult').style.display = 'block';
+      document.getElementById('startScanBtn').disabled = false;
+      addLog('success', `Done! ${st.agents_found} agents found, ${st.agents_saved} saved.`);
+    }
+  })
+  .catch(err => addLog('warn', 'Poll error: ' + err));
+}
+
+/* ── Validate credentials ───────────────────────────────── */
+function validateCreds() {
+  const panel = document.getElementById('validationPanel');
+  const body  = document.getElementById('validationBody');
+  panel.style.display = 'block';
+  body.innerHTML = '<div class="text-center py-3"><i class="fas fa-spinner fa-spin text-info"></i> Validating credentials…</div>';
+  fetch('{{ url_for("cloud_scan_validate") }}')
+  .then(r => r.json())
+  .then(results => {
+    let html = '<div class="row g-3">';
+    for (const [pv, res] of Object.entries(results)) {
+      const ok    = res.valid;
+      const color = ok ? 'success' : 'danger';
+      const icon  = ok ? 'check-circle' : 'times-circle';
+      const detail= ok
+        ? Object.entries(res).filter(([k])=>k!='valid').map(([k,v])=>`<div class="small text-muted">${k}: <strong>${Array.isArray(v)?v.join(', '):v}</strong></div>`).join('')
+        : `<div class="small text-danger">${res.error}</div>`;
+      html += `
+        <div class="col-md-4">
+          <div class="border rounded p-3 border-${color}">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="fas fa-${icon} text-${color} fa-lg"></i>
+              <strong>${pv.toUpperCase()}</strong>
+              <span class="badge bg-${color}">${ok?'Valid':'Invalid'}</span>
+            </div>
+            ${detail}
+          </div>
+        </div>`;
+    }
+    html += '</div>';
+    body.innerHTML = html;
+  })
+  .catch(err => { body.innerHTML = `<div class="text-danger">${err}</div>`; });
+}
+
+/* ── Log helper ─────────────────────────────────────────── */
+function addLog(level, msg) {
+  const el  = document.getElementById('scanLog');
+  const ts  = new Date().toLocaleTimeString();
+  const div = document.createElement('div');
+  div.className = `log-${level}`;
+  div.textContent = `[${ts}] ${msg}`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+</script>
+{% endblock %}

@@ -524,7 +524,6 @@ def start_scan():
 @app.route('/multi-cloud')
 def multi_cloud():
     """Multi-cloud management interface"""
-    # Mock cloud provider data
     cloud_providers = [
         {
             'name': 'AWS',
@@ -548,8 +547,74 @@ def multi_cloud():
             'last_scan': None
         }
     ]
-    
     return render_template('multi_cloud.html', cloud_providers=cloud_providers)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# REAL CLOUD SCANNING  (/cloud-scan)
+# ─────────────────────────────────────────────────────────────────────────────
+try:
+    from integrations.cloud_scan_manager import CloudScanManager
+    _cloud_mgr = CloudScanManager()
+    CLOUD_SCAN_AVAILABLE = True
+except Exception as _cse:
+    _cloud_mgr = None
+    CLOUD_SCAN_AVAILABLE = False
+    logger.warning("Cloud scan manager not available: %s", _cse)
+
+
+@app.route('/cloud-scan')
+def cloud_scan_index():
+    providers    = _cloud_mgr.provider_status() if _cloud_mgr else []
+    recent_scans = _cloud_mgr.list_scans()      if _cloud_mgr else []
+    # Summary of imported cloud agents
+    cloud_agents = AIAgent.query.filter(
+        AIAgent.agent_metadata.op('->>')('scan_source') == 'cloud_scan'
+    ).order_by(AIAgent.discovered_at.desc()).limit(50).all()
+    by_provider = {}
+    for ag in cloud_agents:
+        cp = ag.cloud_provider or "unknown"
+        by_provider.setdefault(cp, 0)
+        by_provider[cp] += 1
+    return render_template('cloud_scan.html',
+                           providers=providers,
+                           recent_scans=recent_scans,
+                           cloud_agents=cloud_agents,
+                           by_provider=by_provider,
+                           available=CLOUD_SCAN_AVAILABLE)
+
+
+@app.route('/cloud-scan/start', methods=['POST'])
+def cloud_scan_start():
+    if not _cloud_mgr:
+        return jsonify({"error": "Cloud scan manager not available"}), 503
+    selected = request.form.getlist('providers') or request.json.get('providers') if request.is_json else request.form.getlist('providers')
+    if not selected:
+        selected = ["aws", "azure", "gcp"]
+    scan_id = _cloud_mgr.start_scan(providers=selected)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+        return jsonify({"scan_id": scan_id, "status": "started"})
+    flash(f"Cloud scan started (ID: {scan_id}). Results will appear below when complete.", "info")
+    return redirect(url_for('cloud_scan_index'))
+
+
+@app.route('/cloud-scan/status/<scan_id>')
+def cloud_scan_status(scan_id):
+    if not _cloud_mgr:
+        return jsonify({"error": "not available"}), 503
+    status = _cloud_mgr.get_scan_status(scan_id)
+    if not status:
+        return jsonify({"error": "Scan not found"}), 404
+    # Strip full agent list from poll responses for performance
+    safe = {k: v for k, v in status.items() if k != "agents"}
+    return jsonify(safe)
+
+
+@app.route('/cloud-scan/validate')
+def cloud_scan_validate():
+    if not _cloud_mgr:
+        return jsonify({"error": "not available"}), 503
+    return jsonify(_cloud_mgr.validate_all())
 
 
 @app.route('/api/risk-trends')

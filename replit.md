@@ -19,7 +19,9 @@ Preferred communication style: Simple, everyday language.
 - **Clawbot Scanner**: Dedicated scanner (`scanners/clawbot_scanner.py`) that discovers robotic AI agents via ROS network scanning, MQTT broker detection, REST endpoint fingerprinting, and VEX controller discovery
 - **Compliance Engine**: Framework-agnostic evaluation system with configurable compliance rules and scoring algorithms
 - **Analytics Pipeline**: Predictive analytics engine with risk scoring, trend analysis, and security forecasting
-- **Multi-Cloud Support**: Abstracted cloud deployment manager supporting AWS, Azure, and GCP
+- **Multi-Cloud Support**: Real cloud API scanning via dedicated scanner modules (AWS, Azure, GCP) with async background scan threads and live progress polling
+- **Live Cloud Scan**: `/cloud-scan` page with real AWS (boto3), Azure (azure-mgmt-*), and GCP (google-api-python-client) scanning; credential validation; discovered agents saved to DB
+- **Framework Controls**: `/frameworks` page to view, enable/disable compliance frameworks and individual control points (63 built-in across HIPAA, HITRUST, FDA SaMD, GDPR, SOC 2, NIST AI RMF)
 
 ## Data Models
 - **AIAgent**: Core entity representing discovered AI systems with metadata, protocol information, and discovery timestamps

@@ -32,6 +32,9 @@ dependencies = [
     "azure-mgmt-machinelearningservices>=1.0.0",
     "google-cloud-storage>=3.3.1",
     "google-auth>=2.40.3",
+    "azure-mgmt-containerservice>=41.0.0",
+    "azure-mgmt-resource>=25.0.0",
+    "google-api-python-client>=2.193.0",
 ]
 
 [[tool.uv.index]]
