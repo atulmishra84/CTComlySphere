@@ -115,6 +115,36 @@ az containerapp create \
       SESSION_SECRET="$SESSION_SECRET" \
   -o none
 
+echo "      Configuring liveness and readiness probes to /health..."
+PROBE_YAML=$(mktemp /tmp/probes-XXXXXX.yaml)
+cat > "$PROBE_YAML" <<YAML_EOF
+properties:
+  template:
+    containers:
+      - name: ${APP_NAME}
+        probes:
+          - type: liveness
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            failureThreshold: 3
+          - type: readiness
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+YAML_EOF
+az containerapp update \
+  --name "$APP_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --yaml "$PROBE_YAML" \
+  -o none
+rm -f "$PROBE_YAML"
+
 APP_URL=$(az containerapp show \
   --name "$APP_NAME" \
   --resource-group "$RESOURCE_GROUP" \

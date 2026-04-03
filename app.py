@@ -58,11 +58,29 @@ with app.app_context():
     except Exception as e:
         logging.error(f"Failed to initialize database schema: {e}")
 
-# Add a simple health endpoint that doesn't touch the database
-@app.route('/healthz')
+# Health check endpoint for Azure Container Apps liveness/readiness probes
+@app.route('/health')
 def health_check():
-    """Simple health check endpoint"""
-    return "ok", 200
+    """Health check endpoint returning JSON status"""
+    from flask import jsonify
+    import datetime
+    return jsonify({
+        "status": "ok",
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "version": "1.0.0"
+    }), 200
+
+# Legacy health endpoint redirect
+@app.route('/healthz')
+def health_check_legacy():
+    """Legacy health check endpoint"""
+    from flask import jsonify
+    import datetime
+    return jsonify({
+        "status": "ok",
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "version": "1.0.0"
+    }), 200
 
 # Fast startup mode - disable heavy integrations for now
 FAST_START = os.getenv("FAST_START", "0") == "1"
