@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from app import app, db
-from models import AIAgent, ScanResult, ComplianceEvaluation, RiskLevel, ComplianceFramework, InventoryStatus, AIAgentInventory, RegistrationPlaybook, AgentRegistration, PlaybookExecution, RemediationWorkflow, RemediationExecution, RemediationActionExecution, ComplianceRule
+from models import AIAgent, ScanResult, ComplianceEvaluation, RiskLevel, ComplianceFramework, InventoryStatus, AIAgentInventory, RegistrationPlaybook, AgentRegistration, PlaybookExecution, RemediationWorkflow, RemediationExecution, RemediationActionExecution, ComplianceRule, ControlGapRecord
 from datetime import datetime, timedelta
 # ProtocolScanner imported later to avoid import-time failures
 import random
@@ -2453,6 +2453,97 @@ def control_delete(fw_id, ctrl_id):
 @app.route('/knowledge')
 def knowledge():
     return render_template('knowledge.html')
+
+
+# ---------------------------------------------------------------------------
+# Control Gap Detection
+# ---------------------------------------------------------------------------
+
+@app.route('/compliance/gaps')
+def compliance_gaps():
+    """Control gap analysis dashboard."""
+    try:
+        from models import FrameworkConfig, ControlPoint
+        from engines.gap_detection_engine import get_gap_summary
+        summary = get_gap_summary(db, ControlGapRecord, FrameworkConfig, ControlPoint, AIAgent)
+        has_data = summary['total'] > 0
+        # Recent gap records for the detail table (paginated, latest first)
+        page = request.args.get('page', 1, type=int)
+        status_filter = request.args.get('status', '')
+        agent_filter  = request.args.get('agent_id', 0, type=int)
+        q = ControlGapRecord.query
+        if status_filter:
+            q = q.filter(ControlGapRecord.status == status_filter)
+        if agent_filter:
+            q = q.filter(ControlGapRecord.ai_agent_id == agent_filter)
+        q = q.filter(ControlGapRecord.status != 'NOT_APPLICABLE')
+        records = q.order_by(ControlGapRecord.detected_at.desc()).limit(200).all()
+        agents = AIAgent.query.order_by(AIAgent.name).all()
+    except Exception as e:
+        logger.error(f"Gap dashboard error: {e}")
+        summary = {'total': 0, 'implemented': 0, 'partial': 0, 'not_implemented': 0,
+                   'not_applicable': 0, 'impl_pct': 0, 'top_agent_gaps': [],
+                   'top_control_gaps': [], 'framework_gaps': []}
+        has_data, records, agents = False, [], []
+    return render_template('compliance_gaps.html', summary=summary, has_data=has_data,
+                           records=records, agents=agents,
+                           status_filter=status_filter, agent_filter=agent_filter)
+
+
+@app.route('/compliance/gaps/scan', methods=['POST'])
+def compliance_gaps_scan():
+    """Run gap detection for one agent or all agents."""
+    try:
+        from models import FrameworkConfig, ControlPoint
+        from engines.gap_detection_engine import detect_gaps_for_agent, detect_gaps_all_agents
+        agent_id = request.form.get('agent_id', 0, type=int)
+        if agent_id:
+            agent = AIAgent.query.get_or_404(agent_id)
+            result = detect_gaps_for_agent(
+                agent, db, ScanResult, ComplianceEvaluation,
+                ControlPoint, FrameworkConfig, ControlGapRecord
+            )
+            flash(f'Gap scan complete for {agent.name}: '
+                  f'{result["NOT_IMPLEMENTED"]} gaps found out of {result["total_controls"]} controls.', 'info')
+        else:
+            agent_count = AIAgent.query.count()
+            if agent_count > 50:
+                # Limit to 50 for performance
+                agents = AIAgent.query.limit(50).all()
+            else:
+                agents = AIAgent.query.all()
+            summaries = []
+            for agent in agents:
+                s = detect_gaps_for_agent(
+                    agent, db, ScanResult, ComplianceEvaluation,
+                    ControlPoint, FrameworkConfig, ControlGapRecord
+                )
+                summaries.append(s)
+            total_gaps = sum(s.get('NOT_IMPLEMENTED', 0) for s in summaries)
+            flash(f'Gap scan complete across {len(summaries)} agents — '
+                  f'{total_gaps} control gaps found.', 'info')
+    except Exception as e:
+        logger.error(f"Gap scan error: {e}")
+        flash(f'Gap scan error: {e}', 'danger')
+    return redirect(url_for('compliance_gaps'))
+
+
+@app.route('/compliance/gaps/<int:record_id>/attest', methods=['POST'])
+def compliance_gap_attest(record_id):
+    """Manually mark a gap record as implemented or not-applicable."""
+    record = ControlGapRecord.query.get_or_404(record_id)
+    new_status = request.form.get('status', 'IMPLEMENTED')
+    notes = request.form.get('notes', '').strip()
+    if new_status not in ('IMPLEMENTED', 'PARTIAL', 'NOT_IMPLEMENTED', 'NOT_APPLICABLE'):
+        flash('Invalid status.', 'danger')
+        return redirect(url_for('compliance_gaps'))
+    record.status = new_status
+    record.detection_method = 'MANUAL'
+    record.notes = notes
+    record.updated_at = datetime.utcnow()
+    db.session.commit()
+    flash(f'Control "{record.control_point.control_id}" marked as {new_status}.', 'success')
+    return redirect(url_for('compliance_gaps'))
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% block title %}Control Gap Analysis - CT ComplySphere{% endblock %}
+
+{% block head %}
+<style>
+.gap-stat-card { border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.status-pill { font-size: .72rem; font-weight: 600; letter-spacing: .04em; padding: .25rem .6rem; border-radius: 20px; }
+.status-IMPLEMENTED    { background: #dcfce7; color: #166534; }
+.status-PARTIAL        { background: #fef9c3; color: #854d0e; }
+.status-NOT_IMPLEMENTED{ background: #fee2e2; color: #991b1b; }
+.status-NOT_APPLICABLE { background: #f1f5f9; color: #64748b; }
+.evidence-text { font-size: .75rem; font-family: monospace; color: #475569; white-space: pre-wrap; max-height: 80px; overflow-y: auto; }
+.fw-gap-bar { height: 8px; border-radius: 4px; background: #e2e8f0; overflow: hidden; }
+.fw-gap-bar-fill { height: 100%; border-radius: 4px; }
+.top-gap-row { padding: .5rem .75rem; border-bottom: 1px solid #f1f5f9; }
+.top-gap-row:last-child { border-bottom: none; }
+.detection-badge { font-size: .65rem; background: #ede9fe; color: #5b21b6; border-radius: 4px; padding: .1rem .4rem; }
+.detection-manual { background: #fce7f3; color: #9d174d; }
+.hint-text { color: #7c3aed; font-size: .72rem; }
+.empty-scan-prompt { border: 2px dashed #cbd5e1; border-radius: 12px; padding: 3rem; text-align: center; background: #f8fafc; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <!-- Header -->
+  <div class="row mb-4 align-items-center">
+    <div class="col">
+      <h1 class="h2 mb-1"><i class="fas fa-search-minus me-2 text-primary"></i>Control Gap Analysis</h1>
+      <p class="text-muted mb-0">Automatically detect which compliance controls are missing across your AI agents — and know exactly why.</p>
+    </div>
+    <div class="col-auto d-flex gap-2">
+      <!-- Run gap scan for all agents -->
+      <form method="post" action="{{ url_for('compliance_gaps_scan') }}">
+        <input type="hidden" name="agent_id" value="0">
+        <button class="btn btn-primary">
+          <i class="fas fa-play me-2"></i>Scan All Agents
+        </button>
+      </form>
+      <!-- Run for a specific agent -->
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+          <i class="fas fa-robot me-1"></i>Scan One Agent
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" style="max-height:320px;overflow-y:auto">
+          {% for agent in agents %}
+          <li>
+            <form method="post" action="{{ url_for('compliance_gaps_scan') }}" class="d-inline">
+              <input type="hidden" name="agent_id" value="{{ agent.id }}">
+              <button class="dropdown-item">{{ agent.name[:45] }}</button>
+            </form>
+          </li>
+          {% else %}
+          <li><span class="dropdown-item text-muted">No agents found</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  {% if not has_data %}
+  <!-- Empty state -->
+  <div class="empty-scan-prompt">
+    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+    <h4 class="text-muted">No gap analysis data yet</h4>
+    <p class="text-muted mb-3">Click <strong>Scan All Agents</strong> to run the automated control gap detection.<br>
+    The system will check each agent against every enabled control point across all frameworks.</p>
+    <form method="post" action="{{ url_for('compliance_gaps_scan') }}">
+      <input type="hidden" name="agent_id" value="0">
+      <button class="btn btn-primary btn-lg"><i class="fas fa-play me-2"></i>Run Gap Detection Now</button>
+    </form>
+  </div>
+
+  {% else %}
+
+  <!-- KPI strip -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="gap-stat-card p-3 text-center">
+        <div class="h3 mb-0 text-success">{{ summary.implemented }}</div>
+        <div class="small text-muted">Implemented</div>
+        <div class="fw-gap-bar mt-2">
+          <div class="fw-gap-bar-fill bg-success" style="width:{{ (summary.implemented / summary.total * 100) | round(1) if summary.total else 0 }}%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="gap-stat-card p-3 text-center">
+        <div class="h3 mb-0 text-warning">{{ summary.partial }}</div>
+        <div class="small text-muted">Partially Implemented</div>
+        <div class="fw-gap-bar mt-2">
+          <div class="fw-gap-bar-fill bg-warning" style="width:{{ (summary.partial / summary.total * 100) | round(1) if summary.total else 0 }}%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="gap-stat-card p-3 text-center">
+        <div class="h3 mb-0 text-danger">{{ summary.not_implemented }}</div>
+        <div class="small text-muted">Not Implemented</div>
+        <div class="fw-gap-bar mt-2">
+          <div class="fw-gap-bar-fill bg-danger" style="width:{{ (summary.not_implemented / summary.total * 100) | round(1) if summary.total else 0 }}%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="gap-stat-card p-3 text-center">
+        <div class="h3 mb-0 text-primary">{{ summary.impl_pct }}%</div>
+        <div class="small text-muted">Overall Compliance Rate</div>
+        <div class="fw-gap-bar mt-2">
+          <div class="fw-gap-bar-fill bg-primary" style="width:{{ summary.impl_pct }}%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Insight panels -->
+  <div class="row g-3 mb-4">
+
+    <!-- Top agents with gaps -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header fw-semibold">
+          <i class="fas fa-robot me-2 text-danger"></i>Agents With Most Gaps
+        </div>
+        <div class="card-body p-0">
+          {% for item in summary.top_agent_gaps %}
+          <div class="top-gap-row d-flex justify-content-between align-items-center">
+            <a href="/agents/{{ item.id }}" class="text-decoration-none small">{{ item.name[:35] }}</a>
+            <span class="badge bg-danger">{{ item.gap_count }}</span>
+          </div>
+          {% else %}
+          <div class="p-3 text-muted small fst-italic">No gap data yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Most commonly missing controls -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header fw-semibold">
+          <i class="fas fa-times-circle me-2 text-warning"></i>Most Commonly Unimplemented
+        </div>
+        <div class="card-body p-0">
+          {% for item in summary.top_control_gaps %}
+          <div class="top-gap-row">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="small fw-semibold font-monospace text-danger">{{ item.control_id }}</span>
+              <span class="badge bg-warning text-dark">{{ item.gap_count }} agents</span>
+            </div>
+            <div class="text-muted" style="font-size:.72rem">{{ item.title[:55] }}</div>
+          </div>
+          {% else %}
+          <div class="p-3 text-muted small fst-italic">No gap data yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Gap % by framework -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header fw-semibold">
+          <i class="fas fa-layer-group me-2 text-info"></i>Gap Rate by Framework
+        </div>
+        <div class="card-body">
+          {% for fw in summary.framework_gaps %}
+          <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <small class="fw-semibold">{{ fw.name }}</small>
+              <small class="{% if fw.gap_pct > 50 %}text-danger{% elif fw.gap_pct > 20 %}text-warning{% else %}text-success{% endif %}">
+                {{ fw.gap_pct }}% gaps
+              </small>
+            </div>
+            <div class="fw-gap-bar">
+              <div class="fw-gap-bar-fill {% if fw.gap_pct > 50 %}bg-danger{% elif fw.gap_pct > 20 %}bg-warning{% else %}bg-success{% endif %}"
+                   style="width:{{ fw.gap_pct }}%"></div>
+            </div>
+            <div class="text-muted" style="font-size:.68rem">{{ fw.not_implemented }} of {{ fw.total }} controls not implemented</div>
+          </div>
+          {% else %}
+          <p class="text-muted small fst-italic">No framework data yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Detail table -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span class="fw-semibold"><i class="fas fa-table me-2"></i>Control Gap Details</span>
+      <!-- Filters -->
+      <form method="get" action="{{ url_for('compliance_gaps') }}" class="d-flex gap-2 flex-wrap">
+        <select name="status" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+          <option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+          <option value="NOT_IMPLEMENTED" {% if status_filter=='NOT_IMPLEMENTED' %}selected{% endif %}>Not Implemented</option>
+          <option value="PARTIAL"         {% if status_filter=='PARTIAL' %}selected{% endif %}>Partial</option>
+          <option value="IMPLEMENTED"     {% if status_filter=='IMPLEMENTED' %}selected{% endif %}>Implemented</option>
+        </select>
+        <select name="agent_id" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+          <option value="0" {% if not agent_filter %}selected{% endif %}>All Agents</option>
+          {% for agent in agents %}
+          <option value="{{ agent.id }}" {% if agent_filter == agent.id %}selected{% endif %}>{{ agent.name[:40] }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Agent</th>
+            <th>Framework</th>
+            <th>Control</th>
+            <th>Status</th>
+            <th>Evidence / Reason</th>
+            <th>Detected</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for rec in records %}
+        <tr>
+          <td>
+            <a href="/agents/{{ rec.ai_agent_id }}" class="fw-semibold text-decoration-none small">
+              {{ rec.agent.name[:30] if rec.agent else '—' }}
+            </a>
+          </td>
+          <td>
+            <span class="badge bg-secondary" style="font-size:.65rem">
+              {{ rec.framework.name if rec.framework else '—' }}
+            </span>
+          </td>
+          <td>
+            <span class="font-monospace small text-primary">{{ rec.control_point.control_id if rec.control_point else '—' }}</span><br>
+            <span class="text-muted" style="font-size:.7rem">{{ (rec.control_point.title[:50] + '…') if rec.control_point and rec.control_point.title|length > 50 else (rec.control_point.title if rec.control_point else '') }}</span>
+          </td>
+          <td>
+            <span class="status-pill status-{{ rec.status }}">
+              {{ rec.status.replace('_', ' ').title() }}
+            </span>
+            {% if rec.detection_method == 'MANUAL' %}
+            <br><span class="detection-badge detection-manual mt-1 d-inline-block">Manual</span>
+            {% else %}
+            <br><span class="detection-badge mt-1 d-inline-block">Auto</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if rec.evidence %}
+              {% if rec.evidence.get('hint') %}
+              <div class="hint-text"><i class="fas fa-lightbulb me-1"></i>{{ rec.evidence.hint }}</div>
+              {% endif %}
+              {% for k, v in rec.evidence.items() if k != 'hint' %}
+              <div class="evidence-text">{{ k }}: {{ v }}</div>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted small fst-italic">—</span>
+            {% endif %}
+            {% if rec.notes %}
+            <div class="small text-muted mt-1"><i class="fas fa-sticky-note me-1"></i>{{ rec.notes }}</div>
+            {% endif %}
+          </td>
+          <td class="text-muted small">
+            {{ rec.detected_at.strftime('%b %d') if rec.detected_at else '—' }}
+          </td>
+          <td>
+            <button class="btn btn-xs btn-outline-secondary" style="font-size:.7rem;padding:.2rem .5rem"
+                    data-bs-toggle="modal" data-bs-target="#attestModal"
+                    data-record-id="{{ rec.id }}"
+                    data-control="{{ rec.control_point.control_id if rec.control_point else '' }}"
+                    data-current="{{ rec.status }}">
+              Attest
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4 fst-italic">
+            No records match your filters.
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if records | length == 200 %}
+    <div class="card-footer text-muted small">Showing first 200 records — filter by agent or status to narrow down.</div>
+    {% endif %}
+  </div>
+
+  {% endif %}
+
+</div>
+
+<!-- Manual Attestation Modal -->
+<div class="modal fade" id="attestModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-pen me-2 text-primary"></i>Manually Attest Control</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" id="attestForm" action="">
+        <div class="modal-body">
+          <p class="text-muted small">Override the auto-detected status for control <strong id="attestControlId"></strong>.</p>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Status</label>
+            <select name="status" class="form-select" id="attestStatus">
+              <option value="IMPLEMENTED">Implemented — evidence confirmed by operator</option>
+              <option value="PARTIAL">Partial — in progress or partially met</option>
+              <option value="NOT_IMPLEMENTED">Not Implemented — confirmed gap</option>
+              <option value="NOT_APPLICABLE">Not Applicable — does not apply to this agent</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Notes <span class="text-muted fw-normal">(optional)</span></label>
+            <textarea name="notes" class="form-control" rows="3"
+                      placeholder="e.g. Verified with security team on 2025-04-01. Ticket #1234."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Save Attestation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('attestModal').addEventListener('show.bs.modal', function(e) {
+  const btn = e.relatedTarget;
+  const recordId  = btn.getAttribute('data-record-id');
+  const controlId = btn.getAttribute('data-control');
+  const current   = btn.getAttribute('data-current');
+  document.getElementById('attestControlId').textContent = controlId;
+  document.getElementById('attestStatus').value = current;
+  document.getElementById('attestForm').action = `/compliance/gaps/${recordId}/attest`;
+});
+</script>
+{% endblock %}

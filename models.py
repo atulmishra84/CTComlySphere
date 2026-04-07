@@ -834,6 +834,31 @@ class ControlPoint(db.Model):
     __table_args__ = (db.UniqueConstraint('framework_id', 'control_id', name='uq_framework_control'),)
 
 
+class ControlGapRecord(db.Model):
+    """Tracks whether each control point is implemented for a given AI agent."""
+    __tablename__ = 'control_gap_record'
+
+    id               = db.Column(db.Integer, primary_key=True)
+    ai_agent_id      = db.Column(db.Integer, db.ForeignKey('ai_agent.id', ondelete='CASCADE'), nullable=False)
+    framework_id     = db.Column(db.Integer, db.ForeignKey('framework_config.id', ondelete='CASCADE'), nullable=False)
+    control_point_id = db.Column(db.Integer, db.ForeignKey('control_point.id', ondelete='CASCADE'), nullable=False)
+    # IMPLEMENTED / PARTIAL / NOT_IMPLEMENTED / NOT_APPLICABLE
+    status           = db.Column(db.String(30), nullable=False, default='NOT_IMPLEMENTED')
+    detection_method = db.Column(db.String(20), default='AUTO')   # AUTO or MANUAL
+    evidence         = db.Column(JSON)          # what was found (or not found)
+    notes            = db.Column(db.Text)
+    detected_at      = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at       = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    agent         = db.relationship('AIAgent',        foreign_keys=[ai_agent_id])
+    framework     = db.relationship('FrameworkConfig', foreign_keys=[framework_id])
+    control_point = db.relationship('ControlPoint',   foreign_keys=[control_point_id])
+
+    __table_args__ = (
+        db.UniqueConstraint('ai_agent_id', 'control_point_id', name='uq_agent_control'),
+    )
+
+
 class ComplianceRule(db.Model):
     """User-defined compliance rules evaluated against discovered agents."""
     id = db.Column(db.Integer, primary_key=True)
