@@ -300,6 +300,23 @@ class ModelVersion(db.Model):
     model_type = db.Column(db.String(100))  # classification, regression, nlp, etc.
     input_schema = db.Column(JSON)
 
+    # Healthcare compliance flags
+    hipaa_compliant = db.Column(db.Boolean, default=False)
+    fda_cleared = db.Column(db.Boolean, default=False)
+    processes_phi = db.Column(db.Boolean, default=False)
+
+    # Performance metrics
+    accuracy = db.Column(db.Float)          # 0.0–1.0
+    precision = db.Column(db.Float)
+    recall = db.Column(db.Float)
+    f1_score = db.Column(db.Float)
+    auc_roc = db.Column(db.Float)
+
+    # Deployment / ownership
+    deployed_endpoint = db.Column(db.String(500))
+    owner_team = db.Column(db.String(200))
+    tags = db.Column(JSON)
+
 
 # Remediation Workflow Models
 class RemediationWorkflowStatus(enum.Enum):

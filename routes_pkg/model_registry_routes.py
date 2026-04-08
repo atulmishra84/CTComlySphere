@@ -35,57 +35,53 @@ metadata_extractor = EnhancedModelMetadataExtractor()
 def model_registry_dashboard():
     """Main model registry dashboard"""
     try:
-        # Create sample registry overview
+        models = ModelVersion.query.order_by(ModelVersion.created_at.desc()).all()
+
+        total_models = len(models)
+        stages = {}
+        for m in models:
+            stages[m.stage or 'None'] = stages.get(m.stage or 'None', 0) + 1
+
+        healthcare_models = sum(1 for m in models if m.hipaa_compliant or m.processes_phi or m.fda_cleared)
+        phi_models = sum(1 for m in models if m.processes_phi)
+        hipaa_count = sum(1 for m in models if m.hipaa_compliant)
+        fda_count = sum(1 for m in models if m.fda_cleared)
+        compliance_rate = round((hipaa_count / total_models * 100) if total_models else 0, 1)
+        phi_rate = round((phi_models / total_models * 100) if total_models else 0, 1)
+
+        accuracy_models = [m for m in models if m.accuracy is not None]
+        avg_accuracy = round(sum(m.accuracy for m in accuracy_models) / len(accuracy_models) * 100, 1) if accuracy_models else 0
+
         registry_overview = {
-            'total_models': 12,
+            'total_models': total_models,
             'models_by_stage': {
-                'Production': 4,
-                'Staging': 3,
-                'None': 5
+                'Production': stages.get('Production', 0),
+                'Staging': stages.get('Staging', 0),
+                'None': stages.get('None', 0),
+                'Archived': stages.get('Archived', 0),
             },
-            'healthcare_models': 8,
+            'healthcare_models': healthcare_models,
+            'phi_models': phi_models,
+            'fda_cleared_count': fda_count,
+            'avg_accuracy': avg_accuracy,
             'compliance_summary': {
-                'compliance_rate': 75.5,
-                'total_healthcare_models': 8,
-                'phi_processing_rate': 45.2
+                'compliance_rate': compliance_rate,
+                'total_healthcare_models': healthcare_models,
+                'phi_processing_rate': phi_rate,
             }
         }
-        
-        # Get recent models (fallback to empty if tables don't exist)
-        try:
-            models = ModelVersion.query.order_by(ModelVersion.created_at.desc()).limit(50).all()
-        except:
-            models = []
-        
-        # Get recent deployments (fallback to empty if tables don't exist)
-        try:
-            deployments = ModelDeployment.query.join(ModelVersion).order_by(
-                ModelDeployment.deployed_at.desc()
-            ).limit(20).all()
-            
-            # Add model info to deployments
-            deployment_data = []
-            for deployment in deployments:
-                deployment_info = {
-                    'deployment_id': deployment.deployment_id,
-                    'model_name': deployment.model_version.model_name,
-                    'model_version': deployment.model_version.version,
-                    'environment': deployment.environment,
-                    'deployment_status': deployment.deployment_status,
-                    'health_status': deployment.health_status,
-                    'endpoint_url': deployment.endpoint_url,
-                    'request_count': deployment.request_count,
-                    'average_response_time': deployment.average_response_time,
-                    'deployed_at': deployment.deployed_at
-                }
-                deployment_data.append(deployment_info)
-        except:
-            deployment_data = []
-        
+
+        # Stage breakdown for chart
+        framework_dist = {}
+        for m in models:
+            fw = m.framework or 'Unknown'
+            framework_dist[fw] = framework_dist.get(fw, 0) + 1
+
         return render_template('model_registry.html',
-                             registry_overview=registry_overview,
-                             models=models,
-                             deployments=deployment_data)
+                               registry_overview=registry_overview,
+                               models=models,
+                               framework_dist=framework_dist,
+                               stage_dist=stages)
                              
     except Exception as e:
         logger.error(f"Error loading model registry dashboard: {e}")

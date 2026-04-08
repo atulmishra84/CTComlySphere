@@ -1,441 +1,191 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Model Registry - CT ComplySphere Visibility & Governance Platform</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-shield-alt"></i> CT ComplySphere
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/">Dashboard</a>
-                <a class="nav-link" href="/agents">Agents</a>
-                <a class="nav-link active" href="/model-registry">Model Registry</a>
-                <a class="nav-link" href="/compliance">Compliance</a>
-                <a class="nav-link" href="/analytics">Analytics</a>
+{% extends "base.html" %}
+
+{% block title %}Model Registry - CT ComplySphere{% endblock %}
+
+{% block head %}
+<style>
+.stage-badge-production { background-color: #198754; color: #fff; }
+.stage-badge-staging    { background-color: #fd7e14; color: #fff; }
+.stage-badge-archived   { background-color: #6c757d; color: #fff; }
+.stage-badge-none       { background-color: #e2e8f0; color: #495057; }
+.metric-pill { font-size: .75rem; padding: 2px 8px; border-radius: 12px; }
+.kpi-card { border: none; border-radius: 12px; }
+.kpi-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+.accuracy-bar { height: 6px; border-radius: 3px; }
+.tag-chip { font-size: .7rem; background: #e2e8f0; color: #475569; border-radius: 10px; padding: 1px 8px; display: inline-block; margin: 1px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fas fa-database text-primary me-2"></i>Model Registry</h4>
+        <p class="text-muted mb-0">Comprehensive AI model tracking, versioning, and healthcare compliance management</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('model_registry.model_registry_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-sync me-1"></i>Refresh
+        </a>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card kpi-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="fas fa-cubes"></i>
+                </div>
+                <div>
+                    <div class="h4 fw-bold mb-0">{{ registry_overview.total_models }}</div>
+                    <div class="small text-muted">Total Models</div>
+                </div>
             </div>
         </div>
-    </nav>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card kpi-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon bg-success bg-opacity-10 text-success">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <div>
+                    <div class="h4 fw-bold mb-0">{{ registry_overview.models_by_stage.Production }}</div>
+                    <div class="small text-muted">In Production</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card kpi-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="fas fa-flask"></i>
+                </div>
+                <div>
+                    <div class="h4 fw-bold mb-0">{{ registry_overview.models_by_stage.Staging }}</div>
+                    <div class="small text-muted">In Staging</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card kpi-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon bg-danger bg-opacity-10 text-danger">
+                    <i class="fas fa-heartbeat"></i>
+                </div>
+                <div>
+                    <div class="h4 fw-bold mb-0">{{ registry_overview.phi_models }}</div>
+                    <div class="small text-muted">Process PHI</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card kpi-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon bg-info bg-opacity-10 text-info">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div>
+                    <div class="h4 fw-bold mb-0">{{ registry_overview.compliance_summary.compliance_rate }}%</div>
+                    <div class="small text-muted">HIPAA Compliant</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card kpi-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon bg-secondary bg-opacity-10 text-secondary">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+                <div>
+                    <div class="h4 fw-bold mb-0">{{ registry_overview.avg_accuracy }}%</div>
+                    <div class="small text-muted">Avg Accuracy</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <div class="container-fluid mt-4">
-        <!-- Header Section -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
+<!-- Charts row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-semibold mb-0"><i class="fas fa-chart-pie text-primary me-2"></i>Stage Distribution</h6>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="stageChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-semibold mb-0"><i class="fas fa-layer-group text-success me-2"></i>Framework Distribution</h6>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="frameworkChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-semibold mb-0"><i class="fas fa-check-double text-info me-2"></i>Compliance Breakdown</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-column gap-3 mt-2">
                     <div>
-                        <h1 class="h3 mb-2">
-                            <i class="fas fa-database text-primary"></i>
-                            Model Registry
-                        </h1>
-                        <p class="text-muted mb-0">Comprehensive model tracking, versioning, and compliance management</p>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-info btn-sm" onclick="syncModelRegistry()">
-                            <i class="fas fa-sync"></i> Sync Registry
-                        </button>
-                        <button class="btn btn-primary btn-sm" onclick="showAddModelModal()">
-                            <i class="fas fa-plus"></i> Register Model
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Registry Status Cards -->
-        <div class="row mb-4">
-            <div class="col-xl-3 col-md-6 mb-3">
-                <div class="card border-0 bg-gradient-primary">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h5 class="card-title text-white mb-1">{{ registry_overview.total_models or 0 }}</h5>
-                                <p class="card-text text-white-50 mb-0">Total Models</p>
-                            </div>
-                            <div class="text-white-50">
-                                <i class="fas fa-cube fa-2x"></i>
-                            </div>
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>HIPAA Compliant</span>
+                            <span class="fw-semibold">{{ registry_overview.compliance_summary.compliance_rate }}%</span>
+                        </div>
+                        <div class="progress accuracy-bar">
+                            <div class="progress-bar bg-success" style="width: {{ registry_overview.compliance_summary.compliance_rate }}%"></div>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6 mb-3">
-                <div class="card border-0 bg-gradient-success">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h5 class="card-title text-white mb-1">{{ registry_overview.models_by_stage.Production or 0 }}</h5>
-                                <p class="card-text text-white-50 mb-0">In Production</p>
-                            </div>
-                            <div class="text-white-50">
-                                <i class="fas fa-rocket fa-2x"></i>
-                            </div>
+                    <div>
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>PHI Processing</span>
+                            <span class="fw-semibold">{{ registry_overview.compliance_summary.phi_processing_rate }}%</span>
+                        </div>
+                        <div class="progress accuracy-bar">
+                            <div class="progress-bar bg-warning" style="width: {{ registry_overview.compliance_summary.phi_processing_rate }}%"></div>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6 mb-3">
-                <div class="card border-0 bg-gradient-warning">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h5 class="card-title text-white mb-1">{{ registry_overview.healthcare_models or 0 }}</h5>
-                                <p class="card-text text-white-50 mb-0">Healthcare Models</p>
-                            </div>
-                            <div class="text-white-50">
-                                <i class="fas fa-heartbeat fa-2x"></i>
-                            </div>
+                    <div>
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>FDA Cleared</span>
+                            <span class="fw-semibold">
+                                {% if registry_overview.total_models > 0 %}
+                                    {{ (registry_overview.fda_cleared_count / registry_overview.total_models * 100) | round(1) }}%
+                                {% else %}0%{% endif %}
+                            </span>
+                        </div>
+                        <div class="progress accuracy-bar">
+                            {% if registry_overview.total_models > 0 %}
+                            <div class="progress-bar bg-primary" style="width: {{ (registry_overview.fda_cleared_count / registry_overview.total_models * 100) | round(1) }}%"></div>
+                            {% endif %}
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6 mb-3">
-                <div class="card border-0 bg-gradient-info">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h5 class="card-title text-white mb-1">{{ (registry_overview.compliance_summary.compliance_rate or 0)|round(1) }}%</h5>
-                                <p class="card-text text-white-50 mb-0">Compliance Rate</p>
+                    <div class="border-top pt-3 mt-1">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="fw-bold text-success">{{ registry_overview.compliance_summary.compliance_rate }}%</div>
+                                <div class="text-muted" style="font-size:.7rem;">HIPAA</div>
                             </div>
-                            <div class="text-white-50">
-                                <i class="fas fa-check-circle fa-2x"></i>
+                            <div class="col-4">
+                                <div class="fw-bold text-primary">{{ registry_overview.fda_cleared_count }}</div>
+                                <div class="text-muted" style="font-size:.7rem;">FDA Cleared</div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Content Tabs -->
-        <div class="row">
-            <div class="col-12">
-                <ul class="nav nav-tabs" id="modelRegistryTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="models-tab" data-bs-toggle="tab" data-bs-target="#models" type="button" role="tab">
-                            <i class="fas fa-list"></i> Models
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="deployments-tab" data-bs-toggle="tab" data-bs-target="#deployments" type="button" role="tab">
-                            <i class="fas fa-cloud"></i> Deployments
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="lineage-tab" data-bs-toggle="tab" data-bs-target="#lineage" type="button" role="tab">
-                            <i class="fas fa-project-diagram"></i> Lineage
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="compliance-tab" data-bs-toggle="tab" data-bs-target="#compliance" type="button" role="tab">
-                            <i class="fas fa-shield-alt"></i> Compliance
-                        </button>
-                    </li>
-                </ul>
-                
-                <div class="tab-content" id="modelRegistryTabContent">
-                    <!-- Models Tab -->
-                    <div class="tab-pane fade show active" id="models" role="tabpanel">
-                        <div class="card border-0 mt-3">
-                            <div class="card-header">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="card-title mb-0">Model Versions</h5>
-                                    <div class="d-flex gap-2">
-                                        <select class="form-select form-select-sm" id="stageFilter">
-                                            <option value="">All Stages</option>
-                                            <option value="Production">Production</option>
-                                            <option value="Staging">Staging</option>
-                                            <option value="None">None</option>
-                                            <option value="Archived">Archived</option>
-                                        </select>
-                                        <input type="text" class="form-control form-control-sm" id="modelSearch" placeholder="Search models...">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0">
-                                        <thead class="table-dark">
-                                            <tr>
-                                                <th>Model Name</th>
-                                                <th>Version</th>
-                                                <th>Stage</th>
-                                                <th>Framework</th>
-                                                <th>Compliance</th>
-                                                <th>Performance</th>
-                                                <th>Created</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="modelsTableBody">
-                                            {% for model in models %}
-                                            <tr>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-cube text-primary me-2"></i>
-                                                        <div>
-                                                            <div class="fw-semibold">{{ model.model_name }}</div>
-                                                            {% if model.description %}
-                                                            <small class="text-muted">{{ model.description[:50] }}{% if model.description|length > 50 %}...{% endif %}</small>
-                                                            {% endif %}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td><span class="badge bg-secondary">v{{ model.version }}</span></td>
-                                                <td>
-                                                    {% if model.stage == 'Production' %}
-                                                    <span class="badge bg-success">{{ model.stage }}</span>
-                                                    {% elif model.stage == 'Staging' %}
-                                                    <span class="badge bg-warning">{{ model.stage }}</span>
-                                                    {% elif model.stage == 'Archived' %}
-                                                    <span class="badge bg-secondary">{{ model.stage }}</span>
-                                                    {% else %}
-                                                    <span class="badge bg-light text-dark">None</span>
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    {% if model.framework %}
-                                                    <span class="badge bg-info">{{ model.framework|title }}</span>
-                                                    {% else %}
-                                                    <span class="text-muted">Unknown</span>
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex gap-1">
-                                                        {% if model.hipaa_compliant %}
-                                                        <span class="badge bg-success" title="HIPAA Compliant">HIPAA</span>
-                                                        {% endif %}
-                                                        {% if model.fda_cleared %}
-                                                        <span class="badge bg-primary" title="FDA Cleared">FDA</span>
-                                                        {% endif %}
-                                                        {% if model.processes_phi %}
-                                                        <span class="badge bg-warning" title="Processes PHI">PHI</span>
-                                                        {% endif %}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    {% if model.accuracy %}
-                                                    <div class="text-success">{{ (model.accuracy * 100)|round(1) }}% accuracy</div>
-                                                    {% else %}
-                                                    <span class="text-muted">No metrics</span>
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    <small class="text-muted">{{ model.created_at.strftime('%Y-%m-%d') }}</small>
-                                                </td>
-                                                <td>
-                                                    <div class="btn-group btn-group-sm" role="group">
-                                                        <button class="btn btn-outline-primary" onclick="viewModelDetails({{ model.id }})">
-                                                            <i class="fas fa-eye"></i>
-                                                        </button>
-                                                        <button class="btn btn-outline-info" onclick="viewModelLineage({{ model.id }})">
-                                                            <i class="fas fa-project-diagram"></i>
-                                                        </button>
-                                                        <div class="btn-group" role="group">
-                                                            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                                                                <i class="fas fa-ellipsis-v"></i>
-                                                            </button>
-                                                            <ul class="dropdown-menu">
-                                                                <li><a class="dropdown-item" href="#" onclick="deployModel({{ model.id }})">Deploy</a></li>
-                                                                <li><a class="dropdown-item" href="#" onclick="updateCompliance({{ model.id }})">Update Compliance</a></li>
-                                                                <li><a class="dropdown-item" href="#" onclick="archiveModel({{ model.id }})">Archive</a></li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {% if not models %}
-                                <div class="text-center py-5">
-                                    <i class="fas fa-database fa-3x text-muted mb-3"></i>
-                                    <h5 class="text-muted">No Models Found</h5>
-                                    <p class="text-muted">Start by syncing with your model registry or register a new model.</p>
-                                    <button class="btn btn-primary" onclick="syncModelRegistry()">
-                                        <i class="fas fa-sync"></i> Sync Registry
-                                    </button>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Deployments Tab -->
-                    <div class="tab-pane fade" id="deployments" role="tabpanel">
-                        <div class="card border-0 mt-3">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Model Deployments</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row" id="deploymentsGrid">
-                                    {% for deployment in deployments %}
-                                    <div class="col-xl-4 col-lg-6 mb-4">
-                                        <div class="card border-0 shadow-sm">
-                                            <div class="card-body">
-                                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                                    <div>
-                                                        <h6 class="card-title mb-1">{{ deployment.model_version.model_name }}</h6>
-                                                        <small class="text-muted">v{{ deployment.model_version.version }}</small>
-                                                    </div>
-                                                    <div class="text-end">
-                                                        {% if deployment.deployment_status == 'active' %}
-                                                        <span class="badge bg-success">Active</span>
-                                                        {% elif deployment.deployment_status == 'pending' %}
-                                                        <span class="badge bg-warning">Pending</span>
-                                                        {% else %}
-                                                        <span class="badge bg-danger">Failed</span>
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                                
-                                                <div class="row g-3 mb-3">
-                                                    <div class="col-6">
-                                                        <div class="text-center">
-                                                            <div class="h5 mb-0 text-primary">{{ deployment.request_count or 0 }}</div>
-                                                            <small class="text-muted">Requests</small>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <div class="text-center">
-                                                            <div class="h5 mb-0 text-info">{{ (deployment.average_response_time or 0)|round(0) }}ms</div>
-                                                            <small class="text-muted">Avg Response</small>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div class="mb-3">
-                                                    <small class="text-muted d-block">Environment</small>
-                                                    <span class="badge bg-secondary">{{ deployment.environment|title }}</span>
-                                                </div>
-                                                
-                                                {% if deployment.endpoint_url %}
-                                                <div class="mb-3">
-                                                    <small class="text-muted d-block">Endpoint</small>
-                                                    <code class="small">{{ deployment.endpoint_url }}</code>
-                                                </div>
-                                                {% endif %}
-                                                
-                                                <div class="d-flex gap-2">
-                                                    <button class="btn btn-outline-primary btn-sm flex-fill" onclick="testDeployment('{{ deployment.deployment_id }}')">
-                                                        <i class="fas fa-play"></i> Test
-                                                    </button>
-                                                    <button class="btn btn-outline-info btn-sm" onclick="viewDeploymentLogs('{{ deployment.deployment_id }}')">
-                                                        <i class="fas fa-file-alt"></i> Logs
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                                
-                                {% if not deployments %}
-                                <div class="text-center py-5">
-                                    <i class="fas fa-cloud fa-3x text-muted mb-3"></i>
-                                    <h5 class="text-muted">No Deployments Found</h5>
-                                    <p class="text-muted">Deploy your models to start tracking their performance.</p>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Lineage Tab -->
-                    <div class="tab-pane fade" id="lineage" role="tabpanel">
-                        <div class="card border-0 mt-3">
-                            <div class="card-header">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="card-title mb-0">Model Lineage</h5>
-                                    <select class="form-select form-select-sm" style="width: auto;" id="lineageModelSelect" onchange="updateLineageView()">
-                                        <option value="">Select a model to view lineage</option>
-                                        {% for model in models %}
-                                        <option value="{{ model.id }}">{{ model.model_name }} v{{ model.version }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div id="lineageVisualization" style="height: 500px;">
-                                    <div class="d-flex align-items-center justify-content-center h-100">
-                                        <div class="text-center">
-                                            <i class="fas fa-project-diagram fa-3x text-muted mb-3"></i>
-                                            <h5 class="text-muted">Select a model to view its lineage</h5>
-                                            <p class="text-muted">Explore data sources, dependencies, and model evolution.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Compliance Tab -->
-                    <div class="tab-pane fade" id="compliance" role="tabpanel">
-                        <div class="card border-0 mt-3">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Model Compliance Overview</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-lg-8">
-                                        <canvas id="complianceChart" style="max-height: 400px;"></canvas>
-                                    </div>
-                                    <div class="col-lg-4">
-                                        <div class="card bg-light">
-                                            <div class="card-body">
-                                                <h6 class="card-title">Compliance Summary</h6>
-                                                {% if registry_overview.compliance_summary %}
-                                                <div class="mb-3">
-                                                    <div class="d-flex justify-content-between">
-                                                        <span>Healthcare Models</span>
-                                                        <strong>{{ registry_overview.compliance_summary.total_healthcare_models }}</strong>
-                                                    </div>
-                                                    <div class="progress mt-1" style="height: 8px;">
-                                                        <div class="progress-bar bg-primary" style="width: 100%"></div>
-                                                    </div>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <div class="d-flex justify-content-between">
-                                                        <span>HIPAA Compliant</span>
-                                                        <strong>{{ registry_overview.compliance_summary.compliance_rate }}%</strong>
-                                                    </div>
-                                                    <div class="progress mt-1" style="height: 8px;">
-                                                        <div class="progress-bar bg-success" style="width: {{ registry_overview.compliance_summary.compliance_rate }}%"></div>
-                                                    </div>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <div class="d-flex justify-content-between">
-                                                        <span>PHI Processing</span>
-                                                        <strong>{{ registry_overview.compliance_summary.phi_processing_rate }}%</strong>
-                                                    </div>
-                                                    <div class="progress mt-1" style="height: 8px;">
-                                                        <div class="progress-bar bg-warning" style="width: {{ registry_overview.compliance_summary.phi_processing_rate }}%"></div>
-                                                    </div>
-                                                </div>
-                                                {% endif %}
-                                                
-                                                <div class="mt-4">
-                                                    <h6>Quick Actions</h6>
-                                                    <div class="d-grid gap-2">
-                                                        <button class="btn btn-outline-primary btn-sm" onclick="runComplianceScan()">
-                                                            <i class="fas fa-shield-alt"></i> Run Compliance Scan
-                                                        </button>
-                                                        <button class="btn btn-outline-info btn-sm" onclick="generateComplianceReport()">
-                                                            <i class="fas fa-file-export"></i> Generate Report
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="col-4">
+                                <div class="fw-bold text-warning">{{ registry_overview.phi_models }}</div>
+                                <div class="text-muted" style="font-size:.7rem;">PHI Models</div>
                             </div>
                         </div>
                     </div>
@@ -443,24 +193,286 @@
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Model Details Modal -->
-    <div class="modal fade" id="modelDetailsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Model Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="modelDetailsContent">
-                    <!-- Model details content will be loaded here -->
-                </div>
+<!-- Models Table -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h6 class="fw-semibold mb-0"><i class="fas fa-list text-primary me-2"></i>Model Versions
+                <span class="badge bg-primary ms-2">{{ models | length }}</span>
+            </h6>
+            <div class="d-flex gap-2">
+                <select class="form-select form-select-sm" id="stageFilter" onchange="filterModels()" style="width:140px;">
+                    <option value="">All Stages</option>
+                    <option value="Production">Production</option>
+                    <option value="Staging">Staging</option>
+                    <option value="None">Undeployed</option>
+                    <option value="Archived">Archived</option>
+                </select>
+                <select class="form-select form-select-sm" id="complianceFilter" onchange="filterModels()" style="width:150px;">
+                    <option value="">All Models</option>
+                    <option value="hipaa">HIPAA Compliant</option>
+                    <option value="phi">Processes PHI</option>
+                    <option value="fda">FDA Cleared</option>
+                </select>
+                <input type="text" class="form-control form-control-sm" id="modelSearch" placeholder="Search…" oninput="filterModels()" style="width:160px;">
             </div>
         </div>
     </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="modelsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Model</th>
+                        <th>Version</th>
+                        <th>Stage</th>
+                        <th>Framework</th>
+                        <th>Type</th>
+                        <th>Compliance</th>
+                        <th>Accuracy</th>
+                        <th>Owner</th>
+                        <th>Registered</th>
+                    </tr>
+                </thead>
+                <tbody id="modelsTableBody">
+                    {% for model in models %}
+                    <tr data-stage="{{ model.stage or 'None' }}"
+                        data-hipaa="{{ 'yes' if model.hipaa_compliant else 'no' }}"
+                        data-phi="{{ 'yes' if model.processes_phi else 'no' }}"
+                        data-fda="{{ 'yes' if model.fda_cleared else 'no' }}"
+                        data-name="{{ model.model_name | lower }}">
+                        <td class="ps-3">
+                            <div class="fw-semibold">{{ model.model_name }}</div>
+                            {% if model.description %}
+                            <small class="text-muted">{{ model.description[:60] }}{% if model.description | length > 60 %}…{% endif %}</small>
+                            {% endif %}
+                            {% if model.tags %}
+                            <div class="mt-1">
+                                {% for tag in (model.tags or [])[:3] %}
+                                <span class="tag-chip">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-secondary">v{{ model.version }}</span></td>
+                        <td>
+                            {% if model.stage == 'Production' %}
+                            <span class="badge stage-badge-production">Production</span>
+                            {% elif model.stage == 'Staging' %}
+                            <span class="badge stage-badge-staging">Staging</span>
+                            {% elif model.stage == 'Archived' %}
+                            <span class="badge stage-badge-archived">Archived</span>
+                            {% else %}
+                            <span class="badge stage-badge-none">Undeployed</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if model.framework %}
+                            <span class="badge bg-light text-dark border">{{ model.framework | title }}</span>
+                            {% else %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                        <td>
+                            <span class="small text-muted">{{ (model.model_type or 'unknown') | replace('_', ' ') | title }}</span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+                                {% if model.hipaa_compliant %}
+                                <span class="badge bg-success metric-pill" title="HIPAA Compliant"><i class="fas fa-check me-1"></i>HIPAA</span>
+                                {% endif %}
+                                {% if model.fda_cleared %}
+                                <span class="badge bg-primary metric-pill" title="FDA Cleared"><i class="fas fa-certificate me-1"></i>FDA</span>
+                                {% endif %}
+                                {% if model.processes_phi %}
+                                <span class="badge bg-warning text-dark metric-pill" title="Processes PHI"><i class="fas fa-lock me-1"></i>PHI</span>
+                                {% endif %}
+                                {% if not model.hipaa_compliant and not model.fda_cleared and not model.processes_phi %}
+                                <span class="text-muted small">None</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if model.accuracy is not none %}
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1 accuracy-bar" style="min-width:60px;">
+                                    <div class="progress-bar
+                                        {% if model.accuracy >= 0.9 %}bg-success
+                                        {% elif model.accuracy >= 0.75 %}bg-warning
+                                        {% else %}bg-danger{% endif %}"
+                                        style="width: {{ (model.accuracy * 100) | round(0) }}%">
+                                    </div>
+                                </div>
+                                <span class="small fw-semibold">{{ (model.accuracy * 100) | round(1) }}%</span>
+                            </div>
+                            {% else %}
+                            <span class="text-muted small">No data</span>
+                            {% endif %}
+                        </td>
+                        <td><small class="text-muted">{{ model.owner_team or '—' }}</small></td>
+                        <td><small class="text-muted">{{ model.created_at.strftime('%b %d, %Y') }}</small></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/model_registry.js') }}"></script>
-</body>
-</html>
+        {% if not models %}
+        <div class="text-center py-5">
+            <i class="fas fa-database fa-3x text-muted mb-3"></i>
+            <h6 class="text-muted">No models registered yet</h6>
+            <p class="text-muted small">Models discovered by scans will appear here automatically.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Framework & type breakdown table -->
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-semibold mb-0"><i class="fas fa-layer-group text-success me-2"></i>By Framework</h6>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr><th class="ps-3">Framework</th><th>Models</th><th>Share</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for fw, cnt in framework_dist.items() | sort(attribute='1', reverse=True) %}
+                        <tr>
+                            <td class="ps-3"><span class="badge bg-light text-dark border">{{ fw | title }}</span></td>
+                            <td>{{ cnt }}</td>
+                            <td style="width:40%;">
+                                <div class="progress accuracy-bar">
+                                    <div class="progress-bar bg-success" style="width: {{ (cnt / registry_overview.total_models * 100) | round(0) }}%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-semibold mb-0"><i class="fas fa-chart-bar text-info me-2"></i>By Lifecycle Stage</h6>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr><th class="ps-3">Stage</th><th>Models</th><th>Share</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for stage_name, cnt in stage_dist.items() | sort(attribute='1', reverse=True) %}
+                        <tr>
+                            <td class="ps-3">
+                                {% if stage_name == 'Production' %}<span class="badge stage-badge-production">{{ stage_name }}</span>
+                                {% elif stage_name == 'Staging' %}<span class="badge stage-badge-staging">{{ stage_name }}</span>
+                                {% elif stage_name == 'Archived' %}<span class="badge stage-badge-archived">{{ stage_name }}</span>
+                                {% else %}<span class="badge stage-badge-none">Undeployed</span>{% endif %}
+                            </td>
+                            <td>{{ cnt }}</td>
+                            <td style="width:40%;">
+                                <div class="progress accuracy-bar">
+                                    <div class="progress-bar
+                                        {% if stage_name == 'Production' %}bg-success
+                                        {% elif stage_name == 'Staging' %}bg-warning
+                                        {% elif stage_name == 'Archived' %}bg-secondary
+                                        {% else %}bg-light{% endif %}"
+                                        style="width: {{ (cnt / registry_overview.total_models * 100) | round(0) }}%">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const stageData = {{ stage_dist | tojson }};
+const frameworkData = {{ framework_dist | tojson }};
+
+// Stage pie chart
+const stageColors = {
+    'Production': '#198754',
+    'Staging':    '#fd7e14',
+    'Archived':   '#6c757d',
+    'None':       '#94a3b8'
+};
+new Chart(document.getElementById('stageChart'), {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys(stageData),
+        datasets: [{
+            data: Object.values(stageData),
+            backgroundColor: Object.keys(stageData).map(k => stageColors[k] || '#94a3b8'),
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+        },
+        cutout: '65%'
+    }
+});
+
+// Framework bar chart
+const fwLabels = Object.keys(frameworkData);
+const fwCounts = Object.values(frameworkData);
+const fwColors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899'];
+new Chart(document.getElementById('frameworkChart'), {
+    type: 'bar',
+    data: {
+        labels: fwLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+        datasets: [{
+            label: 'Models',
+            data: fwCounts,
+            backgroundColor: fwLabels.map((_, i) => fwColors[i % fwColors.length]),
+            borderRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+
+// Client-side filtering
+function filterModels() {
+    const stage  = document.getElementById('stageFilter').value;
+    const comp   = document.getElementById('complianceFilter').value;
+    const search = document.getElementById('modelSearch').value.toLowerCase();
+    let visible = 0;
+    document.querySelectorAll('#modelsTableBody tr').forEach(row => {
+        const matchStage = !stage || row.dataset.stage === stage;
+        const matchComp  = !comp  ||
+            (comp === 'hipaa' && row.dataset.hipaa === 'yes') ||
+            (comp === 'phi'   && row.dataset.phi   === 'yes') ||
+            (comp === 'fda'   && row.dataset.fda   === 'yes');
+        const matchSearch = !search || row.dataset.name.includes(search) ||
+            row.textContent.toLowerCase().includes(search);
+        const show = matchStage && matchComp && matchSearch;
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+}
+</script>
+{% endblock %}
