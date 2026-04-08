@@ -101,12 +101,12 @@ def dashboard():
         shadow_ai_count     = AIAgent.query.filter(AIAgent.type.in_(shadow_ai_types)).count()
         high_risk_shadow_ai = 0
         try:
-            high_risk_ids = db.session.query(ScanResult.ai_agent_id).filter(
+            high_risk_ids_select = db.session.query(ScanResult.ai_agent_id).filter(
                 ScanResult.risk_level.in_([RiskLevel.HIGH, RiskLevel.CRITICAL])
-            ).subquery()
+            ).subquery().select()
             high_risk_shadow_ai = AIAgent.query.filter(
                 AIAgent.type.in_(shadow_ai_types),
-                AIAgent.id.in_(high_risk_ids)
+                AIAgent.id.in_(high_risk_ids_select)
             ).count()
         except Exception:
             pass
@@ -410,40 +410,65 @@ def evaluate_compliance(agent_id):
 
 @app.route('/compliance/report')
 def compliance_report():
-    """Generate compliance reports"""
+    """Generate compliance reports — paginated for performance"""
+    from sqlalchemy import func as sqlfunc
     framework_filter = request.args.get('framework')
-    
+    page = request.args.get('page', 1, type=int)
+    per_page = 50
+
     query = ComplianceEvaluation.query
-    
     if framework_filter:
-        query = query.filter(ComplianceEvaluation.framework == getattr(ComplianceFramework, framework_filter))
-    
-    evaluations = query.order_by(ComplianceEvaluation.evaluated_at.desc()).all()
-    
-    # Calculate summary statistics
+        try:
+            fw_enum = getattr(ComplianceFramework, framework_filter.upper(), None)
+            if fw_enum:
+                query = query.filter(ComplianceEvaluation.framework == fw_enum)
+        except Exception:
+            pass
+
+    # Paginate — avoids loading thousands of rows at once
+    pagination = query.order_by(ComplianceEvaluation.evaluated_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    evaluations = pagination.items
+
+    # Calculate aggregate summary stats per framework (via DB, not Python)
     summary_stats = {}
     for framework in ComplianceFramework:
-        framework_evals = [e for e in evaluations if e.framework == framework]
-        if framework_evals:
-            avg_score = sum(e.compliance_score for e in framework_evals) / len(framework_evals)
-            compliant_count = sum(1 for e in framework_evals if e.compliance_score >= 80)
+        row = db.session.query(
+            sqlfunc.count(ComplianceEvaluation.id).label('total'),
+            sqlfunc.avg(ComplianceEvaluation.compliance_score).label('avg_score'),
+            sqlfunc.max(ComplianceEvaluation.evaluated_at).label('latest')
+        ).filter(ComplianceEvaluation.framework == framework).one()
+        if row.total:
+            compliant = ComplianceEvaluation.query.filter(
+                ComplianceEvaluation.framework == framework,
+                ComplianceEvaluation.compliance_score >= 80
+            ).count()
             summary_stats[framework.value] = {
-                'total_evaluations': len(framework_evals),
-                'average_score': round(avg_score, 1),
-                'compliant_percentage': round((compliant_count / len(framework_evals)) * 100, 1),
-                'latest_evaluation': max(framework_evals, key=lambda x: x.evaluated_at).evaluated_at if framework_evals else None
+                'total_evaluations': row.total,
+                'average_score': round(float(row.avg_score or 0), 1),
+                'compliant_percentage': round(compliant / row.total * 100, 1),
+                'latest_evaluation': row.latest
             }
-    
-    # Calculate executive summary
+
+    # Executive summary via DB aggregates
+    total_evals = ComplianceEvaluation.query.count()
+    avg_row = db.session.query(sqlfunc.avg(ComplianceEvaluation.compliance_score)).scalar() or 0
+    compliant_total = ComplianceEvaluation.query.filter(ComplianceEvaluation.compliance_score >= 80).count()
+    total_agents = db.session.query(sqlfunc.count(sqlfunc.distinct(ComplianceEvaluation.ai_agent_id))).scalar() or 0
+    high_risk = ComplianceEvaluation.query.filter(ComplianceEvaluation.compliance_score < 50).count()
     executive_summary = {
-        'total_evaluations': len(evaluations),
-        'total_agents': len(set(e.ai_agent_id for e in evaluations)),
-        'average_score': round(sum(e.compliance_score for e in evaluations) / len(evaluations), 1) if evaluations else 0,
-        'compliant_count': sum(1 for e in evaluations if e.compliance_score >= 80)
+        'total_evaluations': total_evals,
+        'total_agents': total_agents,
+        'average_score': round(float(avg_row), 1),
+        'compliant_count': compliant_total,
+        'compliance_rate': round(compliant_total / total_evals * 100, 1) if total_evals else 0,
+        'high_risk_count': high_risk,
     }
-    
+
     return render_template('compliance_report.html',
                          evaluations=evaluations,
+                         pagination=pagination,
                          summary_stats=summary_stats,
                          executive_summary=executive_summary,
                          current_framework_filter=framework_filter)
@@ -1214,8 +1239,19 @@ def kubernetes_integration_page():
     
     cluster_info = kubernetes_integration.get_cluster_info()
     ai_workloads = kubernetes_integration.discover_ai_workloads()
-    metrics = {}  # Real-time metrics removed
     namespace_summary = kubernetes_integration.get_namespace_ai_summary()
+    # Build safe default metrics so template never raises UndefinedError
+    metrics = {
+        'total_workloads': len(ai_workloads) if ai_workloads else 0,
+        'by_namespace': {},
+        'status_summary': {'running': 0, 'pending': 0, 'failed': 0},
+        'resource_usage': {'containers_with_stats': 0}
+    }
+    if ai_workloads:
+        running = sum(1 for w in ai_workloads if isinstance(w, dict) and w.get('status', '').lower() == 'running')
+        metrics['status_summary']['running'] = running
+        metrics['status_summary']['pending'] = sum(1 for w in ai_workloads if isinstance(w, dict) and w.get('status', '').lower() == 'pending')
+        metrics['status_summary']['failed']  = len(ai_workloads) - running - metrics['status_summary']['pending']
     
     return render_template('integrations/kubernetes.html',
                          cluster_info=cluster_info,
@@ -1233,7 +1269,22 @@ def docker_integration_page():
     
     docker_info = docker_integration.get_docker_info()
     ai_containers = docker_integration.discover_ai_containers()
-    metrics = {}  # Real-time metrics removed
+    # Build safe default metrics so template never raises UndefinedError
+    metrics = {
+        'total_containers': len(ai_containers) if ai_containers else 0,
+        'by_ai_type': {},
+        'health_summary': {'healthy': 0, 'starting': 0, 'unhealthy': 0},
+        'resource_usage': {'containers_with_stats': 0}
+    }
+    if ai_containers:
+        healthy = sum(1 for c in ai_containers if isinstance(c, dict) and c.get('status', '').lower() == 'running')
+        metrics['health_summary']['healthy']   = healthy
+        metrics['health_summary']['unhealthy'] = len(ai_containers) - healthy
+        # AI type breakdown
+        for c in ai_containers:
+            if isinstance(c, dict):
+                t = c.get('ai_type', 'Unknown')
+                metrics['by_ai_type'][t] = metrics['by_ai_type'].get(t, 0) + 1
     
     return render_template('integrations/docker.html',
                          docker_info=docker_info,
