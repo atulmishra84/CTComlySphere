@@ -85,56 +85,122 @@ except ImportError as e:
 
 @app.route('/')
 def dashboard():
-    """Main dashboard with fast database queries"""
+    """Main dashboard with live database metrics"""
     try:
-        # Basic counts
+        from sqlalchemy import func
+
+        # ── Core counts ──────────────────────────────────────────────────────
         total_agents = AIAgent.query.count()
-        total_scans = ScanResult.query.count()
+        total_scans  = ScanResult.query.count()
 
-        # Recent scans - limited to 6 to avoid loading too many rows
-        recent_scans = ScanResult.query.order_by(
-            ScanResult.created_at.desc()
-        ).limit(6).all()
+        # ── Shadow AI ────────────────────────────────────────────────────────
+        shadow_ai_types = [
+            'Unauthorized Process AI', 'Containerized Shadow AI',
+            'Unauthorized AI Model File', 'Unauthorized AI Code Implementation'
+        ]
+        shadow_ai_count     = AIAgent.query.filter(AIAgent.type.in_(shadow_ai_types)).count()
+        high_risk_shadow_ai = 0
+        try:
+            high_risk_ids = db.session.query(ScanResult.ai_agent_id).filter(
+                ScanResult.risk_level.in_([RiskLevel.HIGH, RiskLevel.CRITICAL])
+            ).subquery()
+            high_risk_shadow_ai = AIAgent.query.filter(
+                AIAgent.type.in_(shadow_ai_types),
+                AIAgent.id.in_(high_risk_ids)
+            ).count()
+        except Exception:
+            pass
 
-        # Risk distribution using individual counts
+        # ── PHI and risk stats ────────────────────────────────────────────────
+        phi_exposed    = ScanResult.query.filter_by(phi_exposure_detected=True).count()
+        avg_risk_score = db.session.query(func.avg(ScanResult.risk_score)).scalar() or 0.0
+        avg_risk_score = round(float(avg_risk_score), 1)
+
+        # ── Risk distribution ─────────────────────────────────────────────────
         risk_distribution = {}
         for level in RiskLevel:
             risk_distribution[level.value] = ScanResult.query.filter_by(risk_level=level).count()
 
-        # AI type distribution
+        # ── Protocol distribution (real) ──────────────────────────────────────
+        proto_rows = db.session.query(AIAgent.protocol, func.count(AIAgent.id))\
+            .group_by(AIAgent.protocol).all()
+        protocol_distribution = {p.upper(): c for p, c in proto_rows if p}
+
+        # ── Scan timeline – counts per day for last 7 days ────────────────────
+        scan_timeline_labels = []
+        scan_timeline_data   = []
+        for i in range(6, -1, -1):
+            day = (datetime.utcnow() - timedelta(days=i)).date()
+            scan_timeline_labels.append(day.strftime('%a %d'))
+            count = ScanResult.query.filter(
+                ScanResult.created_at >= datetime(day.year, day.month, day.day),
+                ScanResult.created_at <  datetime(day.year, day.month, day.day) + timedelta(days=1)
+            ).count()
+            scan_timeline_data.append(count)
+
+        # ── AI type distribution ──────────────────────────────────────────────
         ai_type_distribution = {
             'GenAI': 0, 'Agentic AI': 0, 'Multimodal AI': 0,
-            'Traditional ML': 0, 'Computer Vision': 0, 'NLP': 0, 'Conversational AI': 0
+            'Traditional ML': 0, 'Computer Vision': 0, 'NLP': 0,
+            'Conversational AI': 0, 'Clawbot': 0
         }
         try:
             from models import AIAgentType
-            ai_type_distribution['GenAI'] = AIAgent.query.filter_by(ai_type=AIAgentType.GENAI).count()
-            ai_type_distribution['Agentic AI'] = AIAgent.query.filter_by(ai_type=AIAgentType.AGENTIC_AI).count()
+            ai_type_distribution['GenAI']          = AIAgent.query.filter_by(ai_type=AIAgentType.GENAI).count()
+            ai_type_distribution['Agentic AI']     = AIAgent.query.filter_by(ai_type=AIAgentType.AGENTIC_AI).count()
+            ai_type_distribution['Multimodal AI']  = AIAgent.query.filter_by(ai_type=AIAgentType.MULTIMODAL_AI).count()
+            ai_type_distribution['Computer Vision']= AIAgent.query.filter_by(ai_type=AIAgentType.COMPUTER_VISION).count()
+            ai_type_distribution['Traditional ML'] = AIAgent.query.filter_by(ai_type=AIAgentType.TRADITIONAL_ML).count()
+            ai_type_distribution['NLP']            = AIAgent.query.filter_by(ai_type=AIAgentType.NLP).count()
+            ai_type_distribution['Conversational AI'] = AIAgent.query.filter_by(ai_type=AIAgentType.CONVERSATIONAL_AI).count()
+            ai_type_distribution['Clawbot']        = AIAgent.query.filter_by(ai_type=AIAgentType.CLAWBOT).count()
         except Exception:
             pass
 
-        # Compliance summary - aggregate by framework
+        # ── Compliance summary ────────────────────────────────────────────────
         compliance_summary = {}
+        overall_compliant_sum, overall_total = 0, 0
         try:
             for framework in ComplianceFramework:
                 evals = ComplianceEvaluation.query.filter_by(framework=framework).all()
                 if evals:
-                    avg_score = sum(e.compliance_score for e in evals) / len(evals)
-                    compliant_pct = (sum(1 for e in evals if e.is_compliant) / len(evals)) * 100
+                    avg_score      = sum(e.compliance_score for e in evals) / len(evals)
+                    compliant_pct  = (sum(1 for e in evals if e.is_compliant) / len(evals)) * 100
+                    overall_compliant_sum += sum(1 for e in evals if e.is_compliant)
+                    overall_total         += len(evals)
                     compliance_summary[framework.value] = {
-                        'average_score': round(avg_score, 1),
+                        'average_score':       round(avg_score, 1),
                         'compliant_percentage': round(compliant_pct, 1)
                     }
         except Exception as e:
             logger.warning(f"Compliance summary query failed: {e}")
 
+        overall_compliance_pct = round(overall_compliant_sum / overall_total * 100, 1) if overall_total else 0
+
+        # ── Control gap summary ───────────────────────────────────────────────
+        control_gaps_total       = ControlGapRecord.query.count()
+        control_gaps_unresolved  = ControlGapRecord.query.filter_by(status='NOT_IMPLEMENTED').count()
+
+        # ── Recent scans ──────────────────────────────────────────────────────
+        recent_scans = ScanResult.query.order_by(ScanResult.created_at.desc()).limit(8).all()
+
         return render_template('dashboard.html',
             total_agents=total_agents,
             total_scans=total_scans,
             recent_scans=recent_scans,
+            shadow_ai_count=shadow_ai_count,
+            high_risk_shadow_ai=high_risk_shadow_ai,
+            phi_exposed=phi_exposed,
+            avg_risk_score=avg_risk_score,
             risk_distribution=risk_distribution,
+            protocol_distribution=protocol_distribution,
+            scan_timeline_labels=scan_timeline_labels,
+            scan_timeline_data=scan_timeline_data,
             ai_type_distribution=ai_type_distribution,
             compliance_summary=compliance_summary,
+            overall_compliance_pct=overall_compliance_pct,
+            control_gaps_total=control_gaps_total,
+            control_gaps_unresolved=control_gaps_unresolved,
             genai_metrics={'total_genai': ai_type_distribution.get('GenAI', 0)},
             agentic_metrics={'total_agentic': ai_type_distribution.get('Agentic AI', 0)},
             genai_risk_analysis={'high_risk_genai': 0}

@@ -219,22 +219,21 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('clawbots_dashboard') }}">
+                            <i class="fas fa-cogs"></i>
+                            <span>Clawbot Detection</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/model-registry">
+                            <i class="fas fa-database"></i>
+                            <span>Model Registry</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('playbooks_index') }}">
                             <i class="fas fa-play-circle"></i>
                             <span>Playbooks</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Clawbot Detection -->
-            <div class="sidebar-section">
-                <h6 class="sidebar-heading fw-semibold text-uppercase">Robotic AI</h6>
-                <ul class="sidebar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('clawbots_dashboard') }}">
-                            <i class="fas fa-robot"></i>
-                            <span>Clawbot Detection</span>
                         </a>
                     </li>
                 </ul>
@@ -267,7 +266,7 @@
 
             <!-- Compliance & Security -->
             <div class="sidebar-section">
-                <h6 class="sidebar-heading">Compliance & Security</h6>
+                <h6 class="sidebar-heading fw-semibold text-uppercase">Compliance & Security</h6>
                 <ul class="sidebar-nav">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('compliance_report') }}">
@@ -304,7 +303,7 @@
 
             <!-- Integration & Management -->
             <div class="sidebar-section">
-                <h6 class="sidebar-heading">Integration & Management</h6>
+                <h6 class="sidebar-heading fw-semibold text-uppercase">Integration & Management</h6>
                 <ul class="sidebar-nav">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('integrations_dashboard') }}">
@@ -335,7 +334,7 @@
 
             <!-- Customer Management -->
             <div class="sidebar-section">
-                <h6 class="sidebar-heading">Customer Management</h6>
+                <h6 class="sidebar-heading fw-semibold text-uppercase">Customer Management</h6>
                 <ul class="sidebar-nav">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('onboarding.onboarding_dashboard') }}">
@@ -393,8 +392,8 @@
             <div class="text-center">
                 <p class="mb-0">
                     <i class="fas fa-shield-alt me-2"></i>
-                    CT ComplySphere Visibility & Governance Platform &copy; 2025 | 
-                    <span class="text-muted">Ensuring HIPAA, HITRUST, FDA SaMD, GDPR & SOC 2 Compliance</span>
+                    CT ComplySphere Visibility &amp; Governance Platform &copy; 2026 | 
+                    <span class="text-muted">Ensuring HIPAA, HITRUST, FDA SaMD, GDPR &amp; SOC 2 Compliance</span>
                 </p>
             </div>
         </div>
@@ -437,15 +436,29 @@
                 }
             });
 
-            // Highlight active navigation item
+            // Highlight active navigation item (exact match first, then prefix fallback)
             const currentPath = window.location.pathname;
             const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
-            
+            let exactMatch = false;
             navLinks.forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
+                const href = link.getAttribute('href');
+                if (href && href === currentPath) {
                     link.classList.add('active');
+                    exactMatch = true;
                 }
             });
+            if (!exactMatch) {
+                // Prefix match — longest prefix wins
+                let bestLink = null, bestLen = 0;
+                navLinks.forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href && href !== '/' && currentPath.startsWith(href) && href.length > bestLen) {
+                        bestLen = href.length;
+                        bestLink = link;
+                    }
+                });
+                if (bestLink) bestLink.classList.add('active');
+            }
         });
     </script>
     
