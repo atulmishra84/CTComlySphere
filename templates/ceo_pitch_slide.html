@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CT ComplySphere — Executive Overview</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0a0f1e;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Slide shell ── */
+  .slide {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 40px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    flex: 1;
+  }
+
+  /* ── Header ── */
+  .slide-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    padding-bottom: 20px;
+  }
+  .logo-area { display: flex; align-items: center; gap: 14px; }
+  .logo-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; flex-shrink: 0;
+  }
+  .platform-name { font-size: 1.4rem; font-weight: 700; letter-spacing: -.3px; }
+  .platform-sub  { font-size: .8rem; color: #94a3b8; margin-top: 2px; }
+  .header-tag {
+    background: rgba(59,130,246,.15); border: 1px solid rgba(59,130,246,.35);
+    color: #93c5fd; font-size: .78rem; font-weight: 600;
+    padding: 6px 14px; border-radius: 20px; white-space: nowrap; align-self: center;
+  }
+
+  /* ── Tagline ── */
+  .tagline {
+    text-align: center;
+    padding: 10px 0 4px;
+  }
+  .tagline h1 {
+    font-size: 1.9rem; font-weight: 800; letter-spacing: -.5px; line-height: 1.2;
+    background: linear-gradient(90deg, #60a5fa, #a78bfa, #34d399);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .tagline p {
+    color: #94a3b8; font-size: .9rem; margin-top: 6px;
+  }
+
+  /* ── 3-column grid ── */
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    flex: 1;
+  }
+
+  /* ── Column cards ── */
+  .col-card {
+    border-radius: 16px;
+    padding: 22px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .col-card.challenges { background: rgba(239,68,68,.08);  border: 1px solid rgba(239,68,68,.25); }
+  .col-card.benefits   { background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.25); }
+  .col-card.advantage  { background: rgba(99,102,241,.08); border: 1px solid rgba(99,102,241,.25); }
+
+  .col-heading {
+    display: flex; align-items: center; gap: 10px;
+    font-size: .72rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+  }
+  .col-heading .dot {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem; flex-shrink: 0;
+  }
+  .challenges .dot { background: rgba(239,68,68,.2); color: #f87171; }
+  .benefits   .dot { background: rgba(16,185,129,.2); color: #34d399; }
+  .advantage  .dot { background: rgba(99,102,241,.2); color: #a78bfa; }
+  .challenges .col-heading { color: #f87171; }
+  .benefits   .col-heading { color: #34d399; }
+  .advantage  .col-heading { color: #a78bfa; }
+
+  .item {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: .82rem; line-height: 1.45; color: #cbd5e1;
+  }
+  .item-icon {
+    flex-shrink: 0; margin-top: 2px; font-size: .75rem;
+  }
+  .challenges .item-icon { color: #f87171; }
+  .benefits   .item-icon { color: #34d399; }
+  .advantage  .item-icon { color: #a78bfa; }
+
+  .item strong { color: #f1f5f9; display: block; font-size: .83rem; margin-bottom: 1px; }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 14px;
+    padding: 16px 20px;
+  }
+  .stat {
+    text-align: center;
+    border-right: 1px solid rgba(255,255,255,.08);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-val {
+    font-size: 1.45rem; font-weight: 800;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .stat-label { font-size: .7rem; color: #64748b; margin-top: 2px; }
+
+  /* ── Footer ── */
+  .slide-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255,255,255,.08);
+    padding-top: 14px;
+    font-size: .73rem;
+    color: #475569;
+  }
+  .footer-badges { display: flex; gap: 8px; }
+  .f-badge {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 6px; padding: 3px 10px;
+    font-size: .68rem; color: #94a3b8; font-weight: 600;
+  }
+
+  /* ── Print ── */
+  @media print {
+    body { background: #0a0f1e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .no-print { display: none !important; }
+  }
+
+  /* ── Controls ── */
+  .controls {
+    position: fixed; top: 16px; right: 16px;
+    display: flex; gap: 8px; z-index: 100;
+  }
+  .ctrl-btn {
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+    color: #fff; font-size: .78rem; padding: 7px 14px;
+    border-radius: 8px; cursor: pointer; text-decoration: none;
+    display: flex; align-items: center; gap: 6px;
+    transition: background .2s;
+  }
+  .ctrl-btn:hover { background: rgba(255,255,255,.18); }
+</style>
+</head>
+<body>
+
+<!-- Controls -->
+<div class="controls no-print">
+  <a href="/" class="ctrl-btn"><i class="fas fa-arrow-left"></i> Platform</a>
+  <button class="ctrl-btn" onclick="window.print()"><i class="fas fa-print"></i> Print / PDF</button>
+</div>
+
+<div class="slide">
+
+  <!-- Header -->
+  <div class="slide-header">
+    <div class="logo-area">
+      <div class="logo-icon"><i class="fas fa-shield-alt"></i></div>
+      <div>
+        <div class="platform-name">CT ComplySphere</div>
+        <div class="platform-sub">Visibility &amp; Governance Platform for Healthcare AI</div>
+      </div>
+    </div>
+    <div class="header-tag"><i class="fas fa-star me-1"></i> Executive Overview — 2026</div>
+  </div>
+
+  <!-- Tagline -->
+  <div class="tagline">
+    <h1>Your Hospital Has AI Everywhere.<br>Does Anyone Know Where?</h1>
+    <p>The first unified platform to discover, govern, and continuously monitor every AI agent operating in your healthcare environment.</p>
+  </div>
+
+  <!-- 3 columns -->
+  <div class="three-col">
+
+    <!-- CHALLENGES -->
+    <div class="col-card challenges">
+      <div class="col-heading">
+        <div class="dot"><i class="fas fa-exclamation-triangle"></i></div>
+        The Problem — Industry Challenges
+      </div>
+
+      <div class="item">
+        <i class="fas fa-eye-slash item-icon"></i>
+        <div><strong>Invisible Shadow AI</strong>Departments self-deploy AI tools (LLMs, diagnostic models, bots) that touch patient data with zero security review or compliance sign-off.</div>
+      </div>
+      <div class="item">
+        <i class="fas fa-file-medical item-icon"></i>
+        <div><strong>HIPAA Exposure at Scale</strong>AI models processing PHI without encryption, access controls, or BAAs create regulatory liability — fines up to $1.9M per incident.</div>
+      </div>
+      <div class="item">
+        <i class="fas fa-certificate item-icon"></i>
+        <div><strong>Undetected FDA SaMD Violations</strong>Clinical AI influencing diagnosis or treatment must be FDA-cleared. Most health systems cannot identify which tools qualify.</div>
+      </div>
+      <div class="item">
+        <i class="fas fa-search item-icon"></i>
+        <div><strong>Audit Readiness Gap</strong>When regulators ask "show us every AI touching patient data and prove compliance" — organizations have no answer.</div>
+      </div>
+      <div class="item">
+        <i class="fas fa-network-wired item-icon"></i>
+        <div><strong>Multi-Cloud Blind Spots</strong>AI workloads spread across AWS, Azure, and GCP with no unified inventory, risk scoring, or governance layer.</div>
+      </div>
+    </div>
+
+    <!-- BENEFITS -->
+    <div class="col-card benefits">
+      <div class="col-heading">
+        <div class="dot"><i class="fas fa-chart-line"></i></div>
+        The Solution — Outcomes &amp; Benefits
+      </div>
+
+      <div class="item">
+        <i class="fas fa-radar item-icon"></i>
+        <div><strong>Complete AI Visibility in Hours</strong>Auto-discover every AI agent across Kubernetes, Docker, REST APIs, cloud services, and IoT — no manual inventory needed.</div>
+      </div>
+      <div class="item">
+        <i class="fas fa-shield-check item-icon"></i>
+        <div><strong>Continuous Compliance Scoring</strong>Real-time scoring against HIPAA, HITRUST CSF, FDA SaMD, GDPR, and SOC 2 with actionable remediation steps per gap.</div>
+      </div>
+      <div class="item">
+        <i class="fas fa-robot item-icon"></i>
+        <div><strong>Shadow AI Neutralized</strong>Automatically classify and flag unauthorized AI — quarantine, document, or escalate via built-in remediation playbooks.</div>
+      </div>
+      <div class="item">
+        <i class="fas fa-file-alt item-icon"></i>
+        <div><strong>Audit-Ready in One Click</strong>Executive compliance reports, control gap evidence, and audit trails generated instantly — cutting audit prep from weeks to minutes.</div>
+      </div>
+      <div class="item">
+        <i class="fas fa-brain item-icon"></i>
+        <div><strong>Predictive Risk Intelligence</strong>AI-powered forecasting identifies which agents are trending toward non-compliance before violations occur.</div>
+      </div>
+    </div>
+
+    <!-- ADVANTAGE -->
+    <div class="col-card advantage">
+      <div class="col-heading">
+        <div class="dot"><i class="fas fa-trophy"></i></div>
+        Why Deploy — Competitive Advantage
+      </div>
+
+      <div class="item">
+        <i class="fas fa-dollar-sign item-icon"></i>
+        <div><strong>Massive Cost Avoidance</strong>Average HIPAA breach costs $10.9M. One prevented violation more than covers years of platform investment.</div>
+      </div>
+      <div class="item">
+        <i class="fas fa-handshake item-icon"></i>
+        <div><strong>Win More Enterprise Contracts</strong>Demonstrate AI governance maturity to hospital networks, payers, and federal buyers who require compliance evidence.</div>
+      </div>
+      <div class="item">
+        <i class="fas fa-tachometer-alt item-icon"></i>
+        <div><strong>Accelerate AI Adoption Safely</strong>Compliance bottlenecks slow AI rollouts by 6–18 months. CT ComplySphere removes that blocker — approve faster, govern continuously.</div>
+      </div>
+      <div class="item">
+        <i class="fas fa-users-cog item-icon"></i>
+        <div><strong>Reduce Compliance Team Burden by 70%</strong>Automated scanning replaces manual spreadsheet audits — freeing your team to focus on strategic risk decisions.</div>
+      </div>
+      <div class="item">
+        <i class="fas fa-globe item-icon"></i>
+        <div><strong>Multi-Framework, Multi-Cloud</strong>Single platform covers all major frameworks and all major clouds — no fragmented point tools, no vendor sprawl.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Stats bar -->
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-val">5</div>
+      <div class="stat-label">Compliance Frameworks<br>(HIPAA · HITRUST · FDA · GDPR · SOC 2)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">3</div>
+      <div class="stat-label">Cloud Providers<br>(AWS · Azure · GCP)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">7+</div>
+      <div class="stat-label">Protocol Scanners<br>(K8s · Docker · REST · gRPC · MCP)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">Real-Time</div>
+      <div class="stat-label">Continuous Monitoring<br>No manual audits required</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">1-Click</div>
+      <div class="stat-label">Audit-Ready Reports<br>Board &amp; regulator ready</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="slide-footer">
+    <div>© 2026 CT ComplySphere · Confidential &amp; Proprietary · Executive Briefing</div>
+    <div class="footer-badges">
+      <span class="f-badge">HIPAA</span>
+      <span class="f-badge">HITRUST CSF</span>
+      <span class="f-badge">FDA SaMD</span>
+      <span class="f-badge">GDPR</span>
+      <span class="f-badge">SOC 2 Type II</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

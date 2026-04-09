@@ -2567,6 +2567,11 @@ def control_delete(fw_id, ctrl_id):
     return redirect(url_for('frameworks_index', fw=fw_id))
 
 
+@app.route('/pitch')
+def ceo_pitch():
+    return render_template('ceo_pitch_slide.html')
+
+
 @app.route('/knowledge')
 def knowledge():
     return render_template('knowledge.html')
