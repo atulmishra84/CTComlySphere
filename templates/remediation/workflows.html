@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Remediation Workflows{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-project-diagram me-2 text-primary"></i>Remediation Workflows
+                    </h1>
+                    <p class="text-muted mb-0">Automated workflows for compliance remediation and issue resolution</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('remediation.create_workflow') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Create Workflow
+                    </a>
+                    <a href="{{ url_for('remediation.templates') }}" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-clone me-2"></i>Templates
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show mb-4">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endwith %}
+
+    <!-- Workflow List -->
+    {% if workflows %}
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Workflow</th>
+                            <th>Type</th>
+                            <th>Trigger</th>
+                            <th>Executions</th>
+                            <th>Success Rate</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for workflow in workflows %}
+                        {% set stats = workflow_stats.get(workflow.id, {}) %}
+                        <tr>
+                            <td class="ps-3">
+                                <div class="fw-semibold">{{ workflow.name }}</div>
+                                {% if workflow.description %}
+                                <small class="text-muted">{{ workflow.description[:80] }}{% if workflow.description|length > 80 %}…{% endif %}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ workflow.workflow_type or '—' }}</span>
+                            </td>
+                            <td>
+                                <small>{{ workflow.trigger_type.value if workflow.trigger_type else '—' }}</small>
+                            </td>
+                            <td>
+                                <span class="fw-semibold">{{ stats.total_executions or 0 }}</span>
+                                {% if stats.total_executions %}
+                                <small class="text-muted">({{ stats.successful or 0 }}✓ {{ stats.failed or 0 }}✗)</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if stats.total_executions %}
+                                {% set rate = stats.success_rate | round(0) | int %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height:6px; width:60px;">
+                                        <div class="progress-bar {% if rate >= 80 %}bg-success{% elif rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                                             style="width:{{ rate }}%"></div>
+                                    </div>
+                                    <small>{{ rate }}%</small>
+                                </div>
+                                {% else %}
+                                <small class="text-muted">No runs</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if workflow.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ workflow.created_at.strftime('%b %d, %Y') if workflow.created_at else '—' }}</small>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('remediation.view_workflow', id=workflow.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('remediation.edit_workflow', id=workflow.id) }}" class="btn btn-sm btn-outline-secondary ms-1">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5 text-muted">
+            <i class="fas fa-project-diagram fa-3x mb-3 opacity-25"></i>
+            <p class="mb-2">No remediation workflows configured yet.</p>
+            <a href="{{ url_for('remediation.create_workflow') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create Your First Workflow
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

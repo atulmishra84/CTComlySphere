@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Workflow Executions{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-history me-2 text-primary"></i>Workflow Executions
+                    </h1>
+                    <p class="text-muted mb-0">History of all remediation workflow runs</p>
+                </div>
+                <a href="{{ url_for('remediation.workflows') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-project-diagram me-2"></i>Workflows
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body py-3">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold mb-1">Status</label>
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">All Statuses</option>
+                        {% for status in workflow_statuses %}
+                        <option value="{{ status.value }}" {% if status_filter == status.value %}selected{% endif %}>
+                            {{ status.value | capitalize }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold mb-1">Workflow</label>
+                    <select name="workflow" class="form-select form-select-sm">
+                        <option value="">All Workflows</option>
+                        {% for wf in workflows %}
+                        <option value="{{ wf.id }}" {% if workflow_filter == wf.id|string %}selected{% endif %}>
+                            {{ wf.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                </div>
+                {% if status_filter or workflow_filter %}
+                <div class="col-md-2">
+                    <a href="{{ url_for('remediation.executions') }}" class="btn btn-outline-secondary btn-sm w-100">Clear</a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Executions Table -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            {% if executions.items %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">#</th>
+                            <th>Workflow</th>
+                            <th>Status</th>
+                            <th>Started</th>
+                            <th>Completed</th>
+                            <th>Duration</th>
+                            <th>Triggered By</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exe in executions.items %}
+                        <tr>
+                            <td class="ps-3 text-muted"><small>#{{ exe.id }}</small></td>
+                            <td>
+                                {% if exe.workflow %}
+                                <a href="{{ url_for('remediation.view_workflow', id=exe.workflow_id) }}" class="text-decoration-none">
+                                    {{ exe.workflow.name }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted">Workflow #{{ exe.workflow_id }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% set sv = exe.status.value %}
+                                {% if sv == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif sv == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% elif sv == 'running' %}
+                                    <span class="badge bg-primary"><i class="fas fa-spinner fa-spin me-1"></i>Running</span>
+                                {% elif sv == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif sv == 'cancelled' %}
+                                    <span class="badge bg-secondary">Cancelled</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ sv }}</span>
+                                {% endif %}
+                            </td>
+                            <td><small class="text-muted">{{ exe.started_at.strftime('%b %d %H:%M') if exe.started_at else '—' }}</small></td>
+                            <td><small class="text-muted">{{ exe.completed_at.strftime('%b %d %H:%M') if exe.completed_at else '—' }}</small></td>
+                            <td>
+                                {% if exe.started_at and exe.completed_at %}
+                                <small>{{ ((exe.completed_at - exe.started_at).total_seconds() | round(0) | int) }}s</small>
+                                {% else %}
+                                <small class="text-muted">—</small>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ exe.triggered_by or 'System' }}</small></td>
+                            <td>
+                                <a href="{{ url_for('remediation.view_execution', id=exe.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination -->
+            {% if executions.pages > 1 %}
+            <div class="px-3 py-2 border-top">
+                <nav>
+                    <ul class="pagination pagination-sm mb-0 justify-content-end">
+                        {% if executions.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('remediation.executions', page=executions.prev_num, status=status_filter, workflow=workflow_filter) }}">Previous</a>
+                        </li>
+                        {% endif %}
+                        <li class="page-item disabled"><span class="page-link">Page {{ executions.page }} of {{ executions.pages }}</span></li>
+                        {% if executions.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('remediation.executions', page=executions.next_num, status=status_filter, workflow=workflow_filter) }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-history fa-3x mb-3 opacity-25"></i>
+                <p class="mb-0">No executions found{% if status_filter or workflow_filter %} matching the current filters{% endif %}.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

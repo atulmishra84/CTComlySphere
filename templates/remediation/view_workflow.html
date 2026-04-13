@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}{{ workflow.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1">
+                            <li class="breadcrumb-item"><a href="{{ url_for('remediation.index') }}">Remediation</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('remediation.workflows') }}">Workflows</a></li>
+                            <li class="breadcrumb-item active">{{ workflow.name }}</li>
+                        </ol>
+                    </nav>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-project-diagram me-2 text-primary"></i>{{ workflow.name }}
+                    </h1>
+                </div>
+                <div>
+                    <a href="{{ url_for('remediation.edit_workflow', id=workflow.id) }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-edit me-2"></i>Edit
+                    </a>
+                    <a href="{{ url_for('remediation.workflows') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show mb-4">
+            {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="row g-4">
+        <!-- Main Details -->
+        <div class="col-lg-8">
+            <!-- Stats -->
+            <div class="row g-3 mb-4">
+                <div class="col-sm-3">
+                    <div class="card shadow-sm text-center">
+                        <div class="card-body py-3">
+                            <h3 class="text-primary mb-0">{{ total_executions }}</h3>
+                            <small class="text-muted">Total Runs</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="card shadow-sm text-center">
+                        <div class="card-body py-3">
+                            <h3 class="text-success mb-0">{{ successful }}</h3>
+                            <small class="text-muted">Successful</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="card shadow-sm text-center">
+                        <div class="card-body py-3">
+                            <h3 class="text-danger mb-0">{{ failed }}</h3>
+                            <small class="text-muted">Failed</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="card shadow-sm text-center">
+                        <div class="card-body py-3">
+                            <h3 class="{% if success_rate >= 80 %}text-success{% elif success_rate >= 50 %}text-warning{% else %}text-danger{% endif %} mb-0">{{ success_rate | round(1) }}%</h3>
+                            <small class="text-muted">Success Rate</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Executions -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-history me-2 text-primary"></i>Recent Executions</h6>
+                    <a href="{{ url_for('remediation.executions') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if executions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Started</th>
+                                    <th>Status</th>
+                                    <th>Agent</th>
+                                    <th>Duration</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for exe in executions %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <small class="text-muted">{{ exe.started_at.strftime('%b %d %H:%M') if exe.started_at else '—' }}</small>
+                                    </td>
+                                    <td>
+                                        {% if exe.status.value == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% elif exe.status.value == 'failed' %}
+                                            <span class="badge bg-danger">Failed</span>
+                                        {% elif exe.status.value == 'running' %}
+                                            <span class="badge bg-primary">Running</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ exe.status.value }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><small>{{ exe.target_agent_id or '—' }}</small></td>
+                                    <td>
+                                        {% if exe.started_at and exe.completed_at %}
+                                            <small>{{ ((exe.completed_at - exe.started_at).total_seconds() | round(0) | int) }}s</small>
+                                        {% else %}
+                                            <small class="text-muted">—</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('remediation.view_execution', id=exe.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-history fa-2x mb-2 opacity-25"></i>
+                        <p class="mb-0 small">No executions yet for this workflow.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>Workflow Details</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5 text-muted small">Status</dt>
+                        <dd class="col-sm-7">
+                            {% if workflow.is_active %}<span class="badge bg-success">Active</span>
+                            {% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+                        </dd>
+
+                        <dt class="col-sm-5 text-muted small">Type</dt>
+                        <dd class="col-sm-7"><small>{{ workflow.workflow_type or '—' }}</small></dd>
+
+                        <dt class="col-sm-5 text-muted small">Trigger</dt>
+                        <dd class="col-sm-7"><small>{{ workflow.trigger_type.value if workflow.trigger_type else '—' }}</small></dd>
+
+                        <dt class="col-sm-5 text-muted small">Timeout</dt>
+                        <dd class="col-sm-7"><small>{{ workflow.timeout_minutes or 60 }} min</small></dd>
+
+                        <dt class="col-sm-5 text-muted small">Retry</dt>
+                        <dd class="col-sm-7"><small>{{ workflow.retry_attempts or 3 }} attempts</small></dd>
+
+                        <dt class="col-sm-5 text-muted small">Approval</dt>
+                        <dd class="col-sm-7">
+                            {% if workflow.requires_approval %}<span class="badge bg-warning text-dark">Required</span>
+                            {% else %}<small class="text-muted">Not required</small>{% endif %}
+                        </dd>
+
+                        <dt class="col-sm-5 text-muted small">Auto-rollback</dt>
+                        <dd class="col-sm-7">
+                            {% if workflow.auto_rollback %}<span class="badge bg-info text-dark">Enabled</span>
+                            {% else %}<small class="text-muted">Disabled</small>{% endif %}
+                        </dd>
+
+                        <dt class="col-sm-5 text-muted small">Created</dt>
+                        <dd class="col-sm-7"><small class="text-muted">{{ workflow.created_at.strftime('%b %d, %Y') if workflow.created_at else '—' }}</small></dd>
+                    </dl>
+                </div>
+            </div>
+
+            {% if workflow.description %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Description</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0 small">{{ workflow.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Manual Execute -->
+            {% if workflow_engine_available and workflow.is_active %}
+            <div class="card shadow-sm border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fas fa-play me-2"></i>Manual Execution</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('remediation.execute_workflow') }}">
+                        <input type="hidden" name="workflow_id" value="{{ workflow.id }}">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Target Agent (optional)</label>
+                            <select name="agent_id" class="form-select form-select-sm">
+                                <option value="">All eligible agents</option>
+                                {% for agent in agents %}
+                                <option value="{{ agent.id }}">{{ agent.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-play me-2"></i>Execute Now
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

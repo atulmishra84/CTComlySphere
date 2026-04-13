@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Remediation Templates{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-clone me-2 text-primary"></i>Remediation Templates
+                    </h1>
+                    <p class="text-muted mb-0">Pre-built workflow templates for common compliance remediation scenarios</p>
+                </div>
+                <a href="{{ url_for('remediation.workflows') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Workflows
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show mb-4">
+            {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endwith %}
+
+    {% if templates %}
+    <div class="row g-4">
+        {% for template in templates %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between mb-2">
+                        <h6 class="fw-semibold mb-0">{{ template.name }}</h6>
+                        <span class="badge bg-light text-dark border ms-2">
+                            {{ template.template_category or 'General' }}
+                        </span>
+                    </div>
+                    {% if template.description %}
+                    <p class="text-muted small mb-3">{{ template.description }}</p>
+                    {% endif %}
+
+                    <div class="d-flex gap-2 mb-3">
+                        {% if template.framework_tags %}
+                            {% for tag in template.framework_tags[:3] %}
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">{{ tag }}</span>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center text-muted small mb-3">
+                        <span><i class="fas fa-play-circle me-1"></i>{{ template.usage_count or 0 }} uses</span>
+                        <span>{{ template.created_at.strftime('%b %d, %Y') if template.created_at else '' }}</span>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('remediation.create_workflow_from_template') }}">
+                        <input type="hidden" name="template_id" value="{{ template.id }}">
+                        <input type="text" name="workflow_name" class="form-control form-control-sm mb-2"
+                               placeholder="Workflow name (optional)" value="{{ template.name }}">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-magic me-2"></i>Create Workflow from Template
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5 text-muted">
+            <i class="fas fa-clone fa-3x mb-3 opacity-25"></i>
+            <p class="mb-2">No remediation templates available yet.</p>
+            <small>Templates are pre-built workflow configurations for common compliance scenarios.</small>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

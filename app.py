@@ -99,9 +99,7 @@ except Exception as e:
 # Import and register blueprints with proper error handling
 try:
     from routes.environment_scanner_routes import environment_scanner_bp
-    from routes.enhanced_dashboard_routes import enhanced_dashboard_bp
     app.register_blueprint(environment_scanner_bp)
-    app.register_blueprint(enhanced_dashboard_bp)
     logging.warning("Blueprints registered successfully")
 except Exception as e:
     logging.warning(f"Failed to register blueprints: {e}")

@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Event #{{ event.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-file-alt me-2 text-primary"></i>Audit Event Detail
+                        <span class="text-muted fs-5">#{{ event.id }}</span>
+                    </h1>
+                    <p class="text-muted mb-0">{{ event.timestamp }}</p>
+                </div>
+                <a href="{{ url_for('audit.audit_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Audit
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Core Event Info -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>Event Summary</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted small">Event Type</dt>
+                        <dd class="col-sm-8"><span class="badge bg-primary">{{ event.event_type }}</span></dd>
+
+                        <dt class="col-sm-4 text-muted small">Category</dt>
+                        <dd class="col-sm-8">{{ event.event_category or '—' }}</dd>
+
+                        <dt class="col-sm-4 text-muted small">Action</dt>
+                        <dd class="col-sm-8"><strong>{{ event.action or '—' }}</strong></dd>
+
+                        <dt class="col-sm-4 text-muted small">Description</dt>
+                        <dd class="col-sm-8">{{ event.description or '—' }}</dd>
+
+                        <dt class="col-sm-4 text-muted small">Outcome</dt>
+                        <dd class="col-sm-8">
+                            {% if event.outcome == 'SUCCESS' %}
+                                <span class="badge bg-success">Success</span>
+                            {% elif event.outcome == 'FAILURE' %}
+                                <span class="badge bg-danger">Failure</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ event.outcome or 'N/A' }}</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted small">Risk Level</dt>
+                        <dd class="col-sm-8">
+                            {% set rl = event.risk_level %}
+                            {% if rl == 'CRITICAL' %}
+                                <span class="badge bg-danger">Critical</span>
+                            {% elif rl == 'HIGH' %}
+                                <span class="badge bg-warning text-dark">High</span>
+                            {% elif rl == 'MEDIUM' %}
+                                <span class="badge bg-info text-dark">Medium</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark border">Low</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted small">Compliance Relevant</dt>
+                        <dd class="col-sm-8">
+                            {% if event.compliance_relevant %}
+                                <span class="badge bg-warning text-dark"><i class="fas fa-shield-alt me-1"></i>Yes</span>
+                            {% else %}
+                                <span class="text-muted">No</span>
+                            {% endif %}
+                        </dd>
+
+                        {% if event.frameworks_affected %}
+                        <dt class="col-sm-4 text-muted small">Frameworks Affected</dt>
+                        <dd class="col-sm-8">
+                            {% for fw in event.frameworks_affected %}
+                                <span class="badge bg-light text-dark border me-1">{{ fw }}</span>
+                            {% endfor %}
+                        </dd>
+                        {% endif %}
+
+                        {% if event.duration_ms %}
+                        <dt class="col-sm-4 text-muted small">Duration</dt>
+                        <dd class="col-sm-8">{{ event.duration_ms }} ms</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Resource Info -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="fas fa-cube me-2 text-primary"></i>Resource Information</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted small">Resource Type</dt>
+                        <dd class="col-sm-8">{{ event.resource_type or '—' }}</dd>
+
+                        <dt class="col-sm-4 text-muted small">Resource ID</dt>
+                        <dd class="col-sm-8">{{ event.resource_id or '—' }}</dd>
+
+                        <dt class="col-sm-4 text-muted small">Resource Name</dt>
+                        <dd class="col-sm-8">{{ event.resource_name or '—' }}</dd>
+
+                        <dt class="col-sm-4 text-muted small">Sensitive Data Accessed</dt>
+                        <dd class="col-sm-8">
+                            {% if event.sensitive_data_accessed %}
+                                <span class="badge bg-danger"><i class="fas fa-exclamation-triangle me-1"></i>Yes</span>
+                            {% else %}
+                                <span class="text-muted">No</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Raw Event Data -->
+            {% if event.event_data %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="fas fa-code me-2 text-primary"></i>Raw Event Data</h6>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light rounded p-3 small mb-0">{{ event.event_data | tojson(indent=2) if event.event_data is mapping else event.event_data }}</pre>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="fas fa-user me-2 text-primary"></i>Session & Identity</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5 text-muted small">User ID</dt>
+                        <dd class="col-sm-7">{{ event.user_id or 'System' }}</dd>
+
+                        <dt class="col-sm-5 text-muted small">Session ID</dt>
+                        <dd class="col-sm-7"><small class="text-muted">{{ event.session_id or '—' }}</small></dd>
+
+                        <dt class="col-sm-5 text-muted small">IP Address</dt>
+                        <dd class="col-sm-7"><code>{{ event.ip_address or '—' }}</code></dd>
+
+                        <dt class="col-sm-5 text-muted small">Auth Method</dt>
+                        <dd class="col-sm-7">{{ event.authentication_method or '—' }}</dd>
+
+                        <dt class="col-sm-5 text-muted small">Correlation ID</dt>
+                        <dd class="col-sm-7"><small class="text-muted font-monospace">{{ event.correlation_id or '—' }}</small></dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="fas fa-clock me-2 text-primary"></i>Retention</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1 small text-muted">Retention Period</p>
+                    <p class="mb-0 fw-semibold">{{ event.retention_period_days or 'Default' }} days</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
