@@ -1,0 +1,159 @@
+##[debug]Evaluating condition for step: 'Create PostgreSQL server if missing'
+##[debug]Evaluating: success()
+##[debug]Evaluating success:
+##[debug]=> true
+##[debug]Result: true
+##[debug]Starting: Create PostgreSQL server if missing
+##[debug]Loading inputs
+##[debug]Evaluating: format('EXISTS=$(az postgres flexible-server show \
+##[debug]  --name complysphere-pg \
+##[debug]  --resource-group {0} \
+##[debug]  --query name -o tsv 2>/dev/null || echo "")
+##[debug]if [ -z "$EXISTS" ]; then
+##[debug]  az postgres flexible-server create \
+##[debug]    --name complysphere-pg \
+##[debug]    --resource-group {1} \
+##[debug]    --location {2} \
+##[debug]    --admin-user complyadmin \
+##[debug]    --admin-password "{3}" \
+##[debug]    --sku-name Standard_B1ms \
+##[debug]    --tier Burstable \
+##[debug]    --storage-size 32 \
+##[debug]    --version 16 \
+##[debug]    --public-access 0.0.0.0 \
+##[debug]    --output none
+##[debug]  az postgres flexible-server db create \
+##[debug]    --server-name complysphere-pg \
+##[debug]    --resource-group {4} \
+##[debug]    --database-name complysphere \
+##[debug]    --output none
+##[debug]else
+##[debug]  echo "PostgreSQL server already exists"
+##[debug]fi
+##[debug]', env.RESOURCE_GROUP, env.RESOURCE_GROUP, env.LOCATION, secrets.PG_ADMIN_PASSWORD, env.RESOURCE_GROUP)
+##[debug]Evaluating format:
+##[debug]..Evaluating String:
+##[debug]..=> 'EXISTS=$(az postgres flexible-server show \
+##[debug]  --name complysphere-pg \
+##[debug]  --resource-group {0} \
+##[debug]  --query name -o tsv 2>/dev/null || echo "")
+##[debug]if [ -z "$EXISTS" ]; then
+##[debug]  az postgres flexible-server create \
+##[debug]    --name complysphere-pg \
+##[debug]    --resource-group {1} \
+##[debug]    --location {2} \
+##[debug]    --admin-user complyadmin \
+##[debug]    --admin-password "{3}" \
+##[debug]    --sku-name Standard_B1ms \
+##[debug]    --tier Burstable \
+##[debug]    --storage-size 32 \
+##[debug]    --version 16 \
+##[debug]    --public-access 0.0.0.0 \
+##[debug]    --output none
+##[debug]  az postgres flexible-server db create \
+##[debug]    --server-name complysphere-pg \
+##[debug]    --resource-group {4} \
+##[debug]    --database-name complysphere \
+##[debug]    --output none
+##[debug]else
+##[debug]  echo "PostgreSQL server already exists"
+##[debug]fi
+##[debug]'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating env:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'RESOURCE_GROUP'
+##[debug]..=> '***'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating env:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'RESOURCE_GROUP'
+##[debug]..=> '***'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating env:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'LOCATION'
+##[debug]..=> 'westeurope'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating secrets:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'PG_ADMIN_PASSWORD'
+##[debug]..=> '***'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating env:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'RESOURCE_GROUP'
+##[debug]..=> '***'
+##[debug]=> 'EXISTS=$(az postgres flexible-server show \
+##[debug]  --name complysphere-pg \
+##[debug]  --resource-group *** \
+##[debug]  --query name -o tsv 2>/dev/null || echo "")
+##[debug]if [ -z "$EXISTS" ]; then
+##[debug]  az postgres flexible-server create \
+##[debug]    --name complysphere-pg \
+##[debug]    --resource-group *** \
+##[debug]    --location westeurope \
+##[debug]    --admin-user complyadmin \
+##[debug]    --admin-password "***" \
+##[debug]    --sku-name Standard_B1ms \
+##[debug]    --tier Burstable \
+##[debug]    --storage-size 32 \
+##[debug]    --version 16 \
+##[debug]    --public-access 0.0.0.0 \
+##[debug]    --output none
+##[debug]  az postgres flexible-server db create \
+##[debug]    --server-name complysphere-pg \
+##[debug]    --resource-group *** \
+##[debug]    --database-name complysphere \
+##[debug]    --output none
+##[debug]else
+##[debug]  echo "PostgreSQL server already exists"
+##[debug]fi
+##[debug]'
+##[debug]Result: 'EXISTS=$(az postgres flexible-server show \
+##[debug]  --name complysphere-pg \
+##[debug]  --resource-group *** \
+##[debug]  --query name -o tsv 2>/dev/null || echo "")
+##[debug]if [ -z "$EXISTS" ]; then
+##[debug]  az postgres flexible-server create \
+##[debug]    --name complysphere-pg \
+##[debug]    --resource-group *** \
+##[debug]    --location westeurope \
+##[debug]    --admin-user complyadmin \
+##[debug]    --admin-password "***" \
+##[debug]    --sku-name Standard_B1ms \
+##[debug]    --tier Burstable \
+##[debug]    --storage-size 32 \
+##[debug]    --version 16 \
+##[debug]    --public-access 0.0.0.0 \
+##[debug]    --output none
+##[debug]  az postgres flexible-server db create \
+##[debug]    --server-name complysphere-pg \
+##[debug]    --resource-group *** \
+##[debug]    --database-name complysphere \
+##[debug]    --output none
+##[debug]else
+##[debug]  echo "PostgreSQL server already exists"
+##[debug]fi
+##[debug]'
+##[debug]Loading env
+Run EXISTS=$(az postgres flexible-server show \
+##[debug]/usr/bin/bash -e /home/runner/work/_temp/8202051c-af81-42bb-87ea-c6a36ce4b8e9.sh
+WARNING: Checking the existence of the resource group '***'...
+WARNING: Resource group '***' exists ? : True 
+WARNING: Creating PostgreSQL Server 'complysphere-pg' in group '***'...
+WARNING: Your server 'complysphere-pg' is using sku 'Standard_B1ms' (Paid Tier). Please refer to https://aka.ms/postgres-pricing for pricing details
+ERROR: (MissingSubscriptionRegistration) The subscription is not registered to use namespace 'Microsoft.DBforPostgreSQL'. See https://aka.ms/rps-not-found for how to register subscriptions.
+Code: MissingSubscriptionRegistration
+Message: The subscription is not registered to use namespace 'Microsoft.DBforPostgreSQL'. See https://aka.ms/rps-not-found for how to register subscriptions.
+Exception Details:	(MissingSubscriptionRegistration) The subscription is not registered to use namespace 'Microsoft.DBforPostgreSQL'. See https://aka.ms/rps-not-found for how to register subscriptions.
+	Code: MissingSubscriptionRegistration
+	Message: The subscription is not registered to use namespace 'Microsoft.DBforPostgreSQL'. See https://aka.ms/rps-not-found for how to register subscriptions.
+	Target: Microsoft.DBforPostgreSQL
+Error: Process completed with exit code 1.
+##[debug]Finishing: Create PostgreSQL server if missing

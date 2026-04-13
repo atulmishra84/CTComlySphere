@@ -25,16 +25,9 @@ jobs:
           az login --service-principal \
             --username "${{ secrets.AZURE_CLIENT_ID }}" \
             --password "${{ secrets.AZURE_CLIENT_SECRET }}" \
-            --tenant "${{ secrets.AZURE_TENANT_ID }}" \
-            --allow-no-subscriptions
-          echo "=== Subscriptions visible to this SP ==="
-          az account list --output table || echo "No subscriptions listed"
-          echo "=== Subscription ID in secret ==="
-          echo "AZURE_SUBSCRIPTION_ID length: $(echo -n '${{ secrets.AZURE_SUBSCRIPTION_ID }}' | wc -c) chars"
-          echo "=== Attempting to set subscription ==="
-          az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}" && echo "SUCCESS" || echo "FAILED - SP has no access to this subscription"
-          echo "=== Current account ==="
-          az account show -o table || echo "No active account"
+            --tenant "${{ secrets.AZURE_TENANT_ID }}"
+          az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+          echo "Logged in — subscription active"
 
       - name: Install Container Apps CLI extension
         run: az extension add --name containerapp --upgrade -y
@@ -43,6 +36,9 @@ jobs:
         run: |
           az provider register --namespace Microsoft.App --wait
           az provider register --namespace Microsoft.OperationalInsights --wait
+          az provider register --namespace Microsoft.DBforPostgreSQL --wait
+          az provider register --namespace Microsoft.ContainerRegistry --wait
+          az provider register --namespace Microsoft.ContainerService --wait
 
       - name: Create Resource Group if missing
         run: |
