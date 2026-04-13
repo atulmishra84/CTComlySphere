@@ -199,7 +199,7 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{{ url_for('remediation.execution_details', execution_id=execution.id) }}" 
+                                            <a href="{{ url_for('remediation.view_execution', id=execution.id) }}" 
                                                class="btn btn-outline-primary btn-sm" 
                                                title="View Details">
                                                 <i class="fas fa-eye"></i>
@@ -301,7 +301,7 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{{ url_for('remediation.workflow_details', workflow_id=workflow.id) }}" 
+                                            <a href="{{ url_for('remediation.view_workflow', id=workflow.id) }}" 
                                                class="btn btn-outline-primary btn-sm">
                                                 <i class="fas fa-eye"></i>
                                             </a>
@@ -443,7 +443,7 @@
 
 <script>
 // Execution Status Chart
-const statusData = {{ status.execution_status_counts | tojson }};
+const statusData = {{ (status.execution_status_counts if status.execution_status_counts is defined else {}) | tojson }};
 const statusLabels = Object.keys(statusData);
 const statusCounts = Object.values(statusData);
 

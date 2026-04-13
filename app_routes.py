@@ -2743,13 +2743,15 @@ def compliance_gap_attest(record_id):
 def security_inspection_overview():
     """Platform-wide Security Inspection overview — all agents with posture summary."""
     try:
-        agents = AIAgent.query.order_by(AIAgent.risk_level.desc()).all()
+        agents = AIAgent.query.order_by(AIAgent.risk_score.desc()).all()
 
         # Enrich each agent with its latest scan result
         enriched = []
         critical_count = high_count = medium_count = low_count = 0
         phi_exposed = 0
         total_risk = 0
+
+        _order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
 
         for agent in agents:
             scan = ScanResult.query.filter_by(agent_id=agent.id)\
@@ -2758,7 +2760,15 @@ def security_inspection_overview():
             risk_val = (agent.risk_score or 0)
             total_risk += risk_val
 
-            rl = (agent.risk_level.value if agent.risk_level else 'low').lower()
+            # Safely get risk level — fall back to scan result risk if agent has none
+            rl_obj = getattr(agent, 'risk_level', None)
+            if rl_obj is not None:
+                rl = rl_obj.value.lower()
+            elif scan and getattr(scan, 'risk_level', None):
+                rl = scan.risk_level.value.lower()
+            else:
+                rl = 'low' if risk_val < 40 else 'medium' if risk_val < 70 else 'high'
+
             if rl == 'critical':
                 critical_count += 1
             elif rl == 'high':
@@ -2775,6 +2785,7 @@ def security_inspection_overview():
                 'agent': agent,
                 'scan': scan,
                 'risk_pct': int(risk_val),
+                'rl': rl,
                 'risk_color': (
                     'danger' if rl == 'critical' else
                     'warning' if rl == 'high' else
@@ -2788,11 +2799,7 @@ def security_inspection_overview():
         avg_risk = int(total_risk / len(agents)) if agents else 0
 
         # Sort: critical first, then high, then by risk score desc
-        _order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
-        enriched.sort(key=lambda x: (
-            _order.get((x['agent'].risk_level.value if x['agent'].risk_level else 'low').lower(), 4),
-            -x['risk_pct']
-        ))
+        enriched.sort(key=lambda x: (_order.get(x['rl'], 4), -x['risk_pct']))
 
         stats = {
             'total': len(agents),

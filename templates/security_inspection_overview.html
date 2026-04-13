@@ -150,12 +150,11 @@
                                 </span>
                             </td>
                             <td>
-                                {% set rl = (agent.risk_level.value if agent.risk_level else 'low') | lower %}
-                                {% if rl == 'critical' %}
+                                {% if item.rl == 'critical' %}
                                     <span class="badge bg-danger"><i class="fas fa-circle me-1" style="font-size:.5rem;"></i>Critical</span>
-                                {% elif rl == 'high' %}
+                                {% elif item.rl == 'high' %}
                                     <span class="badge bg-warning text-dark"><i class="fas fa-circle me-1" style="font-size:.5rem;"></i>High</span>
-                                {% elif rl == 'medium' %}
+                                {% elif item.rl == 'medium' %}
                                     <span class="badge bg-info text-dark"><i class="fas fa-circle me-1" style="font-size:.5rem;"></i>Medium</span>
                                 {% else %}
                                     <span class="badge bg-success"><i class="fas fa-circle me-1" style="font-size:.5rem;"></i>Low</span>
