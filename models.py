@@ -122,13 +122,15 @@ class AIAgent(db.Model):
     compliance_controls = db.Column(JSON)  # HIPAA, GDPR controls in place
     audit_logging = db.Column(db.Boolean, default=False)  # Whether actions are logged
     
-    # Relationships
-    scan_results = db.relationship('ScanResult', backref='ai_agent', lazy=True)
-    compliance_evaluations = db.relationship('ComplianceEvaluation', backref='ai_agent', lazy=True)
+    # Relationships — cascade ensures child records are deleted with the agent
+    scan_results = db.relationship('ScanResult', backref='ai_agent', lazy=True,
+                                   cascade='all, delete-orphan', passive_deletes=True)
+    compliance_evaluations = db.relationship('ComplianceEvaluation', backref='ai_agent', lazy=True,
+                                             cascade='all, delete-orphan', passive_deletes=True)
 
 class ScanResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    ai_agent_id = db.Column(db.Integer, db.ForeignKey('ai_agent.id'), nullable=False)
+    ai_agent_id = db.Column(db.Integer, db.ForeignKey('ai_agent.id', ondelete='CASCADE'), nullable=False)
     scan_type = db.Column(db.String(100), nullable=False)
     status = db.Column(db.Enum(ScanStatus), nullable=False)
     risk_score = db.Column(db.Float, default=0.0)
@@ -142,7 +144,7 @@ class ScanResult(db.Model):
 
 class ComplianceEvaluation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    ai_agent_id = db.Column(db.Integer, db.ForeignKey('ai_agent.id'), nullable=False)
+    ai_agent_id = db.Column(db.Integer, db.ForeignKey('ai_agent.id', ondelete='CASCADE'), nullable=False)
     framework = db.Column(db.Enum(ComplianceFramework), nullable=False)
     compliance_score = db.Column(db.Float, nullable=False)  # 0-100
     is_compliant = db.Column(db.Boolean, nullable=False)
