@@ -2572,6 +2572,73 @@ def ceo_pitch():
     return render_template('ceo_pitch_slide.html')
 
 
+@app.route('/data-lineage')
+def data_lineage():
+    from models import DataLineageNode, DataLineageEdge
+    nodes = DataLineageNode.query.all()
+    edges = DataLineageEdge.query.all()
+
+    total_flows = len(edges)
+    phi_flows = sum(1 for e in edges if e.data_types and 'PHI' in e.data_types)
+    external_flows = sum(
+        1 for e in edges
+        if e.target_node and e.target_node.node_type == 'external_provider'
+    )
+    unencrypted_flows = sum(1 for e in edges if not e.encrypted)
+    high_risk_flows = sum(1 for e in edges if e.risk_level == 'high')
+    total_volume = sum(e.daily_volume or 0 for e in edges)
+
+    node_types = {}
+    for n in nodes:
+        node_types[n.node_type] = node_types.get(n.node_type, 0) + 1
+
+    sankey_nodes = []
+    node_index = {}
+    type_order = ['source_system', 'ai_agent', 'external_provider', 'output_destination']
+    for t in type_order:
+        for n in [x for x in nodes if x.node_type == t]:
+            node_index[n.node_id] = len(sankey_nodes)
+            sankey_nodes.append({
+                'id': n.node_id,
+                'name': n.name,
+                'type': n.node_type,
+                'risk': n.risk_level,
+                'classification': n.data_classification or '',
+                'is_external': n.is_external,
+            })
+
+    sankey_links = []
+    for e in edges:
+        if e.source_node_id in node_index and e.target_node_id in node_index:
+            sankey_links.append({
+                'source': node_index[e.source_node_id],
+                'target': node_index[e.target_node_id],
+                'value': max(e.daily_volume or 1, 1),
+                'data_types': e.data_types or [],
+                'encrypted': e.encrypted,
+                'baa_signed': e.baa_signed,
+                'risk': e.risk_level,
+                'purpose': e.purpose or '',
+            })
+
+    import json
+    stats = {
+        'total_flows': total_flows,
+        'phi_flows': phi_flows,
+        'external_flows': external_flows,
+        'unencrypted_flows': unencrypted_flows,
+        'high_risk_flows': high_risk_flows,
+        'total_volume': total_volume,
+        'node_counts': node_types,
+    }
+    return render_template('data_lineage.html',
+                           nodes=nodes,
+                           edges=edges,
+                           stats=stats,
+                           sankey_nodes_json=json.dumps(sankey_nodes),
+                           sankey_links_json=json.dumps(sankey_links))
+
+
 @app.route('/knowledge')
 def knowledge():
     return render_template('knowledge.html')

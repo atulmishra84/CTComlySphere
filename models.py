@@ -876,6 +876,47 @@ class ControlGapRecord(db.Model):
     )
 
 
+class DataLineageNode(db.Model):
+    """A node in the AI data lineage graph (source, agent, provider, or destination)."""
+    __tablename__ = 'data_lineage_node'
+    id = db.Column(db.Integer, primary_key=True)
+    node_id = db.Column(db.String(100), unique=True, nullable=False)
+    node_type = db.Column(db.String(50), nullable=False)
+    # source_system | ai_agent | external_provider | output_destination
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    vendor = db.Column(db.String(100))
+    region = db.Column(db.String(80))
+    data_classification = db.Column(db.String(50))  # PHI | PII | Clinical | Financial | Operational
+    risk_level = db.Column(db.String(20), default='medium')  # high | medium | low
+    is_external = db.Column(db.Boolean, default=False)
+    ai_agent_id = db.Column(db.Integer, db.ForeignKey('ai_agent.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    ai_agent = db.relationship('AIAgent', backref='lineage_node', lazy=True, foreign_keys=[ai_agent_id])
+
+
+class DataLineageEdge(db.Model):
+    """A directed data-flow edge between two DataLineageNodes."""
+    __tablename__ = 'data_lineage_edge'
+    id = db.Column(db.Integer, primary_key=True)
+    source_node_id = db.Column(db.String(100), db.ForeignKey('data_lineage_node.node_id'), nullable=False)
+    target_node_id = db.Column(db.String(100), db.ForeignKey('data_lineage_node.node_id'), nullable=False)
+    data_types = db.Column(JSON)            # ['PHI', 'Clinical Notes', ...]
+    daily_volume = db.Column(db.Integer, default=0)
+    encrypted = db.Column(db.Boolean, default=True)
+    consent_obtained = db.Column(db.Boolean, default=True)
+    baa_signed = db.Column(db.Boolean, default=False)
+    retention_days = db.Column(db.Integer)
+    risk_level = db.Column(db.String(20), default='medium')
+    purpose = db.Column(db.String(200))
+    last_observed = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    source_node = db.relationship('DataLineageNode', foreign_keys=[source_node_id], backref='outgoing_edges')
+    target_node = db.relationship('DataLineageNode', foreign_keys=[target_node_id], backref='incoming_edges')
+
+
 class ComplianceRule(db.Model):
     """User-defined compliance rules evaluated against discovered agents."""
     id = db.Column(db.Integer, primary_key=True)
