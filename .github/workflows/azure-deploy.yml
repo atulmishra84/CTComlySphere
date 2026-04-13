@@ -10,7 +10,8 @@ env:
   IMAGE_NAME: complysphere
   RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
   CONTAINERAPP_NAME: ${{ secrets.AZURE_APP_NAME }}
-  LOCATION: eastus
+  RG_LOCATION: westeurope
+  CA_LOCATION: eastus
 
 jobs:
   build-and-deploy:
@@ -41,10 +42,18 @@ jobs:
 
       - name: Create Resource Group if missing
         run: |
-          az group create \
+          EXISTS=$(az group show \
             --name ${{ env.RESOURCE_GROUP }} \
-            --location ${{ env.LOCATION }} \
-            --output none
+            --query name -o tsv 2>/dev/null || echo "")
+          if [ -z "$EXISTS" ]; then
+            echo "Creating resource group in ${{ env.RG_LOCATION }}..."
+            az group create \
+              --name ${{ env.RESOURCE_GROUP }} \
+              --location ${{ env.RG_LOCATION }} \
+              --output none
+          else
+            echo "Resource group already exists — skipping creation."
+          fi
 
       - name: Create Container Registry if missing
         run: |
@@ -75,11 +84,11 @@ jobs:
             --query name -o tsv 2>/dev/null || echo "")
 
           if [ -z "$EXISTS" ]; then
-            echo "Creating PostgreSQL server..."
+            echo "Creating PostgreSQL server in ${{ env.RG_LOCATION }}..."
             az postgres flexible-server create \
               --name complysphere-pg \
               --resource-group ${{ env.RESOURCE_GROUP }} \
-              --location ${{ env.LOCATION }} \
+              --location ${{ env.RG_LOCATION }} \
               --admin-user complyadmin \
               --admin-password "${{ secrets.PG_ADMIN_PASSWORD }}" \
               --sku-name Standard_B1ms \
@@ -143,11 +152,11 @@ jobs:
               done
             fi
 
-            echo "Creating Container Apps environment..."
+            echo "Creating Container Apps environment in ${{ env.CA_LOCATION }}..."
             az containerapp env create \
               --name complysphere-env \
               --resource-group ${{ env.RESOURCE_GROUP }} \
-              --location ${{ env.LOCATION }} \
+              --location ${{ env.CA_LOCATION }} \
               --output none
 
             echo "Polling for environment to reach Succeeded state..."
