@@ -120,6 +120,13 @@ jobs:
             --end-ip-address 0.0.0.0 \
             --output none 2>/dev/null || echo "Firewall rule already exists"
 
+          echo "Syncing PostgreSQL admin password with current secret..."
+          az postgres flexible-server update \
+            --name complysphere-pg \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --admin-password "${{ secrets.PG_ADMIN_PASSWORD }}" \
+            --output none
+
           echo "Building DATABASE_URL with URL-encoded password..."
           DB_URL=$(PG_PASS="${{ secrets.PG_ADMIN_PASSWORD }}" PG_HOST="$PG_HOST" python3 - <<'PYEOF'
 import urllib.parse, os
