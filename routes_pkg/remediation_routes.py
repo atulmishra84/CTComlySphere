@@ -586,68 +586,6 @@ def get_status():
         return jsonify({"service_status": "error", "error": str(e)})
 
 
-@remediation_bp.route('/executions/<int:execution_id>')
-def execution_details(execution_id):
-    """View detailed execution information"""
-    try:
-        execution = RemediationExecution.query.get_or_404(execution_id)
-        
-        # Get action executions
-        action_executions = RemediationActionExecution.query.filter_by(
-            execution_id=execution_id
-        ).order_by(RemediationActionExecution.execution_order).all()
-        
-        return render_template('remediation/execution_details.html',
-                             execution=execution,
-                             action_executions=action_executions)
-    
-    except Exception as e:
-        logger.error(f"Error viewing execution {execution_id}: {str(e)}")
-        flash(f'Error loading execution: {str(e)}', 'error')
-        return redirect(url_for('remediation.index'))
-
-
-@remediation_bp.route('/workflows/<int:workflow_id>')
-def workflow_details(workflow_id):
-    """View detailed workflow information"""
-    try:
-        workflow = RemediationWorkflow.query.get_or_404(workflow_id)
-        
-        # Get recent executions for this workflow
-        executions = RemediationExecution.query.filter_by(
-            workflow_id=workflow_id
-        ).order_by(RemediationExecution.started_at.desc()).limit(20).all()
-        
-        # Get execution statistics
-        total_executions = RemediationExecution.query.filter_by(workflow_id=workflow_id).count()
-        successful = RemediationExecution.query.filter_by(
-            workflow_id=workflow_id, status=RemediationWorkflowStatus.COMPLETED
-        ).count()
-        failed = RemediationExecution.query.filter_by(
-            workflow_id=workflow_id, status=RemediationWorkflowStatus.FAILED
-        ).count()
-        
-        success_rate = (successful / total_executions * 100) if total_executions > 0 else 0
-        
-        # Get available agents for manual execution
-        agents = AIAgent.query.limit(50).all()
-        
-        return render_template('remediation/workflow_details.html',
-                             workflow=workflow,
-                             executions=executions,
-                             total_executions=total_executions,
-                             successful=successful,
-                             failed=failed,
-                             success_rate=success_rate,
-                             agents=agents,
-                             workflow_engine_available=WORKFLOW_ENGINE_AVAILABLE)
-    
-    except Exception as e:
-        logger.error(f"Error viewing workflow {workflow_id}: {str(e)}")
-        flash(f'Error loading workflow: {str(e)}', 'error')
-        return redirect(url_for('remediation.index'))
-
-
 @remediation_bp.route('/workflow_templates')
 def workflow_templates():
     """View workflow templates"""
