@@ -120,7 +120,15 @@ jobs:
             --end-ip-address 0.0.0.0 \
             --output none 2>/dev/null || echo "Firewall rule already exists"
 
-          DB_URL="postgresql://complyadmin:${{ secrets.PG_ADMIN_PASSWORD }}@${PG_HOST}:5432/complysphere?sslmode=require"
+          echo "Building DATABASE_URL with URL-encoded password..."
+          DB_URL=$(PG_PASS="${{ secrets.PG_ADMIN_PASSWORD }}" PG_HOST="$PG_HOST" python3 - <<'PYEOF'
+import urllib.parse, os
+password = os.environ["PG_PASS"]
+host = os.environ["PG_HOST"]
+encoded = urllib.parse.quote(password, safe="")
+print(f"postgresql://complyadmin:{encoded}@{host}:5432/complysphere?sslmode=require")
+PYEOF
+)
           echo "DATABASE_URL=$DB_URL" >> $GITHUB_ENV
           echo "PostgreSQL host: $PG_HOST"
 
