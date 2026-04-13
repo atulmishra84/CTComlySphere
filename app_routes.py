@@ -2736,8 +2736,81 @@ def compliance_gap_attest(record_id):
 
 
 # ---------------------------------------------------------------------------
-# Security Inspection (per-agent deep-dive)
+# Security Inspection — platform overview + per-agent deep-dive
 # ---------------------------------------------------------------------------
+
+@app.route('/security-inspection')
+def security_inspection_overview():
+    """Platform-wide Security Inspection overview — all agents with posture summary."""
+    try:
+        agents = AIAgent.query.order_by(AIAgent.risk_level.desc()).all()
+
+        # Enrich each agent with its latest scan result
+        enriched = []
+        critical_count = high_count = medium_count = low_count = 0
+        phi_exposed = 0
+        total_risk = 0
+
+        for agent in agents:
+            scan = ScanResult.query.filter_by(agent_id=agent.id)\
+                .order_by(ScanResult.scan_date.desc()).first()
+
+            risk_val = (agent.risk_score or 0)
+            total_risk += risk_val
+
+            rl = (agent.risk_level.value if agent.risk_level else 'low').lower()
+            if rl == 'critical':
+                critical_count += 1
+            elif rl == 'high':
+                high_count += 1
+            elif rl == 'medium':
+                medium_count += 1
+            else:
+                low_count += 1
+
+            if scan and scan.phi_exposure_detected:
+                phi_exposed += 1
+
+            enriched.append({
+                'agent': agent,
+                'scan': scan,
+                'risk_pct': int(risk_val),
+                'risk_color': (
+                    'danger' if rl == 'critical' else
+                    'warning' if rl == 'high' else
+                    'info' if rl == 'medium' else 'success'
+                ),
+                'vuln_count': (scan.vulnerabilities_found if scan else 0) or 0,
+                'phi': scan.phi_exposure_detected if scan else False,
+                'scan_date': scan.scan_date if scan else None,
+            })
+
+        avg_risk = int(total_risk / len(agents)) if agents else 0
+
+        # Sort: critical first, then high, then by risk score desc
+        _order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
+        enriched.sort(key=lambda x: (
+            _order.get((x['agent'].risk_level.value if x['agent'].risk_level else 'low').lower(), 4),
+            -x['risk_pct']
+        ))
+
+        stats = {
+            'total': len(agents),
+            'critical': critical_count,
+            'high': high_count,
+            'medium': medium_count,
+            'low': low_count,
+            'phi_exposed': phi_exposed,
+            'avg_risk': avg_risk,
+        }
+
+    except Exception as e:
+        logger.error(f"Security inspection overview error: {e}")
+        enriched = []
+        stats = {'total': 0, 'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'phi_exposed': 0, 'avg_risk': 0}
+
+    return render_template('security_inspection_overview.html', agents=enriched, stats=stats)
+
 
 @app.route('/agents/<int:agent_id>/security-inspection')
 def agent_security_inspection(agent_id):

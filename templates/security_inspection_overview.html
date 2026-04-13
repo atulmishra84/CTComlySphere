@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Security Inspection{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-shield-alt me-2 text-primary"></i>Security Inspection
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Deep security posture assessment across 15 security domains —
+                        IAM, encryption, PHI protection, privilege management, and more.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Strip -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-2">
+            <div class="card shadow-sm h-100 text-center">
+                <div class="card-body py-3 px-2">
+                    <div class="display-6 fw-bold text-primary">{{ stats.total }}</div>
+                    <div class="small text-muted">Total Agents</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card shadow-sm h-100 text-center border-danger">
+                <div class="card-body py-3 px-2">
+                    <div class="display-6 fw-bold text-danger">{{ stats.critical }}</div>
+                    <div class="small text-muted">Critical Risk</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card shadow-sm h-100 text-center border-warning">
+                <div class="card-body py-3 px-2">
+                    <div class="display-6 fw-bold text-warning">{{ stats.high }}</div>
+                    <div class="small text-muted">High Risk</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card shadow-sm h-100 text-center">
+                <div class="card-body py-3 px-2">
+                    <div class="display-6 fw-bold text-info">{{ stats.medium }}</div>
+                    <div class="small text-muted">Medium Risk</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card shadow-sm h-100 text-center border-danger">
+                <div class="card-body py-3 px-2">
+                    <div class="display-6 fw-bold text-danger">{{ stats.phi_exposed }}</div>
+                    <div class="small text-muted">PHI Exposed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card shadow-sm h-100 text-center">
+                <div class="card-body py-3 px-2">
+                    <div class="display-6 fw-bold {% if stats.avg_risk >= 70 %}text-danger{% elif stats.avg_risk >= 40 %}text-warning{% else %}text-success{% endif %}">
+                        {{ stats.avg_risk }}
+                    </div>
+                    <div class="small text-muted">Avg Risk Score</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- What Security Inspection Covers -->
+    <div class="card shadow-sm mb-4 border-0 bg-light">
+        <div class="card-body py-3">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="small fw-semibold text-muted me-2">15 Security Domains:</span>
+                {% for domain in [
+                    ('fa-id-badge', 'IAM Auth'),
+                    ('fa-mobile-alt', 'MFA'),
+                    ('fa-user-shield', 'RBAC'),
+                    ('fa-key', 'Secrets Mgmt'),
+                    ('fa-lock', 'Encryption at Rest'),
+                    ('fa-exchange-alt', 'Encryption in Transit'),
+                    ('fa-network-wired', 'Network Security'),
+                    ('fa-tachometer-alt', 'Rate Limiting'),
+                    ('fa-filter', 'Input Validation'),
+                    ('fa-eye-slash', 'Output Filtering'),
+                    ('fa-clipboard-list', 'Audit Logging'),
+                    ('fa-bug', 'Vuln Management'),
+                    ('fa-hospital', 'PHI/PII Protection'),
+                    ('fa-exclamation-circle', 'Incident Response'),
+                    ('fa-user-lock', 'Privilege Mgmt')
+                ] %}
+                <span class="badge bg-white text-dark border shadow-sm px-2 py-1">
+                    <i class="fas {{ domain[0] }} text-primary me-1"></i>{{ domain[1] }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Table -->
+    {% if agents %}
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="fas fa-list me-2 text-primary"></i>Agents — Select to Run Full Inspection</h6>
+            <span class="badge bg-secondary">{{ agents|length }} agent{% if agents|length != 1 %}s{% endif %}</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3" style="width:30%">Agent</th>
+                            <th>Protocol</th>
+                            <th>Risk Level</th>
+                            <th>Risk Score</th>
+                            <th>Vulnerabilities</th>
+                            <th>PHI Exposure</th>
+                            <th>Last Scan</th>
+                            <th class="text-end pe-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in agents %}
+                        {% set agent = item.agent %}
+                        <tr>
+                            <td class="ps-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-{{ item.risk_color }} bg-opacity-10"
+                                         style="width:36px;height:36px;">
+                                        <i class="fas fa-robot text-{{ item.risk_color }}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">{{ agent.name }}</div>
+                                        <small class="text-muted">{{ agent.agent_type or agent.type or '—' }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    {{ agent.protocol.value if agent.protocol else '—' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% set rl = (agent.risk_level.value if agent.risk_level else 'low') | lower %}
+                                {% if rl == 'critical' %}
+                                    <span class="badge bg-danger"><i class="fas fa-circle me-1" style="font-size:.5rem;"></i>Critical</span>
+                                {% elif rl == 'high' %}
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-circle me-1" style="font-size:.5rem;"></i>High</span>
+                                {% elif rl == 'medium' %}
+                                    <span class="badge bg-info text-dark"><i class="fas fa-circle me-1" style="font-size:.5rem;"></i>Medium</span>
+                                {% else %}
+                                    <span class="badge bg-success"><i class="fas fa-circle me-1" style="font-size:.5rem;"></i>Low</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height:6px;width:60px;max-width:60px;">
+                                        <div class="progress-bar bg-{{ item.risk_color }}"
+                                             style="width:{{ item.risk_pct }}%"></div>
+                                    </div>
+                                    <span class="small fw-semibold text-{{ item.risk_color }}">{{ item.risk_pct }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if item.vuln_count > 0 %}
+                                    <span class="fw-semibold text-danger">{{ item.vuln_count }}</span>
+                                {% else %}
+                                    <span class="text-success"><i class="fas fa-check-circle me-1"></i>0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.phi %}
+                                    <span class="badge bg-danger"><i class="fas fa-exclamation-triangle me-1"></i>Detected</span>
+                                {% else %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                        <i class="fas fa-check me-1"></i>None
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.scan_date %}
+                                    <small class="text-muted">{{ item.scan_date.strftime('%b %d, %Y') }}</small>
+                                {% else %}
+                                    <small class="text-muted">Never scanned</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-3">
+                                <a href="{{ url_for('agent_security_inspection', agent_id=agent.id) }}"
+                                   class="btn btn-sm btn-primary">
+                                    <i class="fas fa-shield-alt me-1"></i>Inspect
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5 text-muted">
+            <i class="fas fa-shield-alt fa-3x mb-3 opacity-25"></i>
+            <p class="mb-2 fw-semibold">No agents discovered yet.</p>
+            <p class="small mb-3">Run a scan to discover AI agents, then return here to run security inspections.</p>
+            <a href="{{ url_for('scan_results') }}" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i>Go to Agent Inventory
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
