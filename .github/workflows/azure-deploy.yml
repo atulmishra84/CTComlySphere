@@ -128,14 +128,8 @@ jobs:
             --output none
 
           echo "Building DATABASE_URL with URL-encoded password..."
-          DB_URL=$(PG_PASS="${{ secrets.PG_ADMIN_PASSWORD }}" PG_HOST="$PG_HOST" python3 - <<'PYEOF'
-import urllib.parse, os
-password = os.environ["PG_PASS"]
-host = os.environ["PG_HOST"]
-encoded = urllib.parse.quote(password, safe="")
-print(f"postgresql://complyadmin:{encoded}@{host}:5432/complysphere?sslmode=require")
-PYEOF
-)
+          DB_URL=$(PG_PASS="${{ secrets.PG_ADMIN_PASSWORD }}" PG_HOST="$PG_HOST" python3 -c \
+            "import urllib.parse,os; p=urllib.parse.quote(os.environ['PG_PASS'],safe=''); h=os.environ['PG_HOST']; print('postgresql://complyadmin:'+p+'@'+h+':5432/complysphere?sslmode=require')")
           echo "DATABASE_URL=$DB_URL" >> $GITHUB_ENV
           echo "PostgreSQL host: $PG_HOST"
 
