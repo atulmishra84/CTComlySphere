@@ -38,7 +38,6 @@ jobs:
           az provider register --namespace Microsoft.OperationalInsights --wait
           az provider register --namespace Microsoft.DBforPostgreSQL --wait
           az provider register --namespace Microsoft.ContainerRegistry --wait
-          az provider register --namespace Microsoft.ContainerService --wait
 
       - name: Create Resource Group if missing
         run: |
@@ -68,13 +67,15 @@ jobs:
           docker push $IMAGE_LATEST
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
-      - name: Create PostgreSQL server if missing
+      - name: Create PostgreSQL server and build DATABASE_URL
         run: |
           EXISTS=$(az postgres flexible-server show \
             --name complysphere-pg \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --query name -o tsv 2>/dev/null || echo "")
+
           if [ -z "$EXISTS" ]; then
+            echo "Creating PostgreSQL server..."
             az postgres flexible-server create \
               --name complysphere-pg \
               --resource-group ${{ env.RESOURCE_GROUP }} \
@@ -96,13 +97,24 @@ jobs:
             echo "PostgreSQL server already exists"
           fi
 
-      - name: Create Container Apps Environment if missing
+          PG_HOST=$(az postgres flexible-server show \
+            --name complysphere-pg \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query fullyQualifiedDomainName -o tsv)
+
+          DB_URL="postgresql://complyadmin:${{ secrets.PG_ADMIN_PASSWORD }}@${PG_HOST}:5432/complysphere?sslmode=require"
+          echo "DATABASE_URL=$DB_URL" >> $GITHUB_ENV
+          echo "PostgreSQL host: $PG_HOST"
+
+      - name: Create Container Apps Environment and wait for provisioning
         run: |
           EXISTS=$(az containerapp env show \
             --name complysphere-env \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --query name -o tsv 2>/dev/null || echo "")
+
           if [ -z "$EXISTS" ]; then
+            echo "Creating Container Apps environment..."
             az containerapp env create \
               --name complysphere-env \
               --resource-group ${{ env.RESOURCE_GROUP }} \
@@ -111,6 +123,24 @@ jobs:
           else
             echo "Container Apps environment already exists"
           fi
+
+          echo "Waiting for environment to be fully provisioned..."
+          for i in $(seq 1 20); do
+            STATE=$(az containerapp env show \
+              --name complysphere-env \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --query "properties.provisioningState" -o tsv 2>/dev/null || echo "Unknown")
+            echo "  Attempt $i/20 — state: $STATE"
+            if [ "$STATE" = "Succeeded" ]; then
+              echo "Environment is ready."
+              break
+            fi
+            if [ "$i" = "20" ]; then
+              echo "ERROR: Environment did not reach Succeeded state in time."
+              exit 1
+            fi
+            sleep 15
+          done
 
       - name: Get ACR credentials
         id: acr-creds
@@ -144,7 +174,7 @@ jobs:
               --cpu 1.0 \
               --memory 2.0Gi \
               --env-vars \
-                "DATABASE_URL=${{ secrets.DATABASE_URL }}" \
+                "DATABASE_URL=${{ env.DATABASE_URL }}" \
                 "SESSION_SECRET=${{ secrets.SESSION_SECRET }}" \
                 "FLASK_ENV=production" \
                 "PYTHONUNBUFFERED=1" \
@@ -155,6 +185,11 @@ jobs:
               --name ${{ env.CONTAINERAPP_NAME }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --image ${{ env.IMAGE_TAG }} \
+              --set-env-vars \
+                "DATABASE_URL=${{ env.DATABASE_URL }}" \
+                "SESSION_SECRET=${{ secrets.SESSION_SECRET }}" \
+                "FLASK_ENV=production" \
+                "PYTHONUNBUFFERED=1" \
               --output none
           fi
 
