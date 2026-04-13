@@ -37,7 +37,7 @@
                     <div class="d-flex align-items-start justify-content-between mb-2">
                         <h6 class="fw-semibold mb-0">{{ template.name }}</h6>
                         <span class="badge bg-light text-dark border ms-2">
-                            {{ template.template_category or 'General' }}
+                            {{ template.category or 'General' }}
                         </span>
                     </div>
                     {% if template.description %}
@@ -45,11 +45,10 @@
                     {% endif %}
 
                     <div class="d-flex gap-2 mb-3">
-                        {% if template.framework_tags %}
-                            {% for tag in template.framework_tags[:3] %}
-                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">{{ tag }}</span>
-                            {% endfor %}
-                        {% endif %}
+                        {% set tags = template.compliance_frameworks or ([template.framework] if template.framework else []) %}
+                        {% for tag in tags[:3] %}
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">{{ tag }}</span>
+                        {% endfor %}
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center text-muted small mb-3">
@@ -57,7 +56,7 @@
                         <span>{{ template.created_at.strftime('%b %d, %Y') if template.created_at else '' }}</span>
                     </div>
 
-                    <form method="POST" action="{{ url_for('remediation.create_workflow_from_template') }}">
+                    <form method="POST" action="{{ url_for('remediation.create_workflow_from_template', id=template.id) }}">
                         <input type="hidden" name="template_id" value="{{ template.id }}">
                         <input type="text" name="workflow_name" class="form-control form-control-sm mb-2"
                                placeholder="Workflow name (optional)" value="{{ template.name }}">

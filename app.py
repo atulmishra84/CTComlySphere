@@ -58,13 +58,11 @@ with app.app_context():
     except Exception as e:
         logging.error(f"Failed to initialize database schema: {e}")
 
-    # Auto-seed demo data on first startup if database is empty
+    # Auto-seed demo data — always called; each section checks its own table
     try:
-        from models import AIAgent
-        if AIAgent.query.count() == 0:
-            logging.warning("Database is empty — loading Contoso Health Systems demo data...")
-            from demo_seeder import seed_demo_data
-            seed_demo_data(app, db)
+        logging.warning("Running demo data seeder (per-section checks)...")
+        from demo_seeder import seed_demo_data
+        seed_demo_data(app, db)
     except Exception as e:
         logging.warning(f"Demo data auto-seed skipped: {e}")
 
