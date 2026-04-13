@@ -15,7 +15,7 @@ set -euo pipefail
 # =============================================================================
 # CONFIGURATION — fill these in before running
 # =============================================================================
-SUBSCRIPTION_ID=""          # az account list --output table
+SUBSCRIPTION_ID="0ffed277-661a-48d7-bb45-3691c755352e"          # az account list --output table
 RESOURCE_GROUP="complysphere-rg"
 LOCATION="westeurope"       # e.g. westeurope | eastus | australiaeast
 ACR_NAME="complysphereacr"  # must be globally unique, alphanumeric only
@@ -26,7 +26,7 @@ ENVIRONMENT_NAME="complysphere-env"
 PG_SERVER_NAME="complysphere-pg"
 PG_DATABASE="complysphere"
 PG_ADMIN_USER="complyadmin"
-PG_ADMIN_PASSWORD=""        # min 8 chars, uppercase + number + special
+PG_ADMIN_PASSWORD="Pritisha@2022"        # min 8 chars, uppercase + number + special
 
 # Flask session secret (generate with: python3 -c "import secrets; print(secrets.token_hex(32))")
 SESSION_SECRET=""
