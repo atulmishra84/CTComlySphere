@@ -108,39 +108,51 @@ jobs:
 
       - name: Create Container Apps Environment and wait for provisioning
         run: |
-          EXISTS=$(az containerapp env show \
+          STATE=$(az containerapp env show \
             --name complysphere-env \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --query name -o tsv 2>/dev/null || echo "")
+            --query "properties.provisioningState" -o tsv 2>/dev/null || echo "")
 
-          if [ -z "$EXISTS" ]; then
+          echo "Current environment state: '$STATE'"
+
+          if [ "$STATE" = "Succeeded" ]; then
+            echo "Environment already provisioned and healthy."
+          else
+            if [ -n "$STATE" ]; then
+              echo "Environment exists but is in '$STATE' state — deleting and recreating..."
+              az containerapp env delete \
+                --name complysphere-env \
+                --resource-group ${{ env.RESOURCE_GROUP }} \
+                --yes --no-wait
+              echo "Waiting 30s for deletion to complete..."
+              sleep 30
+            fi
+
             echo "Creating Container Apps environment..."
             az containerapp env create \
               --name complysphere-env \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --location ${{ env.LOCATION }} \
               --output none
-          else
-            echo "Container Apps environment already exists"
-          fi
 
-          echo "Waiting for environment to be fully provisioned..."
-          for i in $(seq 1 20); do
-            STATE=$(az containerapp env show \
-              --name complysphere-env \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --query "properties.provisioningState" -o tsv 2>/dev/null || echo "Unknown")
-            echo "  Attempt $i/20 — state: $STATE"
-            if [ "$STATE" = "Succeeded" ]; then
-              echo "Environment is ready."
-              break
-            fi
-            if [ "$i" = "20" ]; then
-              echo "ERROR: Environment did not reach Succeeded state in time."
-              exit 1
-            fi
-            sleep 15
-          done
+            echo "Polling for environment to reach Succeeded state..."
+            for i in $(seq 1 30); do
+              STATE=$(az containerapp env show \
+                --name complysphere-env \
+                --resource-group ${{ env.RESOURCE_GROUP }} \
+                --query "properties.provisioningState" -o tsv 2>/dev/null || echo "Unknown")
+              echo "  Attempt $i/30 — state: $STATE"
+              if [ "$STATE" = "Succeeded" ]; then
+                echo "Environment is ready."
+                break
+              fi
+              if [ "$i" = "30" ]; then
+                echo "ERROR: Environment did not reach Succeeded state after 7.5 minutes."
+                exit 1
+              fi
+              sleep 15
+            done
+          fi
 
       - name: Get ACR credentials
         id: acr-creds
