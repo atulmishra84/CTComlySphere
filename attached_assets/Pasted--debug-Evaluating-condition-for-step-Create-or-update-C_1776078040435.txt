@@ -1,0 +1,256 @@
+##[debug]Evaluating condition for step: 'Create or update Container App'
+##[debug]Evaluating: success()
+##[debug]Evaluating success:
+##[debug]=> true
+##[debug]Result: true
+##[debug]Starting: Create or update Container App
+##[debug]Loading inputs
+##[debug]Evaluating: format('EXISTS=$(az containerapp show \
+##[debug]  --name {0} \
+##[debug]  --resource-group {1} \
+##[debug]  --query name -o tsv 2>/dev/null || echo "")
+##[debug]
+##[debug]if [ -z "$EXISTS" ]; then
+##[debug]  echo "Creating Container App for the first time..."
+##[debug]  az containerapp create \
+##[debug]    --name {2} \
+##[debug]    --resource-group {3} \
+##[debug]    --environment complysphere-env \
+##[debug]    --image {4} \
+##[debug]    --registry-server {5} \
+##[debug]    --registry-username {6} \
+##[debug]    --registry-password {7} \
+##[debug]    --target-port 5000 \
+##[debug]    --ingress external \
+##[debug]    --min-replicas 1 \
+##[debug]    --max-replicas 5 \
+##[debug]    --cpu 1.0 \
+##[debug]    --memory 2.0Gi \
+##[debug]    --env-vars \
+##[debug]      "DATABASE_URL={8}" \
+##[debug]      "SESSION_SECRET={9}" \
+##[debug]      "FLASK_ENV=production" \
+##[debug]      "PYTHONUNBUFFERED=1" \
+##[debug]    --output none
+##[debug]else
+##[debug]  echo "Updating existing Container App..."
+##[debug]  az containerapp update \
+##[debug]    --name {10} \
+##[debug]    --resource-group {11} \
+##[debug]    --image {12} \
+##[debug]    --output none
+##[debug]fi
+##[debug]', env.CONTAINERAPP_NAME, env.RESOURCE_GROUP, env.CONTAINERAPP_NAME, env.RESOURCE_GROUP, env.IMAGE_TAG, env.REGISTRY, steps.acr-creds.outputs.acr_username, steps.acr-creds.outputs.acr_password, secrets.DATABASE_URL, secrets.SESSION_SECRET, env.CONTAINERAPP_NAME, env.RESOURCE_GROUP, env.IMAGE_TAG)
+##[debug]Evaluating format:
+##[debug]..Evaluating String:
+##[debug]..=> 'EXISTS=$(az containerapp show \
+##[debug]  --name {0} \
+##[debug]  --resource-group {1} \
+##[debug]  --query name -o tsv 2>/dev/null || echo "")
+##[debug]
+##[debug]if [ -z "$EXISTS" ]; then
+##[debug]  echo "Creating Container App for the first time..."
+##[debug]  az containerapp create \
+##[debug]    --name {2} \
+##[debug]    --resource-group {3} \
+##[debug]    --environment complysphere-env \
+##[debug]    --image {4} \
+##[debug]    --registry-server {5} \
+##[debug]    --registry-username {6} \
+##[debug]    --registry-password {7} \
+##[debug]    --target-port 5000 \
+##[debug]    --ingress external \
+##[debug]    --min-replicas 1 \
+##[debug]    --max-replicas 5 \
+##[debug]    --cpu 1.0 \
+##[debug]    --memory 2.0Gi \
+##[debug]    --env-vars \
+##[debug]      "DATABASE_URL={8}" \
+##[debug]      "SESSION_SECRET={9}" \
+##[debug]      "FLASK_ENV=production" \
+##[debug]      "PYTHONUNBUFFERED=1" \
+##[debug]    --output none
+##[debug]else
+##[debug]  echo "Updating existing Container App..."
+##[debug]  az containerapp update \
+##[debug]    --name {10} \
+##[debug]    --resource-group {11} \
+##[debug]    --image {12} \
+##[debug]    --output none
+##[debug]fi
+##[debug]'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating env:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'CONTAINERAPP_NAME'
+##[debug]..=> '***'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating env:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'RESOURCE_GROUP'
+##[debug]..=> '***'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating env:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'CONTAINERAPP_NAME'
+##[debug]..=> '***'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating env:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'RESOURCE_GROUP'
+##[debug]..=> '***'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating env:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'IMAGE_TAG'
+##[debug]..=> '***.azurecr.io/complysphere:6d147ad5b70843c347e392697ca674d74fb70cf8'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating env:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'REGISTRY'
+##[debug]..=> '***.azurecr.io'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating Index:
+##[debug]......Evaluating Index:
+##[debug]........Evaluating steps:
+##[debug]........=> Object
+##[debug]........Evaluating String:
+##[debug]........=> 'acr-creds'
+##[debug]......=> Object
+##[debug]......Evaluating String:
+##[debug]......=> 'outputs'
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'acr_username'
+##[debug]..=> '***'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating Index:
+##[debug]......Evaluating Index:
+##[debug]........Evaluating steps:
+##[debug]........=> Object
+##[debug]........Evaluating String:
+##[debug]........=> 'acr-creds'
+##[debug]......=> Object
+##[debug]......Evaluating String:
+##[debug]......=> 'outputs'
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'acr_password'
+##[debug]..=> '3a8999ld1sdbXWTR1Kz3r41i11rXc8E5w2fDa0PK5Xltm9ozvmLWJQQJ99CDAC5RqLJEqg7NAAACAZCRSo8R'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating secrets:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'DATABASE_URL'
+##[debug]..=> null
+##[debug]..Evaluating Index:
+##[debug]....Evaluating secrets:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'SESSION_SECRET'
+##[debug]..=> '***'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating env:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'CONTAINERAPP_NAME'
+##[debug]..=> '***'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating env:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'RESOURCE_GROUP'
+##[debug]..=> '***'
+##[debug]..Evaluating Index:
+##[debug]....Evaluating env:
+##[debug]....=> Object
+##[debug]....Evaluating String:
+##[debug]....=> 'IMAGE_TAG'
+##[debug]..=> '***.azurecr.io/complysphere:6d147ad5b70843c347e392697ca674d74fb70cf8'
+##[debug]=> 'EXISTS=$(az containerapp show \
+##[debug]  --name *** \
+##[debug]  --resource-group *** \
+##[debug]  --query name -o tsv 2>/dev/null || echo "")
+##[debug]
+##[debug]if [ -z "$EXISTS" ]; then
+##[debug]  echo "Creating Container App for the first time..."
+##[debug]  az containerapp create \
+##[debug]    --name *** \
+##[debug]    --resource-group *** \
+##[debug]    --environment complysphere-env \
+##[debug]    --image ***.azurecr.io/complysphere:6d147ad5b70843c347e392697ca674d74fb70cf8 \
+##[debug]    --registry-server ***.azurecr.io \
+##[debug]    --registry-username *** \
+##[debug]    --registry-password 3a8999ld1sdbXWTR1Kz3r41i11rXc8E5w2fDa0PK5Xltm9ozvmLWJQQJ99CDAC5RqLJEqg7NAAACAZCRSo8R \
+##[debug]    --target-port 5000 \
+##[debug]    --ingress external \
+##[debug]    --min-replicas 1 \
+##[debug]    --max-replicas 5 \
+##[debug]    --cpu 1.0 \
+##[debug]    --memory 2.0Gi \
+##[debug]    --env-vars \
+##[debug]      "DATABASE_URL=" \
+##[debug]      "SESSION_SECRET=***" \
+##[debug]      "FLASK_ENV=production" \
+##[debug]      "PYTHONUNBUFFERED=1" \
+##[debug]    --output none
+##[debug]else
+##[debug]  echo "Updating existing Container App..."
+##[debug]  az containerapp update \
+##[debug]    --name *** \
+##[debug]    --resource-group *** \
+##[debug]    --image ***.azurecr.io/complysphere:6d147ad5b70843c347e392697ca674d74fb70cf8 \
+##[debug]    --output none
+##[debug]fi
+##[debug]'
+##[debug]Result: 'EXISTS=$(az containerapp show \
+##[debug]  --name *** \
+##[debug]  --resource-group *** \
+##[debug]  --query name -o tsv 2>/dev/null || echo "")
+##[debug]
+##[debug]if [ -z "$EXISTS" ]; then
+##[debug]  echo "Creating Container App for the first time..."
+##[debug]  az containerapp create \
+##[debug]    --name *** \
+##[debug]    --resource-group *** \
+##[debug]    --environment complysphere-env \
+##[debug]    --image ***.azurecr.io/complysphere:6d147ad5b70843c347e392697ca674d74fb70cf8 \
+##[debug]    --registry-server ***.azurecr.io \
+##[debug]    --registry-username *** \
+##[debug]    --registry-password 3a8999ld1sdbXWTR1Kz3r41i11rXc8E5w2fDa0PK5Xltm9ozvmLWJQQJ99CDAC5RqLJEqg7NAAACAZCRSo8R \
+##[debug]    --target-port 5000 \
+##[debug]    --ingress external \
+##[debug]    --min-replicas 1 \
+##[debug]    --max-replicas 5 \
+##[debug]    --cpu 1.0 \
+##[debug]    --memory 2.0Gi \
+##[debug]    --env-vars \
+##[debug]      "DATABASE_URL=" \
+##[debug]      "SESSION_SECRET=***" \
+##[debug]      "FLASK_ENV=production" \
+##[debug]      "PYTHONUNBUFFERED=1" \
+##[debug]    --output none
+##[debug]else
+##[debug]  echo "Updating existing Container App..."
+##[debug]  az containerapp update \
+##[debug]    --name *** \
+##[debug]    --resource-group *** \
+##[debug]    --image ***.azurecr.io/complysphere:6d147ad5b70843c347e392697ca674d74fb70cf8 \
+##[debug]    --output none
+##[debug]fi
+##[debug]'
+##[debug]Loading env
+Run EXISTS=$(az containerapp show \
+##[debug]/usr/bin/bash -e /home/runner/work/_temp/267f88a6-75be-41af-91a7-e59a914d071a.sh
+Creating Container App for the first time...
+WARNING: The behavior of this command has been altered by the following extension: containerapp
+WARNING: Adding registry password as a secret with name "***azurecrio-***"
+ERROR: (ManagedEnvironmentNotProvisioned) The environment '/subscriptions/***/resourceGroups/***/providers/Microsoft.App/managedEnvironments/complysphere-env' has not been provisioned successfully.
+Error: Process completed with exit code 1.
+##[debug]Finishing: Create or update Container App
