@@ -124,8 +124,23 @@ jobs:
                 --name complysphere-env \
                 --resource-group ${{ env.RESOURCE_GROUP }} \
                 --yes --no-wait
-              echo "Waiting 30s for deletion to complete..."
-              sleep 30
+              echo "Polling until deletion is complete..."
+              for d in $(seq 1 40); do
+                GONE=$(az containerapp env show \
+                  --name complysphere-env \
+                  --resource-group ${{ env.RESOURCE_GROUP }} \
+                  --query name -o tsv 2>/dev/null || echo "")
+                echo "  Deletion check $d/40 — exists: '${GONE}'"
+                if [ -z "$GONE" ]; then
+                  echo "  Environment fully deleted."
+                  break
+                fi
+                if [ "$d" = "40" ]; then
+                  echo "ERROR: Environment deletion timed out."
+                  exit 1
+                fi
+                sleep 15
+              done
             fi
 
             echo "Creating Container Apps environment..."
