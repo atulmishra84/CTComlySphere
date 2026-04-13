@@ -3,7 +3,6 @@
 
 {% block head %}
 <script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
 <style>
 /* ── layout ── */
 #sankey-container { width:100%; overflow-x:auto; }
@@ -263,199 +262,236 @@
 
 {% block scripts %}
 <script>
-const RAW_NODES = {{ sankey_nodes_json|safe }};
-const RAW_LINKS = {{ sankey_links_json|safe }};
+const ALL_NODES = {{ sankey_nodes_json|safe }};
+const ALL_LINKS = {{ sankey_links_json|safe }};
 
-// ── colour palette ────────────────────────────────────────────
 const NODE_COLORS = {
-  source_system:       '#3b82f6',
-  ai_agent:            '#8b5cf6',
-  external_provider:   '#f59e0b',
-  output_destination:  '#10b981',
+  source_system:      '#3b82f6',
+  ai_agent:           '#8b5cf6',
+  external_provider:  '#f59e0b',
+  output_destination: '#10b981',
 };
-const RISK_COLORS = { high:'#ef4444', medium:'#f59e0b', low:'#10b981' };
+const RISK_STROKE = { high:'#ef4444', medium:'#f59e0b', low:'#10b981' };
 const NODE_LABELS = {
   source_system: 'Source Systems',
   ai_agent: 'AI Agents',
   external_provider: 'External Providers',
   output_destination: 'Output Destinations',
 };
+const LAYER_ORDER = ['source_system','ai_agent','external_provider','output_destination'];
 
-// ── legend ────────────────────────────────────────────────────
+// legend
 const legendEl = document.getElementById('sankey-legend');
-Object.entries(NODE_LABELS).forEach(([k, label]) => {
-  legendEl.innerHTML += `
-    <div class="d-flex align-items-center gap-1">
-      <div style="width:12px;height:12px;border-radius:3px;background:${NODE_COLORS[k]}"></div>
-      <span>${label}</span>
-    </div>`;
+LAYER_ORDER.forEach(k => {
+  legendEl.innerHTML += `<div class="d-flex align-items-center gap-1">
+    <div style="width:12px;height:12px;border-radius:3px;background:${NODE_COLORS[k]}"></div>
+    <span style="font-size:.75rem;">${NODE_LABELS[k]}</span></div>`;
 });
 
-// ── tooltip helpers ──────────────────────────────────────────
+// tooltip
 const tip = document.getElementById('lineage-tooltip');
-function showTip(html, e) {
-  tip.innerHTML = html; tip.style.display = 'block';
-  moveTip(e);
+function showTip(html, e){ tip.innerHTML=html; tip.style.display='block'; moveTip(e); }
+function moveTip(e){
+  tip.style.left = Math.min(e.clientX+14, window.innerWidth-295)+'px';
+  tip.style.top  = Math.max(e.clientY-10, 8)+'px';
 }
-function moveTip(e) {
-  const x = e.clientX + 14, y = e.clientY - 10;
-  tip.style.left = Math.min(x, window.innerWidth - 290) + 'px';
-  tip.style.top  = Math.max(y, 8) + 'px';
-}
-function hideTip() { tip.style.display = 'none'; }
+function hideTip(){ tip.style.display='none'; }
 
-// ── build Sankey ─────────────────────────────────────────────
-function buildSankey(nodeData, linkData) {
+// ── core draw function ────────────────────────────────────────
+function drawFlow(nodes, links) {
   const container = document.getElementById('sankey-container');
-  const W = Math.max(container.clientWidth - 24, 900);
-  const H = Math.max(Math.min(nodeData.length * 28, 700), 480);
+  const W = Math.max(container.getBoundingClientRect().width - 8, 920);
 
-  const svg = d3.select('#sankey-svg')
-    .attr('width', W).attr('height', H)
-    .attr('viewBox', `0 0 ${W} ${H}`);
-  svg.selectAll('*').remove();
+  // Assign layer (column) to each node
+  const byId = {};
+  nodes.forEach(n => { byId[n.id] = n; });
 
-  const { sankey, sankeyLinkHorizontal } = d3Sankey || window;
-  const sankeyFn = d3.sankey ? d3.sankey() : sankey();
+  // group nodes by layer
+  const layers = {};
+  LAYER_ORDER.forEach(t => { layers[t] = nodes.filter(n => n.type === t); });
 
-  sankeyFn
-    .nodeId(d => d.index)
-    .nodeWidth(20)
-    .nodePadding(14)
-    .extent([[60, 20], [W - 160, H - 20]]);
+  // layout constants
+  const PAD_TOP    = 48;   // space for column headers
+  const PAD_BOT    = 16;
+  const NODE_H     = 32;
+  const NODE_W     = 22;
+  const NODE_GAP   = 12;
+  const COL_LABEL_H= 24;
 
-  // deep-clone to avoid d3-sankey mutation issues
-  const graph = sankeyFn({
-    nodes: nodeData.map((d, i) => ({ ...d, index: i })),
-    links: linkData.map(d => ({ ...d, source: d.source, target: d.target })),
+  // compute height based on tallest column
+  const maxNodes = Math.max(...LAYER_ORDER.map(t => (layers[t]||[]).length));
+  const H = Math.max(PAD_TOP + maxNodes*(NODE_H+NODE_GAP) + PAD_BOT, 420);
+
+  // column x positions
+  const colCount = LAYER_ORDER.length;
+  const usableW  = W - 240;   // reserve 120px each side for labels
+  const colStep  = usableW / (colCount - 1);
+  const colX     = {};
+  LAYER_ORDER.forEach((t, i) => { colX[t] = 120 + i * colStep; });
+
+  // compute each node's cy (center y)
+  const nodePos = {};
+  LAYER_ORDER.forEach(t => {
+    const col = layers[t] || [];
+    const totalH = col.length*(NODE_H+NODE_GAP) - NODE_GAP;
+    const startY = PAD_TOP + (H - PAD_TOP - PAD_BOT - totalH) / 2;
+    col.forEach((n, i) => {
+      nodePos[n.id] = {
+        cx: colX[t],
+        cy: startY + i*(NODE_H+NODE_GAP) + NODE_H/2,
+        type: t,
+      };
+    });
   });
+
+  // volume scale for stroke width
+  const vols = links.map(l => l.value || 1);
+  const maxVol = Math.max(...vols, 1);
+  const strokeW = v => 1.5 + (Math.log(v+1)/Math.log(maxVol+1)) * 10;
+
+  // ── render ────────────────────────────────────────────────
+  const svg = d3.select('#sankey-svg')
+    .attr('width', W).attr('height', H);
+  svg.selectAll('*').remove();
 
   const defs = svg.append('defs');
 
-  // gradient per link
-  graph.links.forEach((l, i) => {
-    const gradId = `grad-${i}`;
-    const grad = defs.append('linearGradient')
-      .attr('id', gradId)
-      .attr('gradientUnits', 'userSpaceOnUse')
-      .attr('x1', l.source.x1).attr('x2', l.target.x0);
-    grad.append('stop').attr('offset', '0%')
-      .attr('stop-color', NODE_COLORS[l.source.type] || '#94a3b8').attr('stop-opacity', .6);
-    grad.append('stop').attr('offset', '100%')
-      .attr('stop-color', NODE_COLORS[l.target.type] || '#94a3b8').attr('stop-opacity', .6);
+  // draw links first (behind nodes)
+  const linkG = svg.append('g');
+  links.forEach((lk, i) => {
+    const sn = nodes[lk.source];
+    const tn = nodes[lk.target];
+    if (!sn || !tn) return;
+    const sp = nodePos[sn.id];
+    const tp = nodePos[tn.id];
+    if (!sp || !tp) return;
+
+    const x1 = sp.cx + NODE_W/2;
+    const x2 = tp.cx - NODE_W/2;
+    const y1 = sp.cy;
+    const y2 = tp.cy;
+    const mx = (x1 + x2) / 2;
+
+    // gradient
+    const gid = `g${i}`;
+    const grad = defs.append('linearGradient').attr('id', gid)
+      .attr('x1','0%').attr('x2','100%');
+    grad.append('stop').attr('offset','0%')
+      .attr('stop-color', NODE_COLORS[sp.type]).attr('stop-opacity',.55);
+    grad.append('stop').attr('offset','100%')
+      .attr('stop-color', NODE_COLORS[tp.type]).attr('stop-opacity',.55);
+
+    const path = `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+    linkG.append('path')
+      .attr('d', path)
+      .attr('fill', 'none')
+      .attr('stroke', `url(#${gid})`)
+      .attr('stroke-width', strokeW(lk.value || 1))
+      .attr('stroke-linecap', 'round')
+      .style('opacity', .4)
+      .style('cursor','pointer')
+      .on('mouseover', function(){ d3.select(this).style('opacity',.8); })
+      .on('mouseout',  function(){ d3.select(this).style('opacity',.4); hideTip(); })
+      .on('mousemove', (e) => {
+        const vol = (lk.value||0).toLocaleString();
+        showTip(`
+          <div class="tt-title">${sn.name} → ${tn.name}</div>
+          <div class="tt-row"><span>Data Types</span><span>${(lk.data_types||[]).join(', ')||'—'}</span></div>
+          <div class="tt-row"><span>Daily Volume</span><span>${vol} records</span></div>
+          <div class="tt-row"><span>Encrypted</span><span>${lk.encrypted?'✅ Yes':'❌ No'}</span></div>
+          <div class="tt-row"><span>BAA Signed</span><span>${lk.baa_signed?'✅ Yes':'⚠️ Missing'}</span></div>
+          <div class="tt-row"><span>Risk</span><span style="color:${RISK_STROKE[lk.risk]||'#94a3b8'}">${(lk.risk||'').toUpperCase()}</span></div>
+          <div class="tt-row"><span>Purpose</span><span>${lk.purpose||'—'}</span></div>
+        `, e);
+      });
   });
 
-  // links
-  const linkG = svg.append('g').attr('class', 'links');
-  linkG.selectAll('.link')
-    .data(graph.links)
-    .enter().append('path')
-      .attr('class', 'link')
-      .attr('d', d3.sankeyLinkHorizontal())
-      .attr('stroke', (d, i) => `url(#grad-${i})`)
-      .attr('stroke-width', d => Math.max(d.width, 2))
-      .on('mousemove', (e, d) => {
-        moveTip(e);
-        showTip(`
-          <div class="tt-title">${d.source.name} → ${d.target.name}</div>
-          <div class="tt-row"><span>Data Types</span><span>${(d.data_types||[]).join(', ')||'—'}</span></div>
-          <div class="tt-row"><span>Daily Volume</span><span>${d.value.toLocaleString()} records</span></div>
-          <div class="tt-row"><span>Encrypted</span><span>${d.encrypted?'✅ Yes':'❌ No'}</span></div>
-          <div class="tt-row"><span>BAA Signed</span><span>${d.baa_signed?'✅ Yes':'⚠️ Missing'}</span></div>
-          <div class="tt-row"><span>Risk</span><span style="color:${RISK_COLORS[d.risk]||'#64748b'}">${(d.risk||'').toUpperCase()}</span></div>
-          <div class="tt-row"><span>Purpose</span><span>${d.purpose||'—'}</span></div>
-        `, e);
-      })
-      .on('mouseleave', hideTip);
+  // column header labels
+  LAYER_ORDER.forEach(t => {
+    svg.append('text')
+      .attr('x', colX[t]).attr('y', 22)
+      .attr('text-anchor','middle')
+      .attr('fill', NODE_COLORS[t])
+      .attr('font-size','11px').attr('font-weight','700')
+      .attr('letter-spacing','0.5px')
+      .text(NODE_LABELS[t].toUpperCase());
+    // column separator line
+    svg.append('line')
+      .attr('x1', colX[t]).attr('y1', 30)
+      .attr('x2', colX[t]).attr('y2', H - PAD_BOT)
+      .attr('stroke', NODE_COLORS[t]).attr('stroke-width',1)
+      .attr('stroke-dasharray','4,4').attr('opacity',.2);
+  });
 
-  // nodes
-  const nodeG = svg.append('g').attr('class', 'nodes');
-  const nodeEl = nodeG.selectAll('.node')
-    .data(graph.nodes)
-    .enter().append('g').attr('class', 'node')
-      .attr('transform', d => `translate(${d.x0},${d.y0})`);
+  // draw nodes
+  const nodeG = svg.append('g');
+  nodes.forEach(n => {
+    const p = nodePos[n.id];
+    if (!p) return;
+    const g = nodeG.append('g')
+      .attr('transform',`translate(${p.cx - NODE_W/2},${p.cy - NODE_H/2})`)
+      .style('cursor','pointer');
 
-  nodeEl.append('rect')
-    .attr('height', d => Math.max(d.y1 - d.y0, 4))
-    .attr('width', d => d.x1 - d.x0)
-    .attr('fill', d => NODE_COLORS[d.type] || '#94a3b8')
-    .attr('rx', 4)
-    .on('mousemove', (e, d) => {
-      moveTip(e);
-      showTip(`
-        <div class="tt-title">${d.name}</div>
-        <div class="tt-row"><span>Type</span><span>${(NODE_LABELS[d.type]||d.type)}</span></div>
-        <div class="tt-row"><span>Classification</span><span>${d.classification||'—'}</span></div>
-        <div class="tt-row"><span>Risk</span><span style="color:${RISK_COLORS[d.risk]||'#64748b'}">${(d.risk||'').toUpperCase()}</span></div>
-        <div class="tt-row"><span>External</span><span>${d.is_external?'Yes':'No'}</span></div>
-      `, e);
-    })
-    .on('mouseleave', hideTip);
+    // node rect
+    g.append('rect')
+      .attr('width', NODE_W).attr('height', NODE_H).attr('rx', 5)
+      .attr('fill', NODE_COLORS[n.type] || '#94a3b8')
+      .attr('stroke','#fff').attr('stroke-width',1.5);
 
-  // labels — left side for first col, right side for last, centred otherwise
-  nodeEl.append('text')
-    .attr('x', d => {
-      const mid = (d.x0 + d.x1) / 2;
-      if (d.x0 < W * 0.15) return d.x1 + 6;
-      if (d.x1 > W * 0.85) return d.x0 - 6;
-      return mid;
-    })
-    .attr('y', d => (d.y1 - d.y0) / 2)
-    .attr('dy', '.35em')
-    .attr('text-anchor', d => {
-      if (d.x0 < W * 0.15) return 'start';
-      if (d.x1 > W * 0.85) return 'end';
-      return 'middle';
-    })
-    .text(d => d.name.length > 22 ? d.name.slice(0, 21) + '…' : d.name)
-    .attr('fill', d => (d.x0 > W * 0.15 && d.x1 < W * 0.85) ? '#fff' : '#1e293b')
-    .style('font-size', '10.5px')
-    .style('font-weight', '600');
+    // risk dot
+    g.append('circle')
+      .attr('cx', NODE_W - 5).attr('cy', 5).attr('r', 3)
+      .attr('fill', RISK_STROKE[n.risk] || '#94a3b8');
+
+    // label — right of node for col 0, left of node for last col, else right
+    const isFirst = p.cx < W * 0.25;
+    const isLast  = p.cx > W * 0.75;
+    const lx = isFirst ? NODE_W + 5 : isLast ? -5 : NODE_W + 5;
+    const anchor = isLast ? 'end' : 'start';
+    const label = n.name.length > 20 ? n.name.slice(0,19)+'…' : n.name;
+
+    g.append('text')
+      .attr('x', lx).attr('y', NODE_H/2)
+      .attr('dy','.35em')
+      .attr('text-anchor', anchor)
+      .attr('fill','#1e293b').attr('font-size','10.5px').attr('font-weight','600')
+      .text(label);
+
+    // hover
+    g.on('mouseover', function(){ d3.select(this).select('rect').attr('stroke','#334155').attr('stroke-width',2.5); })
+     .on('mouseout',  function(){ d3.select(this).select('rect').attr('stroke','#fff').attr('stroke-width',1.5); hideTip(); })
+     .on('mousemove', (e) => {
+       showTip(`
+         <div class="tt-title">${n.name}</div>
+         <div class="tt-row"><span>Layer</span><span>${NODE_LABELS[n.type]||n.type}</span></div>
+         <div class="tt-row"><span>Classification</span><span>${n.classification||'—'}</span></div>
+         <div class="tt-row"><span>Risk</span><span style="color:${RISK_STROKE[n.risk]||'#94a3b8'}">${(n.risk||'').toUpperCase()}</span></div>
+         <div class="tt-row"><span>External Party</span><span>${n.is_external?'Yes':'No'}</span></div>
+       `, e);
+     });
+  });
 }
 
-// initial build
-let activeNodes = [...RAW_NODES];
-let activeLinks = [...RAW_LINKS];
-
-function rebuildSankey() {
-  if (activeNodes.length === 0 || activeLinks.length === 0) return;
-  buildSankey(activeNodes, activeLinks);
-}
-
-window.addEventListener('resize', () => rebuildSankey());
-rebuildSankey();
-
-// ── filtering ────────────────────────────────────────────────
-function applyFilter() {
+// ── filter & redraw ───────────────────────────────────────────
+function getFilteredData() {
   const risk  = document.getElementById('riskFilter').value;
   const dtype = document.getElementById('typeFilter').value;
-
-  activeLinks = RAW_LINKS.filter(l => {
-    const riskOk  = !risk  || l.risk === risk;
-    const dtypeOk = !dtype || (l.data_types && l.data_types.includes(dtype));
-    return riskOk && dtypeOk;
-  });
-
+  const filteredLinks = ALL_LINKS.filter(l =>
+    (!risk  || l.risk === risk) &&
+    (!dtype || (l.data_types && l.data_types.includes(dtype)))
+  );
   const usedIdx = new Set();
-  activeLinks.forEach(l => { usedIdx.add(l.source); usedIdx.add(l.target); });
-  activeNodes = RAW_NODES.filter((_, i) => usedIdx.has(i));
-
-  // remap indices
-  const newIdx = {};
-  activeNodes.forEach((n, i) => { newIdx[RAW_NODES.indexOf(n)] = i; });
-  const remapped = activeLinks.map(l => ({
-    ...l, source: newIdx[l.source], target: newIdx[l.target],
-  }));
-
-  buildSankey(activeNodes, remapped);
+  filteredLinks.forEach(l => { usedIdx.add(l.source); usedIdx.add(l.target); });
+  // remap to consecutive indices
+  const filtered = ALL_NODES.map((n,i) => usedIdx.size === 0 || usedIdx.has(i) ? n : null);
+  return { nodes: ALL_NODES, links: filteredLinks };
 }
 
+function applyFilter() { const {nodes,links} = getFilteredData(); drawFlow(nodes, links); }
 function resetFilters() {
-  document.getElementById('riskFilter').value  = '';
+  document.getElementById('riskFilter').value = '';
   document.getElementById('typeFilter').value = '';
-  activeNodes = [...RAW_NODES];
-  activeLinks = [...RAW_LINKS];
-  rebuildSankey();
+  drawFlow(ALL_NODES, ALL_LINKS);
 }
 
 // ── table search ─────────────────────────────────────────────
@@ -469,5 +505,9 @@ function searchTable() {
   });
   document.getElementById('tableCount').textContent = vis;
 }
+
+// ── init ─────────────────────────────────────────────────────
+window.addEventListener('resize', () => drawFlow(ALL_NODES, ALL_LINKS));
+drawFlow(ALL_NODES, ALL_LINKS);
 </script>
 {% endblock %}
