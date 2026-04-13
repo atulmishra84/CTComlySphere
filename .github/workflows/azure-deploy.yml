@@ -10,6 +10,7 @@ env:
   IMAGE_NAME: complysphere
   RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
   CONTAINERAPP_NAME: ${{ secrets.AZURE_APP_NAME }}
+  LOCATION: westeurope
 
 jobs:
   build-and-deploy:
@@ -30,36 +31,139 @@ jobs:
               "tenantId": "${{ secrets.AZURE_TENANT_ID }}"
             }
 
-      - name: Log in to Azure Container Registry
+      - name: Install Container Apps CLI extension
+        run: az extension add --name containerapp --upgrade -y
+
+      - name: Register required Azure providers
         run: |
-          az acr login --name ${{ secrets.ACR_NAME }}
+          az provider register --namespace Microsoft.App --wait
+          az provider register --namespace Microsoft.OperationalInsights --wait
+
+      - name: Create Resource Group if missing
+        run: |
+          az group create \
+            --name ${{ env.RESOURCE_GROUP }} \
+            --location ${{ env.LOCATION }} \
+            --output none
+
+      - name: Create Container Registry if missing
+        run: |
+          az acr create \
+            --name ${{ secrets.ACR_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --sku Basic \
+            --admin-enabled true \
+            --output none 2>/dev/null || echo "ACR already exists"
+
+      - name: Log in to Azure Container Registry
+        run: az acr login --name ${{ secrets.ACR_NAME }}
 
       - name: Build and push Docker image
         run: |
           IMAGE_TAG=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           IMAGE_LATEST=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-
           docker build -t $IMAGE_TAG -t $IMAGE_LATEST .
           docker push $IMAGE_TAG
           docker push $IMAGE_LATEST
-
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
-      - name: Deploy to Azure Container Apps
+      - name: Create PostgreSQL server if missing
         run: |
-          az containerapp update \
+          EXISTS=$(az postgres flexible-server show \
+            --name complysphere-pg \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query name -o tsv 2>/dev/null || echo "")
+          if [ -z "$EXISTS" ]; then
+            az postgres flexible-server create \
+              --name complysphere-pg \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --location ${{ env.LOCATION }} \
+              --admin-user complyadmin \
+              --admin-password "${{ secrets.PG_ADMIN_PASSWORD }}" \
+              --sku-name Standard_B1ms \
+              --tier Burstable \
+              --storage-size 32 \
+              --version 16 \
+              --public-access 0.0.0.0 \
+              --output none
+            az postgres flexible-server db create \
+              --server-name complysphere-pg \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --database-name complysphere \
+              --output none
+          else
+            echo "PostgreSQL server already exists"
+          fi
+
+      - name: Create Container Apps Environment if missing
+        run: |
+          EXISTS=$(az containerapp env show \
+            --name complysphere-env \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query name -o tsv 2>/dev/null || echo "")
+          if [ -z "$EXISTS" ]; then
+            az containerapp env create \
+              --name complysphere-env \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --location ${{ env.LOCATION }} \
+              --output none
+          else
+            echo "Container Apps environment already exists"
+          fi
+
+      - name: Get ACR credentials
+        id: acr-creds
+        run: |
+          ACR_USERNAME=$(az acr credential show --name ${{ secrets.ACR_NAME }} --query username -o tsv)
+          ACR_PASSWORD=$(az acr credential show --name ${{ secrets.ACR_NAME }} --query "passwords[0].value" -o tsv)
+          echo "acr_username=$ACR_USERNAME" >> $GITHUB_OUTPUT
+          echo "acr_password=$ACR_PASSWORD" >> $GITHUB_OUTPUT
+
+      - name: Create or update Container App
+        run: |
+          EXISTS=$(az containerapp show \
             --name ${{ env.CONTAINERAPP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.IMAGE_TAG }}
+            --query name -o tsv 2>/dev/null || echo "")
 
-      - name: Verify deployment
+          if [ -z "$EXISTS" ]; then
+            echo "Creating Container App for the first time..."
+            az containerapp create \
+              --name ${{ env.CONTAINERAPP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --environment complysphere-env \
+              --image ${{ env.IMAGE_TAG }} \
+              --registry-server ${{ env.REGISTRY }} \
+              --registry-username ${{ steps.acr-creds.outputs.acr_username }} \
+              --registry-password ${{ steps.acr-creds.outputs.acr_password }} \
+              --target-port 5000 \
+              --ingress external \
+              --min-replicas 1 \
+              --max-replicas 5 \
+              --cpu 1.0 \
+              --memory 2.0Gi \
+              --env-vars \
+                "DATABASE_URL=${{ secrets.DATABASE_URL }}" \
+                "SESSION_SECRET=${{ secrets.SESSION_SECRET }}" \
+                "FLASK_ENV=production" \
+                "PYTHONUNBUFFERED=1" \
+              --output none
+          else
+            echo "Updating existing Container App..."
+            az containerapp update \
+              --name ${{ env.CONTAINERAPP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image ${{ env.IMAGE_TAG }} \
+              --output none
+          fi
+
+      - name: Get and display app URL
         run: |
           URL=$(az containerapp show \
             --name ${{ env.CONTAINERAPP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --query "properties.configuration.ingress.fqdn" -o tsv)
-          echo "Deployed to: https://$URL"
-          sleep 15
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://$URL)
-          echo "Health check HTTP $STATUS"
-          [ "$STATUS" = "200" ] && echo "Deployment verified." || echo "Warning: app returned $STATUS"
+          echo ""
+          echo "========================================"
+          echo "  DEPLOYED: https://$URL"
+          echo "========================================"
