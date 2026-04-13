@@ -1,0 +1,78 @@
+##[debug]  done
+##[debug]fi
+##[debug]'
+##[debug]Loading env
+Run STATE=$(az containerapp env show \
+##[debug]/usr/bin/bash -e /home/runner/work/_temp/fa693aad-06a6-4a4b-9952-b24044c9480f.sh
+Current environment state: ''
+Creating Container Apps environment...
+WARNING: The behavior of this command has been altered by the following extension: containerapp
+WARNING: No Log Analytics workspace provided.
+WARNING: Generating a Log Analytics workspace with name "workspace-complyspherergZbJD"
+
+/ Running ..
+| Running ..
+\ Running ..
+- Running ..
+/ Running ..
+| Running ..
+\ Running ..
+- Running ..
+/ Running ..
+| Running ..
+\ Running ..
+- Running ..
+/ Running ..
+| Running ..
+\ Running ..
+- Running ..
+/ Running ..
+| Running ..
+\ Running ..
+- Running ..
+/ Running ..
+| Running ..
+\ Running ..
+- Running ..
+/ Running ..
+| Running ..
+\ Running ..
+- Running ..
+/ Running ..
+| Running ..
+\ Running ..
+- Running ..
+/ Running ..
+| Running ..
+\ Running ..ERROR: Creating a free tier cluster is unavailable at this time in region westeurope. To create a new cluster, we recommend using an alternate region, or create a paid tier cluster. For a list of all the Azure regions, visit https://aka.ms/aks/regions. For more details on this error, visit https://aka.ms/akscapacityheavyusage.
+Status: 400 (Bad Request)
+ErrorCode: AKSCapacityHeavyUsage
+
+Content:
+{
+  "code": "AKSCapacityHeavyUsage",
+  "details": null,
+  "message": "Creating a free tier cluster is unavailable at this time in region westeurope. To create a new cluster, we recommend using an alternate region, or create a paid tier cluster. For a list of all the Azure regions, visit https://aka.ms/aks/regions. For more details on this error, visit https://aka.ms/akscapacityheavyusage.",
+  "subcode": ""
+ }
+
+Headers:
+Cache-Control: no-cache
+Pragma: no-cache
+x-ms-operation-identifier: REDACTED
+x-ms-correlation-request-id: REDACTED
+x-ms-request-id: 73eac816-5022-4b27-bee5-a497a7dfdf1d
+Strict-Transport-Security: REDACTED
+x-ms-throttling-version: REDACTED
+x-ms-ratelimit-remaining-subscription-writes: REDACTED
+x-ms-routing-request-id: REDACTED
+X-Content-Type-Options: REDACTED
+X-Cache: REDACTED
+X-MSEdge-Ref: REDACTED
+Date: Mon, 13 Apr 2026 11:07:46 GMT
+Content-Length: 412
+Content-Type: application/json
+Expires: -1
+
+Error: Process completed with exit code 1.
+##[debug]Finishing: Create Container Apps Environment and wait for provisioning

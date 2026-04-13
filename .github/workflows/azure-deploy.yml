@@ -10,7 +10,7 @@ env:
   IMAGE_NAME: complysphere
   RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
   CONTAINERAPP_NAME: ${{ secrets.AZURE_APP_NAME }}
-  LOCATION: westeurope
+  LOCATION: eastus
 
 jobs:
   build-and-deploy:
