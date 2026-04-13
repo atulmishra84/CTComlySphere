@@ -2,8 +2,7 @@
 # =============================================================================
 # CT ComplySphere — Startup Script
 # Validates required environment variables, initialises the database schema,
-# then launches gunicorn. The container will exit non-zero if any required
-# variable is missing, making misconfiguration immediately visible.
+# then launches gunicorn.
 # =============================================================================
 set -euo pipefail
 
@@ -30,32 +29,47 @@ fi
 if [ "$MISSING_VARS" -ne 0 ]; then
     echo ""
     echo "  One or more required environment variables are missing."
-    echo "  Copy .env.example to .env, fill in the values, and retry."
     exit 1
 fi
 
 echo "  DATABASE_URL  : set"
 echo "  SESSION_SECRET: set"
 
-# ── 2. Initialise database schema ─────────────────────────────────────────────
+# ── 2. Initialise database schema (with retries) ──────────────────────────────
 echo ""
 echo "[2/3] Initialising database schema..."
 
-python3 - <<'PYEOF'
+DB_INIT_OK=0
+for attempt in 1 2 3 4 5; do
+    echo "  Attempt $attempt/5..."
+    if python3 - <<'PYEOF'
 import os, sys, logging
 logging.basicConfig(level=logging.INFO)
-
 try:
     from app import app, db
-    import models  # noqa: F401 — ensures all ORM models are registered
-
+    import models  # noqa: F401
     with app.app_context():
         db.create_all()
     print("  Database schema initialised successfully.")
+    sys.exit(0)
 except Exception as exc:
-    print(f"  ERROR: Failed to initialise database schema: {exc}", file=sys.stderr)
+    print(f"  DB init failed: {exc}", file=sys.stderr)
     sys.exit(1)
 PYEOF
+    then
+        DB_INIT_OK=1
+        break
+    else
+        echo "  Waiting 10s before retry..."
+        sleep 10
+    fi
+done
+
+if [ "$DB_INIT_OK" -ne 1 ]; then
+    echo ""
+    echo "  WARNING: Could not initialise database schema after 5 attempts."
+    echo "  Starting gunicorn anyway — database errors will appear at request time."
+fi
 
 # ── 3. Start gunicorn ─────────────────────────────────────────────────────────
 echo ""
