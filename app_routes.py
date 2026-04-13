@@ -2736,6 +2736,24 @@ def compliance_gap_attest(record_id):
 
 
 # ---------------------------------------------------------------------------
+# Security Inspection (per-agent deep-dive)
+# ---------------------------------------------------------------------------
+
+@app.route('/agents/<int:agent_id>/security-inspection')
+def agent_security_inspection(agent_id):
+    """Deep security inspection report for a single AI agent."""
+    agent = AIAgent.query.get_or_404(agent_id)
+    try:
+        from engines.security_inspection_engine import run_security_inspection
+        report = run_security_inspection(agent, ScanResult)
+    except Exception as e:
+        logger.error(f"Security inspection error: {e}")
+        flash(f'Inspection error: {e}', 'danger')
+        report = None
+    return render_template('security_inspection.html', report=report, agent=agent)
+
+
+# ---------------------------------------------------------------------------
 # Predictive Analytics
 # ---------------------------------------------------------------------------
 

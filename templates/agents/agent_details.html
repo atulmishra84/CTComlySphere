@@ -676,6 +676,9 @@
                         <a href="{{ url_for('evaluate_compliance', agent_id=agent.id) }}" class="btn btn-outline-secondary">
                             <i class="fas fa-clipboard-check me-1"></i>Evaluate Compliance
                         </a>
+                        <a href="{{ url_for('agent_security_inspection', agent_id=agent.id) }}" class="btn btn-outline-danger">
+                            <i class="fas fa-shield-alt me-1"></i>Security Inspection
+                        </a>
                         <button class="btn btn-outline-warning remediation-btn" 
                                 data-agent-id="{{ agent.id }}" 
                                 data-agent-name="{{ agent.name|tojson }}">

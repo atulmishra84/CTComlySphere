@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+{% block title %}Security Inspection — {{ agent.name }} — CT ComplySphere{% endblock %}
+
+{% block head %}
+<style>
+/* ── layout ── */
+.insp-header { background: linear-gradient(135deg,#0f172a 0%,#1e293b 100%); border-radius:14px; padding:1.75rem 2rem; color:#fff; }
+.posture-ring-wrap { position:relative; width:130px; height:130px; flex-shrink:0; }
+.posture-ring-wrap canvas { position:absolute; top:0; left:0; }
+.posture-ring-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+.posture-score-num { font-size:2rem; font-weight:800; line-height:1; }
+.posture-label     { font-size:.65rem; text-transform:uppercase; letter-spacing:.08em; opacity:.8; margin-top:2px; }
+
+/* ── KPI strip ── */
+.kpi-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:.9rem 1.1rem; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+.kpi-num  { font-size:1.7rem; font-weight:800; line-height:1.1; }
+
+/* ── critical banner ── */
+.critical-banner { background:#fef2f2; border:1px solid #fecaca; border-radius:10px; }
+.critical-item   { border-bottom:1px solid #fee2e2; padding:.45rem .75rem; font-size:.82rem; }
+.critical-item:last-child { border-bottom:none; }
+
+/* ── domain card ── */
+.domain-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,.05); overflow:hidden; transition:box-shadow .15s; }
+.domain-card:hover { box-shadow:0 4px 14px rgba(0,0,0,.1); }
+.domain-header { padding:.75rem 1rem; display:flex; align-items:center; gap:.6rem; border-bottom:1px solid #f1f5f9; }
+.domain-icon { width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:.95rem; flex-shrink:0; }
+.domain-score-bar { height:5px; background:#f1f5f9; border-radius:3px; overflow:hidden; margin-top:4px; }
+.domain-score-fill { height:100%; border-radius:3px; transition:width .4s; }
+.domain-body  { padding:.75rem 1rem; }
+.finding-row  { display:flex; align-items:flex-start; gap:.45rem; font-size:.78rem; padding:.2rem 0; }
+.finding-icon { font-size:.65rem; margin-top:3px; flex-shrink:0; }
+.finding-ok   { color:#16a34a; }
+.finding-warn { color:#d97706; }
+.finding-fail { color:#dc2626; }
+.remediation-block { background:#f8fafc; border-left:3px solid #6366f1; border-radius:0 6px 6px 0; padding:.55rem .75rem; margin-top:.6rem; }
+.remediation-item { font-size:.75rem; color:#374151; padding:.15rem 0; display:flex; align-items:flex-start; gap:.4rem; }
+.remediation-num  { font-size:.65rem; font-weight:700; color:#6366f1; flex-shrink:0; margin-top:2px; }
+
+/* ── status badges ── */
+.badge-PASS { background:#dcfce7; color:#15803d; }
+.badge-WARN { background:#fef9c3; color:#a16207; }
+.badge-FAIL { background:#fee2e2; color:#b91c1c; }
+.badge-UNKNOWN { background:#f1f5f9; color:#64748b; }
+.sev-critical { background:#fce7f3; color:#9d174d; }
+.sev-high     { background:#fee2e2; color:#b91c1c; }
+.sev-medium   { background:#fef3c7; color:#b45309; }
+.sev-low      { background:#dcfce7; color:#166534; }
+.sev-info     { background:#e0f2fe; color:#075985; }
+
+.status-pill  { font-size:.68rem; font-weight:700; letter-spacing:.05em; padding:.2rem .55rem; border-radius:20px; }
+.sev-pill     { font-size:.65rem; font-weight:600; padding:.15rem .5rem; border-radius:20px; }
+
+/* ── color by score ── */
+.score-excellent { color:#16a34a; }
+.score-good      { color:#2563eb; }
+.score-fair      { color:#d97706; }
+.score-poor      { color:#ea580c; }
+.score-critical  { color:#dc2626; }
+
+.fill-excellent { background:#16a34a; }
+.fill-good      { background:#2563eb; }
+.fill-fair      { background:#d97706; }
+.fill-poor      { background:#ea580c; }
+.fill-critical  { background:#dc2626; }
+
+/* ── collapsible remediation ── */
+.remediation-toggle { cursor:pointer; user-select:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if not report %}
+<div class="alert alert-danger">Security inspection could not be completed. <a href="{{ url_for('scan_results') }}">Return to agents list</a>.</div>
+{% else %}
+
+{# helpers #}
+{% set score = report.total_score %}
+{% set posture = report.posture %}
+{% set score_cls = 'excellent' if score >= 85 else 'good' if score >= 70 else 'fair' if score >= 50 else 'poor' if score >= 30 else 'critical' %}
+
+<!-- ── Header ───────────────────────────────────────────────────────── -->
+<div class="insp-header mb-4 d-flex flex-wrap align-items-center gap-3">
+  <!-- Posture ring -->
+  <div class="posture-ring-wrap">
+    <canvas id="postureRing" width="130" height="130"></canvas>
+    <div class="posture-ring-center">
+      <div class="posture-score-num" id="postureNum">{{ score }}</div>
+      <div class="posture-label">/ 100</div>
+    </div>
+  </div>
+
+  <!-- Agent info -->
+  <div class="flex-grow-1">
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <h1 class="h3 mb-0 text-white fw-bold">{{ agent.name }}</h1>
+      <span class="badge rounded-pill px-3 py-1
+        {% if posture == 'Excellent' %}bg-success{% elif posture == 'Good' %}bg-primary{% elif posture == 'Fair' %}bg-warning text-dark{% elif posture == 'Poor' %}bg-orange{% else %}bg-danger{% endif %}">
+        {{ posture }} Posture
+      </span>
+    </div>
+    <div class="d-flex flex-wrap gap-3 mt-2" style="font-size:.82rem; opacity:.85;">
+      <span><i class="fas fa-sitemap me-1"></i>{{ agent.protocol or '—' }}</span>
+      <span><i class="fas fa-map-marker-alt me-1"></i>{{ agent.deployment_location or '—' }}</span>
+      <span><i class="fas fa-tag me-1"></i>{{ agent.type or '—' }}</span>
+      <span><i class="fas fa-history me-1"></i>{{ report.scan_count }} scan(s) on record</span>
+      <span><i class="fas fa-clock me-1"></i>Generated {{ report.generated_at.strftime('%Y-%m-%d %H:%M UTC') }}</span>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="d-flex flex-column gap-2 ms-auto">
+    <a href="{{ url_for('scan_results') }}" class="btn btn-sm btn-outline-light">
+      <i class="fas fa-arrow-left me-1"></i>All Agents
+    </a>
+    <a href="{{ url_for('compliance_gaps') }}?agent_id={{ agent.id }}" class="btn btn-sm btn-light">
+      <i class="fas fa-search-minus me-1"></i>Gap Analysis
+    </a>
+  </div>
+</div>
+
+<!-- ── KPI Strip ─────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="kpi-card text-center">
+      <div class="kpi-num text-danger">{{ report.fail_count }}</div>
+      <div class="small text-muted fw-semibold">FAILED Domains</div>
+      <div class="small text-danger mt-1"><i class="fas fa-times-circle me-1"></i>Requires action</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi-card text-center">
+      <div class="kpi-num text-warning">{{ report.warn_count }}</div>
+      <div class="small text-muted fw-semibold">WARNING Domains</div>
+      <div class="small text-warning mt-1"><i class="fas fa-exclamation-triangle me-1"></i>Needs review</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi-card text-center">
+      <div class="kpi-num text-success">{{ report.pass_count }}</div>
+      <div class="small text-muted fw-semibold">PASSING Domains</div>
+      <div class="small text-success mt-1"><i class="fas fa-check-circle me-1"></i>Controls in place</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi-card text-center">
+      <div class="kpi-num text-danger">{{ report.critical_count }}</div>
+      <div class="small text-muted fw-semibold">Critical Findings</div>
+      <div class="small text-muted mt-1"><i class="fas fa-shield-alt me-1"></i>Immediate risk</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Critical Findings Banner ──────────────────────────────────────── -->
+{% if report.all_criticals %}
+<div class="critical-banner p-3 mb-4">
+  <div class="d-flex align-items-center mb-2">
+    <i class="fas fa-exclamation-circle text-danger me-2"></i>
+    <strong class="text-danger">{{ report.all_criticals|length }} Critical / High Finding(s) Requiring Immediate Attention</strong>
+  </div>
+  {% for cf in report.all_criticals %}
+  <div class="critical-item d-flex align-items-start gap-2">
+    <i class="fas fa-times-circle text-danger mt-1 flex-shrink-0" style="font-size:.7rem;"></i>
+    <div>
+      <span class="badge sev-critical sev-pill me-1">{{ cf.domain }}</span>
+      {{ cf.text }}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ── Domain Cards Grid ─────────────────────────────────────────────── -->
+<div class="row g-3">
+{% for d in report.domains %}
+{% set score_c = 'excellent' if d.score >= 85 else 'good' if d.score >= 70 else 'fair' if d.score >= 50 else 'poor' if d.score >= 30 else 'critical' %}
+<div class="col-md-6 col-xl-4">
+  <div class="domain-card h-100">
+
+    <!-- Domain header -->
+    <div class="domain-header">
+      <div class="domain-icon bg-{{ 'danger' if d.status == 'FAIL' else 'warning' if d.status == 'WARN' else 'success' }} bg-opacity-10">
+        <i class="{{ d.icon }} text-{{ 'danger' if d.status == 'FAIL' else 'warning' if d.status == 'WARN' else 'success' }}"></i>
+      </div>
+      <div class="flex-grow-1 min-w-0">
+        <div class="d-flex align-items-center justify-content-between">
+          <span class="fw-semibold" style="font-size:.85rem;">{{ d.label }}</span>
+          <div class="d-flex gap-1 ms-2 flex-shrink-0">
+            <span class="status-pill badge-{{ d.status }}">{{ d.status }}</span>
+            <span class="sev-pill sev-{{ d.severity }}">{{ d.severity }}</span>
+          </div>
+        </div>
+        <!-- Score bar -->
+        <div class="d-flex align-items-center gap-2 mt-1">
+          <div class="domain-score-bar flex-grow-1">
+            <div class="domain-score-fill fill-{{ score_c }}" style="width:{{ d.score }}%"></div>
+          </div>
+          <span class="fw-bold score-{{ score_c }}" style="font-size:.75rem;min-width:32px;text-align:right;">{{ d.score }}</span>
+        </div>
+        <div class="text-muted" style="font-size:.7rem;margin-top:2px;">{{ d.summary }}</div>
+      </div>
+    </div>
+
+    <!-- Body: findings + remediation -->
+    <div class="domain-body">
+
+      <!-- Findings -->
+      {% for f in d.findings %}
+      <div class="finding-row">
+        <i class="fas fa-{{ 'check-circle finding-ok' if f.level == 'ok' else 'exclamation-circle finding-warn' if f.level == 'warn' else 'times-circle finding-fail' }} finding-icon"></i>
+        <span>{{ f.text }}</span>
+      </div>
+      {% endfor %}
+
+      <!-- Evidence (compact key-value) -->
+      {% if d.evidence %}
+      <div class="mt-2 pt-2 border-top">
+        <div class="text-muted fw-semibold mb-1" style="font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;">Evidence</div>
+        <div style="font-size:.72rem;font-family:monospace;color:#475569;max-height:60px;overflow-y:auto;">
+          {% for k,v in d.evidence.items() %}
+          <span class="me-2"><span class="text-primary">{{ k }}</span>: {{ v if v is not none else '—' }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Remediation (collapsible) -->
+      {% if d.remediation %}
+      <div class="remediation-block mt-2">
+        <div class="remediation-toggle d-flex align-items-center gap-1 mb-1"
+             onclick="toggleRemediation(this)">
+          <i class="fas fa-tools" style="font-size:.7rem;color:#6366f1;"></i>
+          <span style="font-size:.72rem;font-weight:700;color:#6366f1;">
+            {{ d.remediation|length }} Remediation Step(s)
+          </span>
+          <i class="fas fa-chevron-down ms-auto" style="font-size:.6rem;color:#94a3b8;transition:transform .2s;"></i>
+        </div>
+        <div class="remediation-steps" style="display:none;">
+          {% for step in d.remediation %}
+          <div class="remediation-item">
+            <span class="remediation-num">{{ loop.index }}.</span>
+            <span>{{ step }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endfor %}
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Posture ring chart ──────────────────────────────────────────────
+(function() {
+  const score = {{ report.total_score if report else 0 }};
+  const canvas = document.getElementById('postureRing');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const cx = 65, cy = 65, r = 52, lw = 12;
+  const startAngle = -Math.PI / 2;
+  const endAngle   = startAngle + (score / 100) * 2 * Math.PI;
+
+  // Track
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2*Math.PI);
+  ctx.strokeStyle = 'rgba(255,255,255,.12)';
+  ctx.lineWidth = lw;
+  ctx.stroke();
+
+  // Fill
+  const color = score >= 85 ? '#22c55e' : score >= 70 ? '#3b82f6' : score >= 50 ? '#f59e0b' : score >= 30 ? '#f97316' : '#ef4444';
+  const grad = ctx.createLinearGradient(cx - r, cy, cx + r, cy);
+  grad.addColorStop(0, color);
+  grad.addColorStop(1, color + 'bb');
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, startAngle, endAngle);
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = lw;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Animate number
+  let n = 0;
+  const el = document.getElementById('postureNum');
+  const step = Math.ceil(score / 40);
+  const timer = setInterval(() => {
+    n = Math.min(n + step, score);
+    el.textContent = n;
+    if (n >= score) clearInterval(timer);
+  }, 20);
+})();
+
+// ── Toggle remediation visibility ───────────────────────────────────
+function toggleRemediation(toggle) {
+  const steps   = toggle.parentElement.querySelector('.remediation-steps');
+  const chevron = toggle.querySelector('.fa-chevron-down, .fa-chevron-up');
+  const hidden  = steps.style.display === 'none';
+  steps.style.display = hidden ? 'block' : 'none';
+  if (chevron) {
+    chevron.classList.toggle('fa-chevron-down', !hidden);
+    chevron.classList.toggle('fa-chevron-up', hidden);
+  }
+}
+</script>
+{% endblock %}
